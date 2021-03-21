@@ -228,6 +228,7 @@ function mark_complete()
 		-- the shuffler is complete!
 		print('Shuffler complete!')
 		d_set('running', false)
+		save_config(config, 'shuffler-src/config.lua')
 	else
 		swap_game()
 	end

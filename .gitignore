@@ -1,3 +1,7 @@
+games/*
+shuffler-src/config.lua
+shuffler-src/games-list.txt
+
 # Compiled Lua sources
 luac.out
 
@@ -38,4 +42,3 @@ luac.out
 *.i*86
 *.x86_64
 *.hex
-
