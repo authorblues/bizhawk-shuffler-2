@@ -1,5 +1,6 @@
 # Bizhawk Shuffler 2
 written by authorblues, inspired by the [original Bizhawk Shuffler by Brossentia](https://github.com/brossentia/BizHawk-Shuffler)
+
 [tested on Bizhawk v2.6.1 - http://tasvideos.org/BizHawk/ReleaseHistory.html](http://tasvideos.org/BizHawk/ReleaseHistory.html)
 
 ## INSTRUCTIONS:
