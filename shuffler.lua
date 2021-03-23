@@ -6,12 +6,9 @@ require 'shuffler-src.setupform'
 	released under MIT License
 --]]
 
--- database functions
-function d_get(k) return userdata.get('shuf_' .. k) end
-function d_set(k, v) userdata.set('shuf_' .. k, v) end
-
 config = {}
 next_swap_time = 0
+running = true
 
 -- determine operating system for the purpose of commands
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
@@ -220,15 +217,27 @@ function frames_to_time(f)
 	return string.format('%02d:%02d:%02d', hrs, min%60, sec%60)
 end
 
+function output_completed()
+	completed = ""
+	for i,game in ipairs(config['completed_games']) do
+		completed = completed .. strip_ext(game) .. '\n'
+	end
+	write_data('output-info/completed-games.txt', completed)
+end
+
 function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
 	table.insert(config['completed_games'], get_current_game())
 	print(get_current_game() .. ' marked complete')
+
+	-- update list of completed games in file
+	output_completed()
+
 	if #get_games_list() == 0 then
 		-- the shuffler is complete!
-		print('Shuffler complete!')
-		d_set('running', false)
+		running = false
 		save_config(config, 'shuffler-src/config.lua')
+		print('Shuffler complete!')
 	else
 		swap_game()
 	end
@@ -246,11 +255,14 @@ function complete_setup()
 		delete_savestates()
 	end
 
-	d_set('running', true)
+	-- whatever the current state is, update the output file
+	output_completed()
+
+	-- load first game
 	swap_game()
 end
 
-if d_get('running') then
+if emu.getsystemid() ~= "NULL" then
 	-- THIS CODE RUNS EVERY TIME THE SCRIPT RESTARTS
 	-- which is specifically after a call to client.openrom()
 
@@ -278,14 +290,13 @@ if d_get('running') then
 else
 	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
 	client.displaymessages(false)
-	d_set('running', false)
 	setup_form(complete_setup)
 end
 
 prev_input = input.get()
 frames_since_restart = 0
 while true do
-	if d_get('running') then
+	if emu.getsystemid() ~= "NULL" and running then
 		local frame_count = (config['frame_count'] or 0) + 1
 		config['frame_count'] = frame_count
 		frames_since_restart = frames_since_restart + 1
