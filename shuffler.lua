@@ -93,7 +93,6 @@ function get_games_list()
 							table.remove(games, i)
 						end
 					end
-					break
 				end
 			end
 			fp:close()
