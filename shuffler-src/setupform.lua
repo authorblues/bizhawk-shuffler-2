@@ -22,6 +22,7 @@ function setup_form(callback)
 	end
 
 	function save_new_settings()
+		config = {}
 		config['seed'] = tonumber(forms.gettext(seed_text) or "0")
 		config['nseed'] = config['seed']
 
@@ -30,8 +31,8 @@ function setup_form(callback)
 		config['min_swap'] = math.min(a, b)
 		config['max_swap'] = math.max(a, b)
 
-		-- TODO: make this configurable
 		config['hk_complete'] = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
+		config['plugin_state'] = {}
 		config['completed_games'] = {}
 
 		-- internal information for output

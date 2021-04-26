@@ -1,7 +1,8 @@
 require 'shuffler-src.setupform'
 
 --[[
-	Bizhawk Shuffler 2 by authorblues, inspired by the original Bizhawk Shuffler by Brossentia
+	Bizhawk Shuffler 2 by authorblues
+	inspired by Brossentia's Bizhawk Shuffler
 	tested on Bizhawk v2.6.1 - http://tasvideos.org/BizHawk/ReleaseHistory.html
 	released under MIT License
 --]]
@@ -9,6 +10,7 @@ require 'shuffler-src.setupform'
 config = {}
 next_swap_time = 0
 running = true
+plugin_loaded = false
 
 -- determine operating system for the purpose of commands
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
@@ -21,6 +23,19 @@ STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 os.execute('mkdir output-info')
 os.execute('mkdir "' .. GAMES_FOLDER .. '"')
 os.execute('mkdir "' .. STATES_FOLDER .. '"')
+
+--[[
+stub functions for plugins -- this is the closest to an API you're gonna get :^)
+to add a plugin: put a lua script named `plugin.lua` in the games folder
+for all methods:
+    `data` is a table to maintain state between swaps
+    `gamename` is a string containing the filename (without path info) of the rom
+--]]
+function on_setup(data) end -- called once at the start
+function on_game_load(gamename, data) end -- called each time a game/state loads
+function on_frame(gamename, data) end -- called each frame
+function on_game_save(gamename, data) end -- called each time a game/state is saved (before swap)
+function on_complete(gamename, data) end -- called each time a game is marked complete
 
 -- loads primary config file
 function load_config(f)
@@ -61,6 +76,18 @@ function write_data(filename, data, mode)
 	handle:close()
 end
 
+function table_subtract(t2, t1)
+	local t = {}
+	for i = 1, #t1 do
+		t[t1[i]] = true
+	end
+	for i = #t2, 1, -1 do
+		if t[t2[i]] then
+			table.remove(t2, i)
+		end
+	end
+end
+
 -- get list of games
 function get_games_list()
 	local cmd = 'ls ' .. GAMES_FOLDER .. ' > shuffler-src/games-list.txt'
@@ -99,6 +126,7 @@ function get_games_list()
 		end
 	end
 
+	table_subtract(games, {'plugin.lua'})
 	table_subtract(games, config['completed_games'])
 	return games
 end
@@ -110,18 +138,6 @@ function delete_savestates()
 		cmd = 'rmdir "' .. STATES_FOLDER .. '" /S /Q'
 	end
 	os.execute(cmd)
-end
-
-function table_subtract(t2, t1)
-	local t = {}
-	for i = 1, #t1 do
-		t[t1[i]] = true
-	end
-	for i = #t2, 1, -1 do
-		if t[t2[i]] then
-			table.remove(t2, i)
-		end
-	end
 end
 
 function get_current_game()
@@ -228,6 +244,7 @@ function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
 	table.insert(config['completed_games'], get_current_game())
 	print(get_current_game() .. ' marked complete')
+	on_complete(get_current_game(), config['plugin_state'])
 
 	-- update list of completed games in file
 	output_completed()
@@ -242,9 +259,6 @@ function mark_complete()
 	end
 end
 
--- load primary configuration
-load_config('shuffler-src/config.lua')
-
 function complete_setup()
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config['nseed'])
@@ -256,10 +270,17 @@ function complete_setup()
 
 	-- whatever the current state is, update the output file
 	output_completed()
+	on_setup(config['plugin_state'])
 
 	-- load first game
 	swap_game()
 end
+
+-- load primary configuration
+load_config('shuffler-src/config.lua')
+
+-- load plugin configuration
+plugin_loaded = load_config(GAMES_FOLDER .. '/plugin.lua')
 
 if emu.getsystemid() ~= "NULL" then
 	-- THIS CODE RUNS EVERY TIME THE SCRIPT RESTARTS
@@ -286,6 +307,7 @@ if emu.getsystemid() ~= "NULL" then
 
 	update_next_swap_time()
 	client.SetSoundOn(config['sound'] or true)
+	on_game_load(get_current_game(), config['plugin_state'])
 else
 	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
 	client.displaymessages(false)
@@ -308,8 +330,8 @@ while true do
 		write_data('output-info/total-time.txt', frames_to_time(frame_count))
 		write_data('output-info/current-time.txt', frames_to_time(cgf))
 
-		-- time to swap!
-		if frame_count >= next_swap_time then swap_game() end
+		-- let plugins do operations each frame
+		on_frame(get_current_game(), config['plugin_state'])
 
 		-- calculate input "rises" by subtracting the previously held inputs from the inputs on this frame
 		local input_rise = input.get()
@@ -320,6 +342,12 @@ while true do
 		-- the time buffer should hopefully prevent somebody from attempting to
 		-- press the hotkey and the game swapping, marking the wrong game complete
 		if input_rise[config['hk_complete']] and frames_since_restart > math.min(3, config['min_swap']/2) * 60 then mark_complete() end
+
+		-- time to swap!
+		if frame_count >= next_swap_time then
+			on_game_save(get_current_game(), config['plugin_state'])
+			swap_game()
+		end
 	end
 
 	emu.frameadvance()
