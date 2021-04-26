@@ -11,20 +11,18 @@ end
 
 -- called each time a game/state loads
 function on_game_load(data)
-	memory.usememorydomain("68K RAM")
-	local gamestate = bit.band(memory.readbyte(0xF600), 0x7F)
+	local gamestate = bit.band(mainmemory.readbyte(0xF600), 0x7F)
 	if gamestate == 0x0C then
-		memory.write_s16_be(0xFE20, data['rings'])
-		memory.write_s8(0xFE1D, -1) -- triggers an update to the ring counter
+		mainmemory.write_s16_be(0xFE20, data['rings'])
+		mainmemory.write_s8(0xFE1D, -1) -- triggers an update to the ring counter
 	end
 end
 
 -- called each frame
 function on_frame(data)
-	memory.usememorydomain("68K RAM")
-	local gamestate = bit.band(memory.readbyte(0xF600), 0x7F)
+	local gamestate = bit.band(mainmemory.readbyte(0xF600), 0x7F)
 	if gamestate == 0x0C then
-		data['rings'] = memory.read_s16_be(0xFE20)
+		data['rings'] = mainmemory.read_s16_be(0xFE20)
 	end
 end
 

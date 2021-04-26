@@ -1,9 +1,9 @@
 --[[
-    `data` is a table parameter passed to all methods
+	`data` is a table parameter passed to all methods
 	this is where you should maintain your plugin's state
 
 	helpful methods:
-    - get_current_game() returns a string containing the filename (without path info) of the current loaded rom
+	- get_current_game() returns a string containing the filename (without path info) of the current loaded rom
 	- gameinfo.getromhash() returns a hash of the current loaded file, for validating roms and checking versions
 --]]
 
