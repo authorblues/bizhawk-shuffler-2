@@ -183,18 +183,27 @@ end
 
 -- save current game's savestate, backup config, and load new game
 function swap_game()
+	-- if a swap has already happened, don't call again
+	if not running then return false end
+
 	-- if the game isn't changing, stop here and just update the timer
 	-- (you might think we should just disable the timer at this point, but this
 	-- allows new games to be added mid-run without the timer being disabled)
 	local next_game = get_next_game()
 	if next_game == get_current_game() then
 		update_next_swap_time()
-		return
+		return false
+	end
+
+	-- swap_game() is used for the first load, so check if a game is loaded
+	if get_current_game() ~= nil then
+		on_game_save(config['plugin_state'])
 	end
 
 	-- at this point, save the game and update the new "current" game after
 	save_current_game()
 	config['current_game'] = next_game
+	running = false
 
 	-- save an updated randomizer seed
 	config['nseed'] = math.random(9999999999)
@@ -206,6 +215,7 @@ function swap_game()
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
 	load_game(get_current_game())
+	return true
 end
 
 function starts_with(a, b)
@@ -343,10 +353,7 @@ while true do
 		if input_rise[config['hk_complete']] and frames_since_restart > math.min(3, config['min_swap']/2) * 60 then mark_complete() end
 
 		-- time to swap!
-		if frame_count >= next_swap_time then
-			on_game_save(config['plugin_state'])
-			swap_game()
-		end
+		if frame_count >= next_swap_time then swap_game() end
 	end
 
 	emu.frameadvance()
