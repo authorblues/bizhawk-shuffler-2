@@ -29,13 +29,12 @@ stub functions for plugins -- this is the closest to an API you're gonna get :^)
 to add a plugin: put a lua script named `plugin.lua` in the games folder
 for all methods:
     `data` is a table to maintain state between swaps
-    `gamename` is a string containing the filename (without path info) of the rom
 --]]
 function on_setup(data) end -- called once at the start
-function on_game_load(gamename, data) end -- called each time a game/state loads
-function on_frame(gamename, data) end -- called each frame
-function on_game_save(gamename, data) end -- called each time a game/state is saved (before swap)
-function on_complete(gamename, data) end -- called each time a game is marked complete
+function on_game_load(data) end -- called each time a game/state loads
+function on_frame(data) end -- called each frame
+function on_game_save(data) end -- called each time a game/state is saved (before swap)
+function on_complete(data) end -- called each time a game is marked complete
 
 -- loads primary config file
 function load_config(f)
@@ -244,7 +243,7 @@ function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
 	table.insert(config['completed_games'], get_current_game())
 	print(get_current_game() .. ' marked complete')
-	on_complete(get_current_game(), config['plugin_state'])
+	on_complete(config['plugin_state'])
 
 	-- update list of completed games in file
 	output_completed()
@@ -307,7 +306,7 @@ if emu.getsystemid() ~= "NULL" then
 
 	update_next_swap_time()
 	client.SetSoundOn(config['sound'] or true)
-	on_game_load(get_current_game(), config['plugin_state'])
+	on_game_load(config['plugin_state'])
 else
 	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
 	client.displaymessages(false)
@@ -331,7 +330,7 @@ while true do
 		write_data('output-info/current-time.txt', frames_to_time(cgf))
 
 		-- let plugins do operations each frame
-		on_frame(get_current_game(), config['plugin_state'])
+		on_frame(config['plugin_state'])
 
 		-- calculate input "rises" by subtracting the previously held inputs from the inputs on this frame
 		local input_rise = input.get()
@@ -345,7 +344,7 @@ while true do
 
 		-- time to swap!
 		if frame_count >= next_swap_time then
-			on_game_save(get_current_game(), config['plugin_state'])
+			on_game_save(config['plugin_state'])
 			swap_game()
 		end
 	end
