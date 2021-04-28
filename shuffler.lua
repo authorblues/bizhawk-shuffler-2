@@ -87,22 +87,26 @@ function table_subtract(t2, t1)
 	end
 end
 
--- get list of games
-function get_games_list()
-	local cmd = 'ls ' .. GAMES_FOLDER .. ' > shuffler-src/games-list.txt'
+-- returns a table containing all files in a given directory
+function get_dir_contents(dir)
+	local cmd = 'ls ' .. dir .. ' > shuffler-src/temp-list.txt'
 	if PLATFORM == 'WIN' then
-		cmd = 'dir ' .. GAMES_FOLDER .. ' /B > shuffler-src/games-list.txt'
+		cmd = 'dir ' .. dir .. ' /B > shuffler-src/temp-list.txt'
 	end
 	os.execute(cmd)
 
-	local games = {}
-	local fp = io.open('shuffler-src/games-list.txt', 'r')
+	local file_list = {}
+	local fp = io.open('shuffler-src/temp-list.txt', 'r')
 	for x in fp:lines() do
-		if x ~= '.savestates' then
-			table.insert(games, x)
-		end
+		table.insert(file_list, x)
 	end
 	fp:close()
+	return file_list
+end
+
+-- get list of games
+function get_games_list()
+	local games = get_dir_contents(GAMES_FOLDER)
 
 	-- find .cue files and remove the associated bin/iso
 	for _,filename in ipairs(games) do
@@ -125,7 +129,7 @@ function get_games_list()
 		end
 	end
 
-	table_subtract(games, {'plugin.lua'})
+	table_subtract(games, {'plugin.lua','.savestates})
 	table_subtract(games, config['completed_games'])
 	return games
 end
