@@ -16,6 +16,7 @@ plugin_loaded = false
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
 PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
 
+PLUGINS_FOLDER = 'example_plugins'
 GAMES_FOLDER = 'games'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 
@@ -129,7 +130,7 @@ function get_games_list()
 		end
 	end
 
-	table_subtract(games, {'plugin.lua','.savestates})
+	table_subtract(games, {'plugin.lua','.savestates'})
 	table_subtract(games, config['completed_games'])
 	return games
 end
