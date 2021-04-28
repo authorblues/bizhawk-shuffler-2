@@ -135,6 +135,24 @@ function get_games_list()
 	return games
 end
 
+-- deletes plugin.lua and moves over the selected plugin
+function setup_plugin(selection)
+	local cmd = 'rm "' .. GAMES_FOLDER .. '/plugin.lua' .. '"'
+	if PLATFORM == 'WIN' then
+		cmd = 'del "' .. GAMES_FOLDER .. '\\plugin.lua' .. '"'
+	end
+	os.execute(cmd)
+
+	if selection ~= '[None]' then
+		cmd = 'cp "' .. PLUGINS_FOLDER .. '/' .. selection .. '" "' .. GAMES_FOLDER .. '/plugin.lua"'
+		if PLATFORM == 'WIN' then
+			cmd = 'copy "' .. PLUGINS_FOLDER .. '\\' .. selection .. '" "' .. GAMES_FOLDER .. '\\plugin.lua"'
+		end
+	end
+	os.execute(cmd)
+
+end
+
 -- delete savestates folder
 function delete_savestates()
 	local cmd = 'rm -rf "' .. STATES_FOLDER .. '"'
@@ -280,6 +298,10 @@ function complete_setup()
 	if config['frame_count'] == 0 then
 		print('deleting savestates!')
 		delete_savestates()
+		if config['chosen_plugin'] ~= '[Use A Different Plugin]' then
+			print('setting up plugin!')
+			setup_plugin(config['chosen_plugin'])
+		end
 	end
 
 	-- whatever the current state is, update the output file

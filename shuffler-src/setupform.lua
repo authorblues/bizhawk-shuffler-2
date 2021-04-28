@@ -32,6 +32,7 @@ function setup_form(callback)
 		config['max_swap'] = math.max(a, b)
 
 		config['hk_complete'] = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
+		config['chosen_plugin'] = forms.gettext(plugin_combo)
 		config['plugin_state'] = {}
 		config['completed_games'] = {}
 
@@ -88,6 +89,7 @@ function setup_form(callback)
 	plugins_table = get_dir_contents(PLUGINS_FOLDER)
 	table_subtract(plugins_table, {'empty.lua'})
 	table.insert(plugins_table, '[None]')
+	table.insert(plugins_table, '[Use A Different Plugin]')
 
 	plugin_combo = forms.dropdown(form, plugins_table, 10, 160, 150, 20)
 	forms.label(form, "Game Plugin", 165, 163, 150, 20)
