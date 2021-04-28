@@ -32,9 +32,13 @@ function setup_form(callback)
 		config['max_swap'] = math.max(a, b)
 
 		config['hk_complete'] = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
-		config['chosen_plugin'] = forms.gettext(plugin_combo)
-		config['plugin_state'] = {}
 		config['completed_games'] = {}
+
+		config['plugin'] = forms.gettext(plugin_combo)
+		if config['plugin'] == '[None]' then
+			config['plugin'] = nil
+		end
+		config['plugin_state'] = {}
 
 		-- internal information for output
 		config['frame_count'] = 0
@@ -72,9 +76,16 @@ function setup_form(callback)
 	forms.label(form, "Hotkey: Game Completed", 165, 103, 150, 20)
 	forms.settext(hk_complete, config['hk_complete'] or 'Ctrl+Shift+End')
 
-	forms.label(form, "Resuming a run?", 28, 134, 130, 20)
-	resume = forms.checkbox(form, "", 10, 130)
-	start_btn = forms.button(form, "Start New Shuffler", start_handler, 160, 130, 150, 20)
+	plugins_table = get_dir_contents(PLUGINS_FOLDER)
+	table_subtract(plugins_table, { 'empty.lua' })
+	table.insert(plugins_table, '[None]')
+
+	plugin_combo = forms.dropdown(form, plugins_table, 10, 130, 150, 20)
+	forms.label(form, "Game Plugin", 165, 133, 150, 20)
+
+	forms.label(form, "Resuming a run?", 28, 164, 130, 20)
+	resume = forms.checkbox(form, "", 10, 160)
+	start_btn = forms.button(form, "Start New Shuffler", start_handler, 160, 160, 150, 20)
 
 	function toggle_resuming()
 		if forms.ischecked(resume) then
@@ -86,13 +97,5 @@ function setup_form(callback)
 
 	forms.addclick(resume, toggle_resuming)
 
-	plugins_table = get_dir_contents(PLUGINS_FOLDER)
-	table_subtract(plugins_table, {'empty.lua'})
-	table.insert(plugins_table, '[None]')
-	table.insert(plugins_table, '[Use A Different Plugin]')
-
-	plugin_combo = forms.dropdown(form, plugins_table, 10, 160, 150, 20)
-	forms.label(form, "Game Plugin", 165, 163, 150, 20)
-
-	forms.label(form, "** Based on the original Bizhawk Shuffler by Brossentia", 10, 193, 300, 20)
+	forms.label(form, "** Based on Brossentia's Bizhawk Shuffler", 10, 193, 300, 20)
 end

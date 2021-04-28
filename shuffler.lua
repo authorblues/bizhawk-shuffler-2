@@ -16,7 +16,7 @@ plugin_loaded = false
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
 PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
 
-PLUGINS_FOLDER = 'example-plugins'
+PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 
@@ -130,27 +130,9 @@ function get_games_list()
 		end
 	end
 
-	table_subtract(games, {'plugin.lua','.savestates'})
+	table_subtract(games, { 'plugin.lua', '.savestates' })
 	table_subtract(games, config['completed_games'])
 	return games
-end
-
--- deletes plugin.lua and moves over the selected plugin
-function setup_plugin(selection)
-	local cmd = 'rm "' .. GAMES_FOLDER .. '/plugin.lua' .. '"'
-	if PLATFORM == 'WIN' then
-		cmd = 'del "' .. GAMES_FOLDER .. '\\plugin.lua' .. '"'
-	end
-	os.execute(cmd)
-
-	if selection ~= '[None]' then
-		cmd = 'cp "' .. PLUGINS_FOLDER .. '/' .. selection .. '" "' .. GAMES_FOLDER .. '/plugin.lua"'
-		if PLATFORM == 'WIN' then
-			cmd = 'copy "' .. PLUGINS_FOLDER .. '\\' .. selection .. '" "' .. GAMES_FOLDER .. '\\plugin.lua"'
-		end
-	end
-	os.execute(cmd)
-
 end
 
 -- delete savestates folder
@@ -298,10 +280,6 @@ function complete_setup()
 	if config['frame_count'] == 0 then
 		print('deleting savestates!')
 		delete_savestates()
-		if config['chosen_plugin'] ~= '[Use A Different Plugin]' then
-			print('setting up plugin!')
-			setup_plugin(config['chosen_plugin'])
-		end
 	end
 
 	-- whatever the current state is, update the output file
@@ -316,7 +294,9 @@ end
 load_config('shuffler-src/config.lua')
 
 -- load plugin configuration
-plugin_loaded = load_config(GAMES_FOLDER .. '/plugin.lua')
+if config['plugin'] ~= nil then
+	plugin_loaded = load_config(PLUGINS_FOLDER .. '/' .. config['plugin'])
+end
 
 if emu.getsystemid() ~= "NULL" then
 	-- THIS CODE RUNS EVERY TIME THE SCRIPT RESTARTS
