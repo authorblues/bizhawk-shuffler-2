@@ -1,5 +1,5 @@
 function setup_form(callback)
-	local form, seed_text, min_text, max_text, resume, start_btn
+	local form, seed_text, min_text, max_text, resume, start_btn, plugin_combo
 	local hk_complete
 
 	-- I believe none of these conflict with default hotkeys
@@ -52,7 +52,7 @@ function setup_form(callback)
 		forms.settext(seed_text, random_seed())
 	end
 
-	form = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup")
+	form = forms.newform(340, 260, "Bizhawk Shuffler v2 Setup")
 
 	seed_text = forms.textbox(form, 0, 100, 20, "UNSIGNED", 10, 10)
 	forms.label(form, "Seed", 115, 13, 40, 20)
@@ -84,5 +84,13 @@ function setup_form(callback)
 	end
 
 	forms.addclick(resume, toggle_resuming)
-	forms.label(form, "** Based on the original Bizhawk Shuffler by Brossentia", 10, 163, 300, 20)
+
+	plugins_table = get_dir_contents(PLUGINS_FOLDER)
+	table_subtract(plugins_table, {'empty.lua'})
+	table.insert(plugins_table, '[None]')
+
+	plugin_combo = forms.dropdown(form, plugins_table, 10, 160, 150, 20)
+	forms.label(form, "Game Plugin", 165, 163, 150, 20)
+
+	forms.label(form, "** Based on the original Bizhawk Shuffler by Brossentia", 10, 193, 300, 20)
 end

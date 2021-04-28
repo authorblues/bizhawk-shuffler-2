@@ -16,7 +16,7 @@ plugin_loaded = false
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
 PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
 
-PLUGINS_FOLDER = 'example_plugins'
+PLUGINS_FOLDER = 'example-plugins'
 GAMES_FOLDER = 'games'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 
