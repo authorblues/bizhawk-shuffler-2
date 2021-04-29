@@ -90,14 +90,15 @@ end
 
 -- returns a table containing all files in a given directory
 function get_dir_contents(dir)
-	local cmd = 'ls ' .. dir .. ' > shuffler-src/temp-list.txt'
+	local TEMP_FILE = 'shuffler-src/.file-list.txt'
+	local cmd = 'ls ' .. dir .. ' > ' .. TEMP_FILE
 	if PLATFORM == 'WIN' then
-		cmd = 'dir ' .. dir .. ' /B > shuffler-src/temp-list.txt'
+		cmd = 'dir ' .. dir .. ' /B > ' .. TEMP_FILE
 	end
 	os.execute(cmd)
 
 	local file_list = {}
-	local fp = io.open('shuffler-src/temp-list.txt', 'r')
+	local fp = io.open(TEMP_FILE, 'r')
 	for x in fp:lines() do
 		table.insert(file_list, x)
 	end
