@@ -2,7 +2,7 @@ require 'shuffler-src.setupform'
 
 --[[
 	Bizhawk Shuffler 2 by authorblues
-	inspired by Brossentia's Bizhawk Shuffler
+	inspired by Brossentia's Bizhawk Shuffler, based on slowbeef's original project
 	tested on Bizhawk v2.6.1 - http://tasvideos.org/BizHawk/ReleaseHistory.html
 	released under MIT License
 --]]

@@ -57,7 +57,7 @@ function setup_form(callback)
 		forms.settext(seed_text, random_seed())
 	end
 
-	form = forms.newform(340, 260, "Bizhawk Shuffler v2 Setup")
+	form = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup")
 
 	seed_text = forms.textbox(form, 0, 100, 20, "UNSIGNED", 10, 10)
 	forms.label(form, "Seed", 115, 13, 40, 20)
@@ -96,6 +96,4 @@ function setup_form(callback)
 	end
 
 	forms.addclick(resume, toggle_resuming)
-
-	forms.label(form, "** Based on Brossentia's Bizhawk Shuffler", 10, 193, 300, 20)
 end
