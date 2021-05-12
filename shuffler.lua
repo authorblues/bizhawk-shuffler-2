@@ -145,11 +145,6 @@ function get_current_game()
 	return config['current_game'] or nil
 end
 
-function update_next_swap_time()
-	next_swap_time = config['frame_count'] +
-		math.random(config['min_swap'] * 60, config['max_swap'] * 60)
-end
-
 function save_current_game()
 	local g = get_current_game()
 	if g ~= nil then
@@ -218,6 +213,14 @@ function swap_game()
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
 	load_game(get_current_game())
 	return true
+end
+
+function swap_game_delay(f)
+	next_swap_time = config['frame_count'] + f
+end
+
+function update_next_swap_time()
+	swap_game_delay(math.random(config['min_swap'] * 60, config['max_swap'] * 60))
 end
 
 function starts_with(a, b)
