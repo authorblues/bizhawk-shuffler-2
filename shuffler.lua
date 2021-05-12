@@ -109,6 +109,7 @@ end
 -- get list of games
 function get_games_list()
 	local games = get_dir_contents(GAMES_FOLDER)
+	local toremove = {}
 
 	-- find .cue files and remove the associated bin/iso
 	for _,filename in ipairs(games) do
@@ -118,19 +119,14 @@ function get_games_list()
 			for line in fp:lines() do
 				-- look for the line that starts with FILE and remove the rest of the stuff
 				if starts_with(line, "FILE") and ends_with(line, "BINARY") then
-					local target = line:sub(7, -9)
-					-- if this file is listed in the file list, remove it
-					for i = #games, 1, -1 do
-						if ends_with(games[i], target) then
-							table.remove(games, i)
-						end
-					end
+					table.insert(toremove, line:sub(7, -9))
 				end
 			end
 			fp:close()
 		end
 	end
 
+	table_subtract(games, toremove)
 	table_subtract(games, { 'plugin.lua', '.savestates' })
 	table_subtract(games, config['completed_games'])
 	return games
