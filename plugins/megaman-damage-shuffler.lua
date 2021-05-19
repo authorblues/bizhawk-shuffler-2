@@ -1,8 +1,15 @@
 --[[
-	This plugin is designed for Megaman 1-6 NES. The game swaps any time
-	Megaman takes damage. Checks SHA-1 hashes of different rom versions, so if
-	you use a version of the rom that isn't recognized, nothing special will
-	happen in that game (no swap on hit). This means other games can be mixed in
+	THE MEGA MAN DAMAGE SHUFFLER
+
+	The game swaps any time Megaman takes damage. Checks SHA-1 hashes of
+	different rom versions, so if you use a version of the rom that isn't
+	recognized, nothing special will happen in that game (no swap on hit).
+	This means other games can be mixed in.
+
+	Supports:
+	- Mega Man 1-6 NES
+	- Mega Man X 1-3 SNES
+	- Mega Man I-V GB
 --]]
 
 plugin_game_info = {}
