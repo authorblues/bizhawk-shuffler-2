@@ -66,6 +66,43 @@ function _signedHealthLives(addr_hp, addr_lc, maxhp, minhp)
 	end
 end
 
+function _delayHealthLives(addr_hp, addr_lc)
+	return function(data)
+		local currhp = mainmemory.read_u8(addr_hp)
+		local currlc = mainmemory.read_u8(addr_lc)
+
+		-- retrieve previous health and lives before backup
+		local prevhp = data.prevhp
+		local prevlc = data.prevlc
+
+		-- backup current health and lives
+		data.prevhp = currhp
+		data.prevlc = currlc
+
+		-- this delay ensures that when the game ticks away health for the end of a level,
+		-- we can catch its purpose and hopefully not swap, since this isnt damage related
+		if data.hpcountdown ~= nil and data.hpcountdown > 0 then
+			data.hpcountdown = data.hpcountdown - 1
+			if data.hpcountdown == 0 and currhp > 0 then
+				return true
+			end
+		end
+
+		-- Rockman & Forte drops the health to zero for deaths and for the ends of levels
+		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
+		if prevhp ~= nil and currhp < prevhp then
+			data.hpcountdown = 3
+		end
+
+		-- check to see if the life count went down
+		if prevlc ~= nil and currlc < prevlc then
+			return true
+		end
+
+		return false
+	end
+end
+
 _gamemeta = {
 	['mm1nes']={ swapMethod=_standardHealthLives(0x006A, 0x00A6, 28, 0) },
 	['mm2nes']={ swapMethod=_standardHealthLives(0x06C0, 0x00A8, 28, 0) },
@@ -77,6 +114,9 @@ _gamemeta = {
 	['mmx1']={ swapMethod=_mmxHealthLives(0x0BCF, 0x1F80, 0x1F9A) },
 	['mmx2']={ swapMethod=_mmxHealthLives(0x09FF, 0x1FB3, 0x1FD1) },
 	['mmx3']={ swapMethod=_mmxHealthLives(0x09FF, 0x1FB4, 0x1FD2) },
+
+	['rm&f'   ]={ swapMethod=_delayHealthLives(0x0C2F, 0x0B7E) },
+	['mm7snes']={ swapMethod=_delayHealthLives(0x0C2E, 0x0B81) },
 
 	['mm1gb']={ swapMethod=_signedHealthLives(0x1FA3, 0x0108, 152, 0) },
 	['mm2gb']={ swapMethod=_signedHealthLives(0x0FD0, 0x0FE8, 152, 0) },
@@ -306,6 +346,35 @@ _rominfo = {
 	['BF8CE9F1EF4756AE4091D938AC6657DD3EFFB769'] = 'mmx3', -- Mega Man X 3 (U) [T+Swe1.0_GCT].smc
 	['B226F7EC59283B05C1E276E2F433893F45027CAC'] = 'mmx3', -- Mega Man X 3 (U).smc
 	['8E0156FC7D6AF6F36B08A5E399C0284C6C5D81B8'] = 'mmx3', -- Rockman X 3 (J).smc
+	-- Rockman & Forte SNES rom hashes
+	['111C3514C483F59C00B3AED4E23CE72D44A1EC2F'] = 'rm&f', -- Rockman & Forte (J) [h1].smc
+	['5172400A5B1D0787F4F4CE76609598147BF8ABBD'] = 'rm&f', -- Rockman & Forte (J) [T+Eng1.00-MMB_AGTP].smc
+	['20332C7EEAE8D4D740EEDEFCB2671455C1CC4850'] = 'rm&f', -- Rockman & Forte (J) [T+Eng1.00-RMF_AGTP].smc
+	['CB28F9A32C10EFBD1EDAA9AAC0CC704456539DAF'] = 'rm&f', -- Rockman & Forte (J) [T+Por].smc
+	['49ACC34CE955EBA27ABAD588E28DDD804E6F2C4D'] = 'rm&f', -- Rockman & Forte (J) [T-Eng99%].smc
+	['E98789CCC644A737724F3000F8EB4161E1F59731'] = 'rm&f', -- Rockman & Forte (J) [T-Por].smc
+	['5C6B0679C1A6A040F969A5D08987AA4ECDDF14A1'] = 'rm&f', -- Rockman & Forte (J).smc
+	-- Mega Man 7 SNES rom hashes
+	['D11E3793F46F2B1BD00150438D394E4B13489A14'] = 'mm7snes', -- Mega Man VII (E).smc
+	['DFF515C3634807B09DD3D53AC86BD3D2A6F87521'] = 'mm7snes', -- Mega Man VII (U) [T+Fre_Genius].smc
+	['21680D62F6D078DDDC4374FD5DEA33CAC5417CA8'] = 'mm7snes', -- Mega Man VII (U) [T+Ger198_Reaper].smc
+	['E8F566917E952CF66B7072F82196541356298BFE'] = 'mm7snes', -- Mega Man VII (U) [T+Ita].smc
+	['5E7B0D08E080CDD66D783954DA49EEEEA5BAB641'] = 'mm7snes', -- Mega Man VII (U) [T+Por].smc
+	['88707FC246345FBFCAB7212652B711DC075F4C8D'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Sayans].smc
+	['7B66FF57560EF016103CCE5629AF7DF8914956F7'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Sinister].smc
+	['E5391AE50982E07C68AAF105C490A585944273A6'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Tanero].smc
+	['5F49B65345604DA0EA07B6F9E243F75B3BF65D5B'] = 'mm7snes', -- Mega Man VII (U) [t1].smc
+	['10B017FF2E9BF241ED23F1C302E11F023AC60775'] = 'mm7snes', -- Mega Man VII (U) [t2].smc
+	['DAE01650C00491A5FB767206D0BB5FC0C163FD51'] = 'mm7snes', -- Mega Man VII (U) [t3].smc
+	['6E7C9C9DD397F771303EE4AEC29D106B9F86C832'] = 'mm7snes', -- Mega Man VII (U).smc
+	['195A40598CCC79ED99BC6B266CF955701461AD2B'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f1].smc
+	['77CDF229DBADDF996F37F0399473C248ECDA730D'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f2].smc
+	['30C00AEBA9F3607F593995A789742F6569E5289F'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f3].smc
+	['91DA21BE9CFE16391ACA87C35597BB3BA401F101'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f4].smc
+	['72226D8A50C6EEEFD9EEB7F93AE11E085465754A'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t1].smc
+	['CA1610103BFD310A64AA436B9636B721288C0FB6'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t2].smc
+	['84B58F0B3C525767114227BDC1C9D3FB48856596'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t3].smc
+	['A907F7ECE8A8D89126C466079712282D675486EF'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J).smc
 	-- Mega Man 1 GB rom hashes
 	['2CFAEE20EA657F57CDCF0C7159B88D1339C9651D'] = 'mm1gb', -- Megaman (U) [T+Fre_terminus].gb
 	['5D598A14A2A35AF64FBB08828EB1D425472624F3'] = 'mm1gb', -- Megaman (U) [T+Por_Emuboarding].gb
