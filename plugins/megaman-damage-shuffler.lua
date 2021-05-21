@@ -8,7 +8,9 @@
 
 	Supports:
 	- Mega Man 1-6 NES
+	- Mega Man 7 SNES
 	- Mega Man X 1-3 SNES
+	- Rockman & Forte SNES
 	- Mega Man I-V GB
 --]]
 
