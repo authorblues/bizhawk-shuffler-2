@@ -5,12 +5,17 @@
 	things for each game, you could check rom hashes with gameinfo.getromhash()
 --]]
 
+local plugin = {}
+
+plugin.name = "Sonic Ring Sync"
+plugin.settings = {}
+
 -- called once at the start
-function on_setup(data)
+function plugin.on_setup(data)
 end
 
 -- called each time a game/state loads
-function on_game_load(data)
+function plugin.on_game_load(data)
 	local gamestate = bit.band(mainmemory.readbyte(0xF600), 0x7F)
 	if gamestate == 0x0C then
 		mainmemory.write_s16_be(0xFE20, data['rings'])
@@ -19,7 +24,7 @@ function on_game_load(data)
 end
 
 -- called each frame
-function on_frame(data)
+function plugin.on_frame(data)
 	local gamestate = bit.band(mainmemory.readbyte(0xF600), 0x7F)
 	if gamestate == 0x0C then
 		data['rings'] = mainmemory.read_s16_be(0xFE20)
@@ -27,10 +32,12 @@ function on_frame(data)
 end
 
 -- called each time a game/state is saved (before swap)
-function on_game_save(data)
+function plugin.on_game_save(data)
 	print('saving ' .. tostring(data['rings']) .. ' rings')
 end
 
 -- called each time a game is marked complete
-function on_complete(data)
+function plugin.on_complete(data)
 end
+
+return plugin

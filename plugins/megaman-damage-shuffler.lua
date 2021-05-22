@@ -14,9 +14,20 @@
 	- Mega Man I-V GB
 --]]
 
-plugin_game_info = {}
+local plugin = {}
 
-function checkHealthLives(data, currhp, currlc, maxhp, minhp)
+plugin.name = "Megaman Damage Shuffler"
+plugin.settings =
+{
+	-- enable this feature to have health and lives synchronized across games
+	{ name='healthsync', type='boolean', label='Synchronize Health/Lives' },
+}
+
+local prevdata = {}
+
+local shouldSwap = function() return false end
+
+local function checkHealthLives(data, currhp, currlc, maxhp, minhp)
 	-- retrieve previous health and lives before backup
 	local prevhp = data.prevhp
 	local prevlc = data.prevlc
@@ -42,36 +53,36 @@ function checkHealthLives(data, currhp, currlc, maxhp, minhp)
 	return false
 end
 
-function _standardHealthLives(addr_hp, addr_lc, maxhp, minhp)
+local function _standardHealthLives(gamemeta)
 	return function(data)
-		local currhp = mainmemory.read_u8(addr_hp)
-		local currlc = mainmemory.read_u8(addr_lc)
-		return checkHealthLives(data, currhp, currlc, maxhp, minhp)
+		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
+		local currlc = mainmemory.read_u8(gamemeta.addr_lc)
+		return checkHealthLives(data, currhp, currlc, gamemeta.max_hp, gamemeta.min_hp)
 	end
 end
 
 -- mmx seems to use LMB as a one-frame rise to indicate damage was taken
-function _mmxHealthLives(addr_hp, addr_lc, addr_maxhp)
+local function _mmxHealthLives(gamemeta)
 	return function(data)
-		local currhp = bit.band(mainmemory.read_u8(addr_hp), 0x7F)
-		local currlc = mainmemory.read_u8(addr_lc)
-		local maxhp = mainmemory.read_u8(addr_maxhp)
+		local currhp = bit.band(mainmemory.read_u8(gamemeta.addr_hp), 0x7F)
+		local currlc = mainmemory.read_u8(gamemeta.addr_lc)
+		local maxhp = mainmemory.read_u8(gamemeta.addr_maxhp)
 		return checkHealthLives(data, currhp, currlc, maxhp, 0)
 	end
 end
 
-function _signedHealthLives(addr_hp, addr_lc, maxhp, minhp)
+local function _signedHealthLives(gamemeta)
 	return function(data)
-		local currhp = mainmemory.read_u8(addr_hp)
-		local currlc = mainmemory.read_s8(addr_lc)
-		return checkHealthLives(data, currhp, currlc, maxhp, minhp)
+		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
+		local currlc = mainmemory.read_s8(gamemeta.addr_lc)
+		return checkHealthLives(data, currhp, currlc, gamemeta.max_hp, gamemeta.min_hp)
 	end
 end
 
-function _delayHealthLives(addr_hp, addr_lc)
+local function _delayHealthLives(gamemeta)
 	return function(data)
-		local currhp = mainmemory.read_u8(addr_hp)
-		local currlc = mainmemory.read_u8(addr_lc)
+		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
+		local currlc = mainmemory.read_u8(gamemeta.addr_lc)
 
 		-- retrieve previous health and lives before backup
 		local prevhp = data.prevhp
@@ -105,30 +116,30 @@ function _delayHealthLives(addr_hp, addr_lc)
 	end
 end
 
-_gamemeta = {
-	['mm1nes']={ swapMethod=_standardHealthLives(0x006A, 0x00A6, 28, 0) },
-	['mm2nes']={ swapMethod=_standardHealthLives(0x06C0, 0x00A8, 28, 0) },
-	['mm3nes']={ swapMethod=_standardHealthLives(0x00A2, 0x00AE, 156, 128) },
-	['mm4nes']={ swapMethod=_standardHealthLives(0x00B0, 0x00A1, 156, 128) },
-	['mm5nes']={ swapMethod=_standardHealthLives(0x00B0, 0x00BF, 156, 128) },
-	['mm6nes']={ swapMethod=_standardHealthLives(0x03E5, 0x00A9, 27, 0) },
+local gamedata = {
+	['mm1nes']={ swapMethod=_standardHealthLives, addr_hp=0x006A, addr_lc=0x00A6, max_hp=28, min_hp=0 },
+	['mm2nes']={ swapMethod=_standardHealthLives, addr_hp=0x06C0, addr_lc=0x00A8, max_hp=28, min_hp=0 },
+	['mm3nes']={ swapMethod=_standardHealthLives, addr_hp=0x00A2, addr_lc=0x00AE, max_hp=156, min_hp=128 },
+	['mm4nes']={ swapMethod=_standardHealthLives, addr_hp=0x00B0, addr_lc=0x00A1, max_hp=156, min_hp=128 },
+	['mm5nes']={ swapMethod=_standardHealthLives, addr_hp=0x00B0, addr_lc=0x00BF, max_hp=156, min_hp=128 },
+	['mm6nes']={ swapMethod=_standardHealthLives, addr_hp=0x03E5, addr_lc=0x00A9, max_hp=27, min_hp=0 },
 
-	['mmx1']={ swapMethod=_mmxHealthLives(0x0BCF, 0x1F80, 0x1F9A) },
-	['mmx2']={ swapMethod=_mmxHealthLives(0x09FF, 0x1FB3, 0x1FD1) },
-	['mmx3']={ swapMethod=_mmxHealthLives(0x09FF, 0x1FB4, 0x1FD2) },
+	['mmx1']={ swapMethod=_mmxHealthLives, addr_hp=0x0BCF, addr_lc=0x1F80, addr_maxhp=0x1F9A, min_hp=0 },
+	['mmx2']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB3, addr_maxhp=0x1FD1, min_hp=0 },
+	['mmx3']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB4, addr_maxhp=0x1FD2, min_hp=0 },
 
-	['rm&f'   ]={ swapMethod=_delayHealthLives(0x0C2F, 0x0B7E) },
-	['mm7snes']={ swapMethod=_delayHealthLives(0x0C2E, 0x0B81) },
+	['rm&f'   ]={ swapMethod=_delayHealthLives, addr_hp=0x0C2F, addr_lc=0x0B7E, max_hp=28, min_hp=0 },
+	['mm7snes']={ swapMethod=_delayHealthLives, addr_hp=0x0C2E, addr_lc=0x0B81, max_hp=28, min_hp=0 },
 
-	['mm1gb']={ swapMethod=_signedHealthLives(0x1FA3, 0x0108, 152, 0) },
-	['mm2gb']={ swapMethod=_signedHealthLives(0x0FD0, 0x0FE8, 152, 0) },
-	['mm3gb']={ swapMethod=_signedHealthLives(0x1E9C, 0x1D08, 152, 0) },
-	['mm4gb']={ swapMethod=_signedHealthLives(0x1EAE, 0x1F34, 152, 0) },
-	['mm5gb']={ swapMethod=_signedHealthLives(0x1E9E, 0x1F34, 152, 0) },
+	['mm1gb']={ swapMethod=_signedHealthLives, addr_hp=0x1FA3, addr_lc=0x0108, max_hp=152, min_hp=0 },
+	['mm2gb']={ swapMethod=_signedHealthLives, addr_hp=0x0FD0, addr_lc=0x0FE8, max_hp=152, min_hp=0 },
+	['mm3gb']={ swapMethod=_signedHealthLives, addr_hp=0x1E9C, addr_lc=0x1D08, max_hp=152, min_hp=0 },
+	['mm4gb']={ swapMethod=_signedHealthLives, addr_hp=0x1EAE, addr_lc=0x1F34, max_hp=152, min_hp=0 },
+	['mm5gb']={ swapMethod=_signedHealthLives, addr_hp=0x1E9E, addr_lc=0x1F34, max_hp=152, min_hp=0 },
 }
 
 -- same RAM maps across versions?
-_rominfo = {
+local romhashes = {
 	-- Mega Man NES rom hashes
 	['0FE255649359ECE8CB64B6F24ACAF09F17AF746C'] = 'mm1nes', -- Mega Man (E) [!].nes
 	['17730D3A6E4A618CF1AA106024C8FB4EE2E18907'] = 'mm1nes', -- Mega Man (E) [T+Dut1.0_Ok Impala!].nes
@@ -356,6 +367,7 @@ _rominfo = {
 	['49ACC34CE955EBA27ABAD588E28DDD804E6F2C4D'] = 'rm&f', -- Rockman & Forte (J) [T-Eng99%].smc
 	['E98789CCC644A737724F3000F8EB4161E1F59731'] = 'rm&f', -- Rockman & Forte (J) [T-Por].smc
 	['5C6B0679C1A6A040F969A5D08987AA4ECDDF14A1'] = 'rm&f', -- Rockman & Forte (J).smc
+	['BCD2FC38B4E4BF6B811B00301F349E85CA48FE1A'] = 'rm&f', -- Rockman & Forte (Japan).sfc
 	-- Mega Man 7 SNES rom hashes
 	['D11E3793F46F2B1BD00150438D394E4B13489A14'] = 'mm7snes', -- Mega Man VII (E).smc
 	['DFF515C3634807B09DD3D53AC86BD3D2A6F87521'] = 'mm7snes', -- Mega Man VII (U) [T+Fre_Genius].smc
@@ -439,22 +451,21 @@ _rominfo = {
 	['EE7AD85273983A63BC32B011617D13E1EA879463'] = 'mm5gb', -- Rockman World 5 (J) [S][t1].gb
 }
 
-function on_game_load(data)
-	local whichgame = _rominfo[gameinfo.getromhash()]
+function plugin.on_game_load(data, settings)
+	local whichgame = romhashes[gameinfo.getromhash()]
 	if whichgame == nil then
 		print('unrecognized hash for ' .. gameinfo.getromname() .. ': ' .. gameinfo.getromhash())
+	else
+		local gamemeta = gamedata[whichgame]
+		shouldSwap = gamemeta.swapMethod(gamemeta)
 	end
 end
 
--- called each frame
-function on_frame(data)
-	-- do we recognize this game?
-	local whichgame = _rominfo[gameinfo.getromhash()]
-	if whichgame == nil then return end
-
+function plugin.on_frame(data, settings)
 	-- run the check method for each individual game
-	local meta = _gamemeta[whichgame]
-	if meta.swapMethod(plugin_game_info) and frames_since_restart > 10 then
+	if shouldSwap(prevdata) and frames_since_restart > 10 then
 		swap_game_delay(5)
 	end
 end
+
+return plugin

@@ -1,8 +1,24 @@
-function setup_form(callback)
+local module = {}
+
+function module.initial_setup(callback)
 	local form, seed_text, min_text, max_text, resume, start_btn, plugin_combo
 	local hk_complete
 
-	-- I believe none of these conflict with default hotkeys
+	local plugins_table = {'[None]'}
+	local plugins_meta = {}
+
+	for _,filename in ipairs(get_dir_contents(PLUGINS_FOLDER)) do
+		-- ignore non-lua files
+		if ends_with(filename, '.lua') then
+			local pname = filename:sub(1, #filename-4)
+			local plugin = require(PLUGINS_FOLDER .. '.' .. pname)
+
+			table.insert(plugins_table, plugin.name)
+			plugins_meta[plugin.name] = pname
+		end
+	end
+
+	-- I believe none of these conflict with default Bizhawk hotkeys
 	local HOTKEY_OPTIONS = {
 		'Ctrl+Shift+End',
 		'Ctrl+Shift+Delete',
@@ -13,12 +29,49 @@ function setup_form(callback)
 	}
 
 	function start_handler()
-		if not forms.ischecked(resume) then
-			save_new_settings()
-		end
+		local setup = not forms.ischecked(resume)
+		if setup then save_new_settings() end
 
 		forms.destroy(form)
-		callback()
+		plugin_setup(config['plugins'], 1)
+	end
+
+	function create_plugin_settings_window(plugin, plist, px)
+		if plugin == nil or #plugin.settings == 0 then
+			return plugin_setup(plist, px+1)
+		end
+
+		local form = forms.newform(340, 110 + 30 * #plugin.settings, "Plugin Setup")
+		forms.label(form, 'Plugin Setup for ' .. plugin.name, 10, 13, 310, 20)
+
+		local y = 40
+		for _,setting in ipairs(plugin.settings) do
+			if setting.type:sub(1, 1) == 'b' then
+				forms.label(form, setting.label, 28, y + 4, 310, 20)
+				setting.input = forms.checkbox(form, "", 10, y)
+			end
+
+			y = y + 30
+		end
+
+		local next_fn = function()
+			for _,setting in ipairs(plugin.settings) do
+				if setting.type:sub(1, 1) == 'b' then
+					config['plugin_settings'][setting.name] = forms.ischecked(setting.input)
+				end
+			end
+
+			forms.destroy(form)
+			plugin_setup(plist, px+1)
+		end
+
+		local save = forms.button(form, "Save Settings", next_fn, 160, y, 150, 20)
+	end
+
+	function plugin_setup(plist, px)
+		if px > #plist then return callback() end
+		local plugin = require(PLUGINS_FOLDER .. '.' .. plist[px])
+		create_plugin_settings_window(plugin, plist, px)
 	end
 
 	function save_new_settings()
@@ -34,11 +87,14 @@ function setup_form(callback)
 		config['hk_complete'] = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
 		config['completed_games'] = {}
 
-		config['plugin'] = forms.gettext(plugin_combo)
-		if config['plugin'] == '[None]' then
-			config['plugin'] = nil
-		end
+		config['plugins'] = {}
+		config['plugin_settings'] = {}
 		config['plugin_state'] = {}
+
+		local selected_plugin = forms.gettext(plugin_combo)
+		if selected_plugin ~= '[None]' then
+			table.insert(config['plugins'], plugins_meta[selected_plugin])
+		end
 
 		-- internal information for output
 		config['frame_count'] = 0
@@ -76,10 +132,6 @@ function setup_form(callback)
 	forms.label(form, "Hotkey: Game Completed", 165, 103, 150, 20)
 	forms.settext(hk_complete, config['hk_complete'] or 'Ctrl+Shift+End')
 
-	plugins_table = get_dir_contents(PLUGINS_FOLDER)
-	table_subtract(plugins_table, { 'empty.lua' })
-	table.insert(plugins_table, '[None]')
-
 	plugin_combo = forms.dropdown(form, plugins_table, 10, 130, 150, 20)
 	forms.label(form, "Game Plugin", 165, 133, 150, 20)
 
@@ -97,3 +149,5 @@ function setup_form(callback)
 
 	forms.addclick(resume, toggle_resuming)
 end
+
+return module

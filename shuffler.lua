@@ -1,5 +1,3 @@
-require 'shuffler-src.setupform'
-
 --[[
 	Bizhawk Shuffler 2 by authorblues
 	inspired by Brossentia's Bizhawk Shuffler, based on slowbeef's original project
@@ -10,7 +8,7 @@ require 'shuffler-src.setupform'
 config = {}
 next_swap_time = 0
 running = true
-plugin_loaded = false
+plugins = {}
 
 -- determine operating system for the purpose of commands
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
@@ -24,18 +22,6 @@ STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 os.execute('mkdir output-info')
 os.execute('mkdir "' .. GAMES_FOLDER .. '"')
 os.execute('mkdir "' .. STATES_FOLDER .. '"')
-
---[[
-stub functions for plugins -- this is the closest to an API you're gonna get :^)
-to add a plugin: put a lua script named `plugin.lua` in the games folder
-for all methods:
-    `data` is a table to maintain state between swaps
---]]
-function on_setup(data) end -- called once at the start
-function on_game_load(data) end -- called each time a game/state loads
-function on_frame(data) end -- called each frame
-function on_game_save(data) end -- called each time a game/state is saved (before swap)
-function on_complete(data) end -- called each time a game is marked complete
 
 -- loads primary config file
 function load_config(f)
@@ -194,7 +180,11 @@ function swap_game()
 
 	-- swap_game() is used for the first load, so check if a game is loaded
 	if get_current_game() ~= nil then
-		on_game_save(config['plugin_state'])
+		for _,plugin in ipairs(plugins) do
+			if plugin.on_game_save ~= nil then
+				plugin.on_game_save(config['plugin_state'], config['plugin_settings'])
+			end
+		end
 	end
 
 	-- at this point, save the game and update the new "current" game after
@@ -258,7 +248,11 @@ function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
 	table.insert(config['completed_games'], get_current_game())
 	print(get_current_game() .. ' marked complete')
-	on_complete(config['plugin_state'])
+	for _,plugin in ipairs(plugins) do
+		if plugin.on_complete ~= nil then
+			plugin.on_complete(config['plugin_state'], config['plugin_settings'])
+		end
+	end
 
 	-- update list of completed games in file
 	output_completed()
@@ -284,7 +278,11 @@ function complete_setup()
 
 	-- whatever the current state is, update the output file
 	output_completed()
-	on_setup(config['plugin_state'])
+	for _,plugin in ipairs(plugins) do
+		if plugin.on_setup ~= nil then
+			plugin.on_setup(config['plugin_state'], config['plugin_settings'])
+		end
+	end
 
 	-- load first game
 	swap_game()
@@ -293,17 +291,21 @@ end
 -- load primary configuration
 load_config('shuffler-src/config.lua')
 
--- load plugin configuration
-if config['plugin'] ~= nil then
-	plugin_loaded = load_config(PLUGINS_FOLDER .. '/' .. config['plugin'])
-end
-
 if emu.getsystemid() ~= "NULL" then
 	-- THIS CODE RUNS EVERY TIME THE SCRIPT RESTARTS
 	-- which is specifically after a call to client.openrom()
 
 	-- I will try to limit the number of comments I write solely to complain about
 	-- this design decision, but I make no promises.
+
+	-- load plugin configuration
+	if config['plugins'] ~= nil then
+		for _,pmodpath in ipairs(config['plugins']) do
+			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
+			if pmodule ~= nil then table.insert(plugins, pmodule) end
+		end
+	end
+
 	local state = STATES_FOLDER .. '/' .. get_current_game() .. '.state'
 	if file_exists(state) then
 		savestate.load(state)
@@ -323,11 +325,16 @@ if emu.getsystemid() ~= "NULL" then
 
 	update_next_swap_time()
 	client.SetSoundOn(config['sound'] or true)
-	on_game_load(config['plugin_state'])
+	for _,plugin in ipairs(plugins) do
+		if plugin.on_game_load ~= nil then
+			plugin.on_game_load(config['plugin_state'], config['plugin_settings'])
+		end
+	end
 else
 	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
 	client.displaymessages(false)
-	setup_form(complete_setup)
+	local setup = require('shuffler-src.setupform')
+	setup.initial_setup(complete_setup)
 end
 
 prev_input = input.get()
@@ -347,7 +354,11 @@ while true do
 		write_data('output-info/current-time.txt', frames_to_time(cgf))
 
 		-- let plugins do operations each frame
-		on_frame(config['plugin_state'])
+		for _,plugin in ipairs(plugins) do
+			if plugin.on_frame ~= nil then
+				plugin.on_frame(config['plugin_state'], config['plugin_settings'])
+			end
+		end
 
 		-- calculate input "rises" by subtracting the previously held inputs from the inputs on this frame
 		local input_rise = input.get()
