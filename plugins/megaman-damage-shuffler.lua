@@ -20,7 +20,7 @@ plugin.name = "Megaman Damage Shuffler"
 plugin.settings =
 {
 	-- enable this feature to have health and lives synchronized across games
-	{ name='healthsync', type='boolean', label='Synchronize Health/Lives' },
+	--{ name='healthsync', type='boolean', label='Synchronize Health/Lives' },
 }
 
 local prevdata = {}
