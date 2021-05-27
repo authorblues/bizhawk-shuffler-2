@@ -37,7 +37,7 @@ function module.initial_setup(callback)
 	end
 
 	function create_plugin_settings_window(plugin, plist, px)
-		if plugin == nil or #plugin.settings == 0 then
+		if plugin == nil or #(plugin.settings or {}) == 0 then
 			return plugin_setup(plist, px+1)
 		end
 

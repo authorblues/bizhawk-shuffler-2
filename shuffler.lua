@@ -268,6 +268,15 @@ function mark_complete()
 end
 
 function complete_setup()
+	if config['plugins'] ~= nil then
+		for _,pmodpath in ipairs(config['plugins']) do
+			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
+			if pmodule ~= nil and pmodule.on_setup ~= nil then
+				pmodule.on_setup(config['plugin_state'], config['plugin_settings'])
+			end
+		end
+	end
+
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config['nseed'])
 
@@ -278,11 +287,6 @@ function complete_setup()
 
 	-- whatever the current state is, update the output file
 	output_completed()
-	for _,plugin in ipairs(plugins) do
-		if plugin.on_setup ~= nil then
-			plugin.on_setup(config['plugin_state'], config['plugin_settings'])
-		end
-	end
 
 	-- load first game
 	swap_game()
