@@ -2,6 +2,10 @@
 	SOLO ZOOTR MULTIWORLD
 	Written by authorblues, with significant help from TestRunner
 
+	Create a multiworld randomizer seed and generate roms for all players.
+	Put them all in the games/ folder, and the plugin will shuffle like normal,
+	sending items between seeds when necessary.
+
 	Special Thanks:
 	WizzrobeZC for the initial suggestion
 	SpikeVegeta for streaming ZOOTR shuffler and making everybody
