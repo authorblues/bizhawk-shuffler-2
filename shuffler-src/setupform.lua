@@ -47,8 +47,8 @@ function module.initial_setup(callback)
 		local y = 40
 		for _,setting in ipairs(plugin.settings) do
 			if setting.type:sub(1, 1) == 'b' then
-				forms.label(form, setting.label, 28, y + 4, 310, 20)
-				setting.input = forms.checkbox(form, "", 10, y)
+				setting.input = forms.checkbox(form, setting.label, 10, y)
+				forms.setproperty(setting.input, "Width", 330)
 			end
 
 			y = y + 30
@@ -135,8 +135,8 @@ function module.initial_setup(callback)
 	plugin_combo = forms.dropdown(form, plugins_table, 10, 130, 150, 20)
 	forms.label(form, "Game Plugin", 165, 133, 150, 20)
 
-	forms.label(form, "Resuming a run?", 28, 164, 130, 20)
-	resume = forms.checkbox(form, "", 10, 160)
+	resume = forms.checkbox(form, "Resuming a run?", 10, 160)
+	forms.setproperty(resume, "Width", 150)
 	start_btn = forms.button(form, "Start New Shuffler", start_handler, 160, 160, 150, 20)
 
 	function toggle_resuming()
