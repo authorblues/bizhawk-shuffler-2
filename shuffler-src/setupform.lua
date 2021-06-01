@@ -44,21 +44,68 @@ function module.initial_setup(callback)
 		local form = forms.newform(340, 110 + 30 * #plugin.settings, "Plugin Setup")
 		forms.label(form, 'Plugin Setup for ' .. plugin.name, 10, 13, 310, 20)
 
-		local y = 40
-		for _,setting in ipairs(plugin.settings) do
-			if setting.type:sub(1, 1) == 'b' then
-				setting.input = forms.checkbox(form, setting.label, 10, y)
-				forms.setproperty(setting.input, "Width", 330)
-			end
+		local SETTINGS_TYPES =
+		{
+			['boolean'] = {
+				make = function(setting, y)
+					setting.input = forms.checkbox(form, setting.label, 10, y)
+					forms.setproperty(setting.input, "Width", 330)
+				end,
+				getData = function(setting) return forms.ischecked(setting.input) end,
+			},
+			['romlist'] = {
+				make = function(setting, y)
+					setting.input = forms.dropdown(form, get_games_list(), 10, y, 200, 20)
+					forms.label(form, setting.label, 215, y+3, 100, 20)
+				end,
+				getData = function(setting) return forms.gettext(setting.input) end,
+			},
+			['file'] = {
+				make = function(setting, y)
+					local click = function()
+						setting._response = forms.openfile(setting.filename,
+							setting.directory, setting.filter) or setting._response
+						forms.settext(setting.input, setting._response)
+					end
+					setting.input = forms.button(form, "[Select File]", click, 10, y, 200, 20)
+					forms.label(form, setting.label, 215, y+3, 100, 20)
+				end,
+				getData = function(setting) return setting._response or nil end,
+			},
+			['select'] = {
+				make = function(setting, y)
+					setting.input = forms.dropdown(form, setting.options, 10, y, 200, 20)
+					forms.label(form, setting.label, 215, y+3, 100, 20)
+				end,
+				getData = function(setting) return forms.gettext(setting.input) end,
+			},
+			['text'] = {
+				make = function(setting, y)
+					setting.input = forms.textbox(form, "", 150, 20, nil, 10, y)
+					forms.label(form, setting.label, 165, y+3, 150, 20)
+				end,
+				getData = function(setting) return forms.gettext(setting.input) end,
+			},
+			['number'] = {
+				make = function(setting, y)
+					setting.input = forms.textbox(form, "", 150, 20, setting.datatype, 10, y)
+					forms.label(form, setting.label, 165, y+3, 150, 20)
+				end,
+				getData = function(setting) return tonumber(forms.gettext(setting.input) or "0") end,
+			},
+		}
 
-			y = y + 30
+		local y = 40
+		local romlist = nil
+		for _,setting in ipairs(plugin.settings) do
+			local meta = SETTINGS_TYPES[setting.type:lower()]
+			if meta ~= nil then meta.make(setting, y); y = y + 30 end
 		end
 
 		local next_fn = function()
 			for _,setting in ipairs(plugin.settings) do
-				if setting.type:sub(1, 1) == 'b' then
-					config['plugin_settings'][setting.name] = forms.ischecked(setting.input)
-				end
+				local meta = SETTINGS_TYPES[setting.type:lower()]
+				if meta ~= nil then config['plugin_settings'][setting.name] = meta.getData(setting) end
 			end
 
 			forms.destroy(form)

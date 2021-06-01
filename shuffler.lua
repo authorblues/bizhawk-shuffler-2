@@ -271,6 +271,7 @@ function complete_setup()
 	if config['plugins'] ~= nil then
 		for _,pmodpath in ipairs(config['plugins']) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
+			print('Plugin loaded: ' .. pmodule.name)
 			if pmodule ~= nil and pmodule.on_setup ~= nil then
 				pmodule.on_setup(config['plugin_state'], config['plugin_settings'])
 			end
