@@ -143,7 +143,8 @@ function plugin.on_frame(data, settings)
 	end
 
 	-- if the internal count suggests items are missing, add filler
-	-- the weird check on size here has to do
+	-- the weird check on size here has to do with the fact that the memory location
+	-- is stores arbitrary meaningless values on reset (when not in a gameplay mode)
 	if #data.itemqueues[player_num] < count and count - #data.itemqueues[player_num] < 3 then
 		while #data.itemqueues[player_num] < count do
 			table.insert(data.itemqueues[player_num], 0)
