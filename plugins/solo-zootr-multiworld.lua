@@ -56,6 +56,13 @@ local function fill_name(id)
 	mainmemory.write_u32_be(name_address + 4, name2)
 end
 
+local function try_fill_names()
+	-- fill all the name entries with some data if it hasn't already been done
+	if mainmemory.read_u32_be(player_names_addr + player_num * 8) ~= 0xC3D3D9DF then
+		for i = 0, 255 do fill_name(i) end
+	end
+end
+
 local function try_setup(data)
     rando_context = mainmemory.read_u32_be(0x1C6E90 + 0x15D4) - 0x80000000
     if rando_context < 0 then return false end
@@ -81,16 +88,11 @@ local function try_setup(data)
 	player_num = mainmemory.read_u8(coop_context + 4)
 	data.itemqueues[player_num] = data.itemqueues[player_num] or {}
 
-	-- fill all the name entries with some data if it hasn't already been done
-	if mainmemory.read_u32_be(player_names_addr + player_num * 8) ~= 0xC3D3D9DF then
-		for i = 0, 255 do fill_name(i) end
-	end
-
     return true
 end
 
 function plugin.on_setup(data, settings)
-    data.itemqueues = data.itemqueues or {}
+	data.itemqueues = data.itemqueues or {}
 
 	-- this setting is crucially important! without it, loading states will crash
 	local warning = 'You must enable "Use Expansion Slot" under Bizhawk\'s N64 menu!'
@@ -109,6 +111,10 @@ function plugin.on_frame(data, settings)
         if not try_setup(data) then return end
     end
 
+	-- attempt to fill names every frame (check to see if it's already done first)
+	-- (I wish I didn't have to do this so often, but a soft reset loses the names)
+	try_fill_names()
+
 	-- check if an item needs to be sent
 	key = mainmemory.read_u32_be(outgoing_key_addr)
 	if key ~= 0 then
@@ -124,11 +130,24 @@ function plugin.on_frame(data, settings)
 	end
 
 	-- check if an item needs to be received
+	local count = mainmemory.read_u16_be(internal_count_addr)
 	item = mainmemory.read_u16_be(incoming_item_addr)
-	if item == 0 and #data.itemqueues[player_num] > 0 then
-		item = table.remove(data.itemqueues[player_num], 1)
-		mainmemory.write_u16_be(incoming_item_addr, item)
-		mainmemory.write_u16_be(incoming_player_addr, player_num)
+	if item == 0 and #data.itemqueues[player_num] > count then
+		item = data.itemqueues[player_num][count+1]
+		if item == 0 then
+			mainmemory.write_u16_be(internal_count_addr, count+1)
+		else
+			mainmemory.write_u16_be(incoming_item_addr, item)
+			mainmemory.write_u16_be(incoming_player_addr, player_num)
+		end
+	end
+
+	-- if the internal count suggests items are missing, add filler
+	-- the weird check on size here has to do
+	if #data.itemqueues[player_num] < count and count - #data.itemqueues[player_num] < 3 then
+		while #data.itemqueues[player_num] < count do
+			table.insert(data.itemqueues[player_num], 0)
+		end
 	end
 end
 
