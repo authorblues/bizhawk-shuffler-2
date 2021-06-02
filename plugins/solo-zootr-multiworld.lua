@@ -18,7 +18,9 @@ local plugin = {}
 plugin.name = "Solo ZOOTR Multiworld"
 plugin.settings =
 {
-
+	-- some people prefer to see the world name I guess
+	{ name='othernames', type='select', label='Show Other Names As',
+		options={'Someone', 'Link #', 'World #'}, default='Someone' },
 }
 
 local rando_context
@@ -37,23 +39,49 @@ local internal_count_addr = save_context + 0x90
 
 local SCRIPT_PROTOCOL_VERSION = 2
 
-local function get_name(id)
-	if player_num == id then
-		return 0xC3D3D9DF, 0xDFDFDFDF -- You
-	end
-	--[[
-		return 0xC1D3D6D0, 0xC8000000 -- World255
-		return 0xBDC9C9C8, 0xDF000000 -- Seed 255
-		return 0xB6CDD2CF, 0xDF000000 -- Link 255
-	--]]
-	return 0xBDD3D1C9, 0xD3D2C9DF -- Someone
-end
+-- first 4 bytes are written big-endian
+-- second 4 bytes are written little-endian :^)
+local NAME_FUNCTIONS = {
+	['Someone'] = function(id)
+		if player_num == id then
+			return 0xC3D3D9DF, 0xDFDFDFDF -- You
+		end
+		return 0xBDD3D1C9, 0xDFC9D2D3 -- Someone
+	end,
+	['Link #'] = function(id)
+		if player_num == id then
+			return 0xC3D3D9DF, 0xDFDFDFDF -- You
+		end
+
+		local b = 0xDFDFDFDF
+		while id > 0 do
+			b = b * 256 + (id % 10)
+			id = math.floor(id / 10)
+		end
+		return 0xB6CDD2CF, b * 256 + 0xDF -- Link 255
+	end,
+	['World #'] = function(id)
+		if player_num == id then
+			return 0xC3D3D9DF, 0xDFDFDFDF -- You
+		end
+
+		local b = 0xDFDFDFDF
+		while id > 0 do
+			b = b * 256 + (id % 10)
+			id = math.floor(id / 10)
+		end
+		if b < 256 * 256 then b = b * 256 + 0xDF end
+		return 0xC1D3D6D0, b * 256 + 0xC8 -- World 255
+	end,
+}
+
+local get_name = nil
 
 local function fill_name(id)
 	local name_address = player_names_addr + (id * 8)
 	local name1, name2 = get_name(id)
 	mainmemory.write_u32_be(name_address + 0, name1)
-	mainmemory.write_u32_be(name_address + 4, name2)
+	mainmemory.write_u32_le(name_address + 4, name2)
 end
 
 local function try_fill_names()
@@ -91,6 +119,14 @@ local function try_setup(data)
     return true
 end
 
+local function is_normal_gameplay()
+	local state_logo = mainmemory.read_u32_be(0x11F200)
+	local state_main = mainmemory.read_s8(0x11B92F)
+	local state_menu = mainmemory.read_s8(0x1D8DD5)
+	return state_logo ~= 0x802C5880 and state_logo ~= 0x00000000 and
+		state_main ~= 1 and state_main ~= 2 and state_menu == 0
+end
+
 function plugin.on_setup(data, settings)
 	data.itemqueues = data.itemqueues or {}
 
@@ -113,41 +149,45 @@ function plugin.on_frame(data, settings)
 
 	-- attempt to fill names every frame (check to see if it's already done first)
 	-- (I wish I didn't have to do this so often, but a soft reset loses the names)
+	get_name = NAME_FUNCTIONS[settings.othernames]
 	try_fill_names()
 
-	-- check if an item needs to be sent
-	key = mainmemory.read_u32_be(outgoing_key_addr)
-	if key ~= 0 then
-		item = mainmemory.read_u16_be(outgoing_item_addr)
-		player = mainmemory.read_u16_be(outgoing_player_addr)
+	if is_normal_gameplay() then
+		-- check if an item needs to be sent
+		key = mainmemory.read_u32_be(outgoing_key_addr)
+		if key ~= 0 then
+			item = mainmemory.read_u16_be(outgoing_item_addr)
+			player = mainmemory.read_u16_be(outgoing_player_addr)
 
-		data.itemqueues[player] = data.itemqueues[player] or {}
-		table.insert(data.itemqueues[player], item)
+			data.itemqueues[player] = data.itemqueues[player] or {}
+			table.insert(data.itemqueues[player], item)
 
-		mainmemory.write_u32_be(outgoing_key_addr, 0)
-		mainmemory.write_u16_be(outgoing_item_addr, 0)
-		mainmemory.write_u16_be(outgoing_player_addr, 0)
-	end
-
-	-- check if an item needs to be received
-	local count = mainmemory.read_u16_be(internal_count_addr)
-	item = mainmemory.read_u16_be(incoming_item_addr)
-	if item == 0 and #data.itemqueues[player_num] > count then
-		item = data.itemqueues[player_num][count+1]
-		if item == 0 then
-			mainmemory.write_u16_be(internal_count_addr, count+1)
-		else
-			mainmemory.write_u16_be(incoming_item_addr, item)
-			mainmemory.write_u16_be(incoming_player_addr, player_num)
+			mainmemory.write_u32_be(outgoing_key_addr, 0)
+			mainmemory.write_u16_be(outgoing_item_addr, 0)
+			mainmemory.write_u16_be(outgoing_player_addr, 0)
 		end
-	end
 
-	-- if the internal count suggests items are missing, add filler
-	-- the weird check on size here has to do with the fact that the memory location
-	-- is stores arbitrary meaningless values on reset (when not in a gameplay mode)
-	if #data.itemqueues[player_num] < count and count - #data.itemqueues[player_num] < 3 then
-		while #data.itemqueues[player_num] < count do
-			table.insert(data.itemqueues[player_num], 0)
+		-- check if an item needs to be received
+		local count = mainmemory.read_u16_be(internal_count_addr)
+		print('normal gameplay ' .. tostring(count))
+		item = mainmemory.read_u16_be(incoming_item_addr)
+		if item == 0 and #data.itemqueues[player_num] > count then
+			item = data.itemqueues[player_num][count+1]
+			if item == 0 then
+				mainmemory.write_u16_be(internal_count_addr, count+1)
+			else
+				mainmemory.write_u16_be(incoming_item_addr, item)
+				mainmemory.write_u16_be(incoming_player_addr, player_num)
+			end
+		end
+
+		-- if the internal count suggests items are missing, add filler
+		-- the weird check on size here has to do with the fact that the memory location
+		-- is stores arbitrary meaningless values on reset (when not in a gameplay mode)
+		if #data.itemqueues[player_num] < count and count - #data.itemqueues[player_num] < 3 then
+			while #data.itemqueues[player_num] < count do
+				table.insert(data.itemqueues[player_num], 0)
+			end
 		end
 	end
 end

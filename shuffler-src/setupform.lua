@@ -67,15 +67,16 @@ function module.initial_setup(callback)
 							setting.directory, setting.filter) or setting._response
 						forms.settext(setting.input, setting._response)
 					end
-					setting.input = forms.button(form, "[Select File]", click, 10, y, 200, 20)
+					setting.input = forms.button(form, "[ Select File ]", click, 10, y, 200, 20)
 					forms.label(form, setting.label, 215, y+3, 100, 20)
 				end,
 				getData = function(setting) return setting._response or nil end,
 			},
 			['select'] = {
 				make = function(setting, y)
-					setting.input = forms.dropdown(form, setting.options, 10, y, 200, 20)
-					forms.label(form, setting.label, 215, y+3, 100, 20)
+					setting.input = forms.dropdown(form, setting.options, 10, y, 150, 20)
+					if setting.default then forms.settext(setting.input, setting.default) end
+					forms.label(form, setting.label, 165, y+3, 150, 20)
 				end,
 				getData = function(setting) return forms.gettext(setting.input) end,
 			},
@@ -96,7 +97,6 @@ function module.initial_setup(callback)
 		}
 
 		local y = 40
-		local romlist = nil
 		for _,setting in ipairs(plugin.settings) do
 			local meta = SETTINGS_TYPES[setting.type:lower()]
 			if meta ~= nil then meta.make(setting, y); y = y + 30 end
