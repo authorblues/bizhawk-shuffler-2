@@ -15,12 +15,18 @@
 
 local plugin = {}
 
+-- this setting is crucially important! without it, loading states will crash
+local EXPANSION_WARNING = 'Enable "Use Expansion Slot" under Bizhawk\'s N64 menu!'
+
 plugin.name = "Solo ZOOTR Multiworld"
 plugin.settings =
 {
 	-- some people prefer to see the world name I guess
 	{ name='othernames', type='select', label='Show Other Names As',
 		options={'Someone', 'Link #', 'World #'}, default='Someone' },
+
+	-- add an info block for the required settings
+	{ type='info', text=EXPANSION_WARNING, }
 }
 
 local rando_context
@@ -80,8 +86,8 @@ local get_name = nil
 local function fill_name(id)
 	local name_address = player_names_addr + (id * 8)
 	local name1, name2 = get_name(id)
-	mainmemory.write_u32_be(name_address + 0, name1)
-	mainmemory.write_u32_le(name_address + 4, name2)
+	mainmemory.write_u32_be(name_address + 0, name1) --be
+	mainmemory.write_u32_le(name_address + 4, name2) --le
 end
 
 local function try_fill_names()
@@ -129,11 +135,7 @@ end
 
 function plugin.on_setup(data, settings)
 	data.itemqueues = data.itemqueues or {}
-
-	-- this setting is crucially important! without it, loading states will crash
-	local warning = 'You must enable "Use Expansion Slot" under Bizhawk\'s N64 menu!'
-	for i = 1,5 do print(warning) end
-	--gui.pixelText(5, 5, warning)
+	for i = 1,20 do print(EXPANSION_WARNING) end
 end
 
 function plugin.on_game_load(data, settings)
@@ -169,7 +171,6 @@ function plugin.on_frame(data, settings)
 
 		-- check if an item needs to be received
 		local count = mainmemory.read_u16_be(internal_count_addr)
-		print('normal gameplay ' .. tostring(count))
 		item = mainmemory.read_u16_be(incoming_item_addr)
 		if item == 0 and #data.itemqueues[player_num] > count then
 			item = data.itemqueues[player_num][count+1]
@@ -182,12 +183,9 @@ function plugin.on_frame(data, settings)
 		end
 
 		-- if the internal count suggests items are missing, add filler
-		-- the weird check on size here has to do with the fact that the memory location
-		-- is stores arbitrary meaningless values on reset (when not in a gameplay mode)
-		if #data.itemqueues[player_num] < count and count - #data.itemqueues[player_num] < 3 then
-			while #data.itemqueues[player_num] < count do
-				table.insert(data.itemqueues[player_num], 0)
-			end
+		while #data.itemqueues[player_num] < count do
+			print('internal count too high? adding a filler item')
+			table.insert(data.itemqueues[player_num], 0)
 		end
 	end
 end
