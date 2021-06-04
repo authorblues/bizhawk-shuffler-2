@@ -430,7 +430,7 @@ while true do
 		    if frame_count >= next_swap_time then swap_game() end	
 		else
 			if config['plugin_state'].manual_shuffle_request == true then
-				if frames_since_restart > 1 * 60 then
+				if frames_since_restart > 20 then
 					config['plugin_state'].manual_shuffle_request = false
 					swap_game()
 				end
