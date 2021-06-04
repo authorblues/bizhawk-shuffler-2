@@ -20,17 +20,17 @@ STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 
 -- Check if folder exists --
 function folder_exists(strFolderName)
-  local fileHandle, strError = io.open(strFolderName.."\\*.*","r")
-  if fileHandle ~= nil then
-    io.close(fileHandle)
-    return true
-  else
-    if string.match(strError,"No such file or directory") then
-      return false
-    else
-      return true
-    end
-  end
+	local fileHandle, strError = io.open(strFolderName.."\\*.*","r")
+	if fileHandle ~= nil then
+		io.close(fileHandle)
+		return true
+	else
+		if string.match(strError,"No such file or directory") then
+			return false
+		else
+			return true
+		end
+	end
 end
 
 -- folders needed for the shuffler to run
@@ -99,7 +99,7 @@ end
 -- returns a table containing all files in a given directory
 function get_dir_contents(dir, update)
 	local TEMP_FILE = 'shuffler-src/.file-list.txt'
-    if update ~= false then
+	if update ~= false then
 		local cmd = 'ls ' .. dir .. ' > ' .. TEMP_FILE
 		if PLATFORM == 'WIN' then
 			cmd = 'dir ' .. dir .. ' /B > ' .. TEMP_FILE
@@ -118,7 +118,7 @@ end
 
 -- get list of games
 function get_games_list()
-	local games = get_dir_contents(GAMES_FOLDER,false)
+	local games = get_dir_contents(GAMES_FOLDER, false)
 	local toremove = {}
 
 	-- find .cue files and remove the associated bin/iso
@@ -181,7 +181,7 @@ end
 function get_next_game()
 	local prev = config['current_game'] or nil
 	local all_games = get_games_list()
-	
+
 	if config['plugin_state'].autoshuffle ~= false then
 		-- randomize it
 		-- remove the currently loaded game and see if there are any other options
@@ -197,16 +197,16 @@ function get_next_game()
 		-- there's probably a better way to do this.
 		local this_index = 1
 		for i = 1, #all_games do
-		    if prev == all_games[i] then
+			if prev == all_games[i] then
 				this_index = i
 			end
-	    end
+		end
 		-- check if we cycled
 		this_index = this_index + 1
 		if this_index > #all_games then
 			this_index = 1
 		end
-		
+
 		return all_games[this_index]
 	end
 end
@@ -431,8 +431,8 @@ while true do
 		else
 			if config['plugin_state'].manual_shuffle_request == true then
 				if frames_since_restart > 1 * 60 then
-				    config['plugin_state'].manual_shuffle_request = false
-				    swap_game()
+					config['plugin_state'].manual_shuffle_request = false
+					swap_game()
 				end
 			end
 		end
