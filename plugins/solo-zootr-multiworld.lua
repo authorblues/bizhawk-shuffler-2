@@ -18,6 +18,9 @@ local plugin = {}
 -- this setting is crucially important! without it, loading states will crash
 local EXPANSION_WARNING = 'Enable "Use Expansion Slot" under Bizhawk\'s N64 menu!'
 
+local shuffle_random = 'Random'
+local shuffle_manual = 'Manual (P2 L Button)'
+
 plugin.name = "Solo ZOOTR Multiworld"
 plugin.settings =
 {
@@ -135,6 +138,13 @@ end
 
 function plugin.on_setup(data, settings)
 	data.itemqueues = data.itemqueues or {}
+
+	if settings.shufflemode ~= shuffle_manual then
+		data.autoshuffle = true
+	else
+		data.autoshuffle = false
+	end
+	
 	for i = 1,20 do print(EXPANSION_WARNING) end
 end
 
@@ -186,6 +196,18 @@ function plugin.on_frame(data, settings)
 		while #data.itemqueues[player_num] < count do
 			print('internal count too high? adding a filler item')
 			table.insert(data.itemqueues[player_num], 0)
+		end
+		
+		-- see if we're initiating a manual shuffle
+		-- this is debounced in the main shuffler
+		if settings.shufflemode == shuffle_manual then
+			-- Check the L Button
+			local keyTable = joypad.get(2)
+			if keyTable.L == true then
+				data.manual_shuffle_request = true
+			else
+				data.manual_shuffle_request = false
+			end
 		end
 	end
 end
