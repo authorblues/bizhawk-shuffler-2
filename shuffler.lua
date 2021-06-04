@@ -118,7 +118,7 @@ end
 
 -- get list of games
 function get_games_list()
-	local games = get_dir_contents(GAMES_FOLDER)
+	local games = get_dir_contents(GAMES_FOLDER,false)
 	local toremove = {}
 
 	-- find .cue files and remove the associated bin/iso

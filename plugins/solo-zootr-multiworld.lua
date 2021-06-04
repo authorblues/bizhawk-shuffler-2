@@ -27,6 +27,8 @@ plugin.settings =
 	-- some people prefer to see the world name I guess
 	{ name='othernames', type='select', label='Show Other Names As',
 		options={'Someone', 'Link #', 'World #'}, default='Someone' },
+	{ name='shufflemode', type='select', label='Shuffle Mode',
+		options={shuffle_random, shuffle_manual}, default=shuffle_random },
 
 	-- add an info block for the required settings
 	{ type='info', text=EXPANSION_WARNING, }
