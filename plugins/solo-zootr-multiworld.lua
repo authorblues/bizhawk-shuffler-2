@@ -24,6 +24,7 @@ plugin.settings =
 	-- some people prefer to see the world name I guess
 	{ name='othernames', type='select', label='Show Other Names As',
 		options={'Someone', 'Link #', 'World #'}, default='Someone' },
+	{ name='swapbutton', type='boolean', label='Force Game Swap on P2 L Button?' },
 
 	-- add an info block for the required settings
 	{ type='info', text=EXPANSION_WARNING, }
@@ -135,7 +136,7 @@ end
 
 function plugin.on_setup(data, settings)
 	data.itemqueues = data.itemqueues or {}
-	for i = 1,20 do print(EXPANSION_WARNING) end
+	for i = 1,10 do print(EXPANSION_WARNING) end
 end
 
 function plugin.on_game_load(data, settings)
@@ -187,6 +188,12 @@ function plugin.on_frame(data, settings)
 			print('internal count too high? adding a filler item')
 			table.insert(data.itemqueues[player_num], 0)
 		end
+	end
+
+	if settings.swapbutton then
+		local currL = joypad.get(2).L
+		if not data.prevL and currL then swap_game() end
+		data.prevL = currL
 	end
 end
 
