@@ -216,13 +216,13 @@ function swap_game()
 	config.current_game = next_game
 	running = false
 
-	-- save an updated randomizer seed
-	config.nseed = math.random(9999999999)
-	save_config(config, 'shuffler-src/config.lua')
-
 	-- mute the sound for a moment to help with the swap
 	config.sound = client.GetSoundOn()
 	client.SetSoundOn(false)
+
+	-- save an updated randomizer seed
+	config.nseed = math.random(9999999999)
+	save_config(config, 'shuffler-src/config.lua')
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
 	load_game(get_current_game())
