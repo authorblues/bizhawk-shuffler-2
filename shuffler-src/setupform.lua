@@ -169,16 +169,15 @@ function module.initial_setup(callback)
 		return math.random(999999999)
 	end
 
-	function randomize_seed()
-		forms.settext(seed_text, random_seed())
-	end
-
 	form = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup")
 
 	seed_text = forms.textbox(form, 0, 100, 20, "UNSIGNED", 10, 10)
 	forms.label(form, "Seed", 115, 13, 40, 20)
 	forms.settext(seed_text, config['seed'] or random_seed())
-	forms.button(form, "Randomize Seed", randomize_seed, 160, 10, 150, 20)
+
+	forms.button(form, "Randomize Seed", function()
+		forms.settext(seed_text, random_seed())
+	end, 160, 10, 150, 20)
 
 	min_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 10, 40)
 	max_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 62, 40)
