@@ -102,7 +102,6 @@ function module.initial_setup(callback)
 				make = function(setting, y)
 					forms.label(form, setting.text, 10, y+3, 305, 20)
 				end,
-				getData = function(setting) return false end,
 			},
 		}
 
@@ -115,7 +114,7 @@ function module.initial_setup(callback)
 		local next_fn = function()
 			for _,setting in ipairs(plugin.settings) do
 				local meta = SETTINGS_TYPES[setting.type:lower()]
-				if meta ~= nil and setting.name ~= nil then
+				if meta ~= nil and setting.name ~= nil and meta.getData ~= nil then
 					config.plugin_settings[setting.name] = meta.getData(setting)
 				end
 			end
