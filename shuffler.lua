@@ -130,7 +130,7 @@ function get_games_list(force)
 
 	table_subtract(games, toremove)
 	table_subtract(games, { LIST_FILE, '.savestates' })
-	table_subtract(games, config['completed_games'])
+	table_subtract(games, config.completed_games)
 	return games
 end
 
@@ -144,7 +144,7 @@ function delete_savestates()
 end
 
 function get_current_game()
-	return config['current_game'] or nil
+	return config.current_game or nil
 end
 
 function save_current_game()
@@ -171,7 +171,7 @@ function load_game(g)
 end
 
 function get_next_game()
-	local prev = config['current_game'] or nil
+	local prev = config.current_game or nil
 	local all_games = get_games_list()
 
 	-- shuffle_index == -1 represents fully random shuffle order
@@ -206,22 +206,22 @@ function swap_game()
 	if get_current_game() ~= nil then
 		for _,plugin in ipairs(plugins) do
 			if plugin.on_game_save ~= nil then
-				plugin.on_game_save(config['plugin_state'], config['plugin_settings'])
+				plugin.on_game_save(config.plugin_state, config.plugin_settings)
 			end
 		end
 	end
 
 	-- at this point, save the game and update the new "current" game after
 	save_current_game()
-	config['current_game'] = next_game
+	config.current_game = next_game
 	running = false
 
 	-- save an updated randomizer seed
-	config['nseed'] = math.random(9999999999)
+	config.nseed = math.random(9999999999)
 	save_config(config, 'shuffler-src/config.lua')
 
 	-- mute the sound for a moment to help with the swap
-	config['sound'] = client.GetSoundOn()
+	config.sound = client.GetSoundOn()
 	client.SetSoundOn(false)
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
@@ -230,11 +230,11 @@ function swap_game()
 end
 
 function swap_game_delay(f)
-	next_swap_time = config['frame_count'] + f
+	next_swap_time = config.frame_count + f
 end
 
 function update_next_swap_time()
-	swap_game_delay(math.random(config['min_swap'] * 60, config['max_swap'] * 60))
+	swap_game_delay(math.random(config.min_swap * 60, config.max_swap * 60))
 end
 
 function starts_with(a, b)
@@ -262,7 +262,7 @@ end
 
 function output_completed()
 	completed = ""
-	for i,game in ipairs(config['completed_games']) do
+	for i,game in ipairs(config.completed_games) do
 		completed = completed .. strip_ext(game) .. '\n'
 	end
 	write_data('output-info/completed-games.txt', completed)
@@ -270,11 +270,11 @@ end
 
 function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
-	table.insert(config['completed_games'], get_current_game())
+	table.insert(config.completed_games, get_current_game())
 	print(get_current_game() .. ' marked complete')
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_complete ~= nil then
-			plugin.on_complete(config['plugin_state'], config['plugin_settings'])
+			plugin.on_complete(config.plugin_state, config.plugin_settings)
 		end
 	end
 
@@ -292,20 +292,20 @@ function mark_complete()
 end
 
 function complete_setup()
-	if config['plugins'] ~= nil then
-		for _,pmodpath in ipairs(config['plugins']) do
+	if config.plugins ~= nil then
+		for _,pmodpath in ipairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
 			print('Plugin loaded: ' .. pmodule.name)
 			if pmodule ~= nil and pmodule.on_setup ~= nil then
-				pmodule.on_setup(config['plugin_state'], config['plugin_settings'])
+				pmodule.on_setup(config.plugin_state, config.plugin_settings)
 			end
 		end
 	end
 
 	save_config(config, 'shuffler-src/config.lua')
-	math.randomseed(config['nseed'])
+	math.randomseed(config.nseed)
 
-	if config['frame_count'] == 0 then
+	if config.frame_count == 0 then
 		print('deleting savestates!')
 		delete_savestates()
 	end
@@ -328,8 +328,8 @@ if emu.getsystemid() ~= "NULL" then
 	-- this design decision, but I make no promises.
 
 	-- load plugin configuration
-	if config['plugins'] ~= nil then
-		for _,pmodpath in ipairs(config['plugins']) do
+	if config.plugins ~= nil then
+		for _,pmodpath in ipairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
 			if pmodule ~= nil then table.insert(plugins, pmodule) end
 		end
@@ -341,22 +341,22 @@ if emu.getsystemid() ~= "NULL" then
 	end
 
 	-- update swap counter for this game
-	local new_swaps = (config['game_swaps'][get_current_game()] or 0) + 1
-	config['game_swaps'][get_current_game()] = new_swaps
+	local new_swaps = (config.game_swaps[get_current_game()] or 0) + 1
+	config.game_swaps[get_current_game()] = new_swaps
 	write_data('output-info/current-swaps.txt', new_swaps)
 
 	-- update total swap counter
-	config['total_swaps'] = (config['total_swaps'] or 0) + 1
-	write_data('output-info/total-swaps.txt', config['total_swaps'])
+	config.total_swaps = (config.total_swaps or 0) + 1
+	write_data('output-info/total-swaps.txt', config.total_swaps)
 
 	-- update game name
 	write_data('output-info/current-game.txt', strip_ext(get_current_game()))
 
 	update_next_swap_time()
-	client.SetSoundOn(config['sound'] or true)
+	client.SetSoundOn(config.sound or true)
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_game_load ~= nil then
-			plugin.on_game_load(config['plugin_state'], config['plugin_settings'])
+			plugin.on_game_load(config.plugin_state, config.plugin_settings)
 		end
 	end
 else
@@ -370,13 +370,13 @@ prev_input = input.get()
 frames_since_restart = 0
 while true do
 	if emu.getsystemid() ~= "NULL" and running then
-		local frame_count = (config['frame_count'] or 0) + 1
-		config['frame_count'] = frame_count
+		local frame_count = (config.frame_count or 0) + 1
+		config.frame_count = frame_count
 		frames_since_restart = frames_since_restart + 1
 
 		-- update the frame count specifically for the active game as well
-		local cgf = (config['game_frame_count'][get_current_game()] or 0) + 1
-		config['game_frame_count'][get_current_game()] = cgf
+		local cgf = (config.game_frame_count[get_current_game()] or 0) + 1
+		config.game_frame_count[get_current_game()] = cgf
 
 		-- save time info to files for OBS display
 		write_data('output-info/total-time.txt', frames_to_time(frame_count))
@@ -385,7 +385,7 @@ while true do
 		-- let plugins do operations each frame
 		for _,plugin in ipairs(plugins) do
 			if plugin.on_frame ~= nil then
-				plugin.on_frame(config['plugin_state'], config['plugin_settings'])
+				plugin.on_frame(config.plugin_state, config.plugin_settings)
 			end
 		end
 
@@ -397,7 +397,7 @@ while true do
 		-- mark the game as complete if the hotkey is pressed (and some time buffer)
 		-- the time buffer should hopefully prevent somebody from attempting to
 		-- press the hotkey and the game swapping, marking the wrong game complete
-		if input_rise[config['hk_complete']] and frames_since_restart > math.min(3, config['min_swap']/2) * 60 then mark_complete() end
+		if input_rise[config.hk_complete] and frames_since_restart > math.min(3, config.min_swap/2) * 60 then mark_complete() end
 
 		-- time to swap!
 	    if frame_count >= next_swap_time then swap_game() end

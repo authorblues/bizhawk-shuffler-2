@@ -37,7 +37,7 @@ function module.initial_setup(callback)
 		get_games_list(true) -- force refresh of the games list
 
 		forms.destroy(form)
-		plugin_setup(config['plugins'], 1)
+		plugin_setup(config.plugins, 1)
 	end
 
 	function create_plugin_settings_window(plugin, plist, px)
@@ -116,7 +116,7 @@ function module.initial_setup(callback)
 			for _,setting in ipairs(plugin.settings) do
 				local meta = SETTINGS_TYPES[setting.type:lower()]
 				if meta ~= nil and setting.name ~= nil then
-					config['plugin_settings'][setting.name] = meta.getData(setting)
+					config.plugin_settings[setting.name] = meta.getData(setting)
 				end
 			end
 
@@ -135,32 +135,32 @@ function module.initial_setup(callback)
 
 	function save_new_settings()
 		config = {}
-		config['seed'] = tonumber(forms.gettext(seed_text) or "0")
-		config['nseed'] = config['seed']
+		config.seed = tonumber(forms.gettext(seed_text) or "0")
+		config.nseed = config.seed
 
 		local a = tonumber(forms.gettext(min_text) or "15")
 		local b = tonumber(forms.gettext(max_text) or "45")
-		config['min_swap'] = math.min(a, b)
-		config['max_swap'] = math.max(a, b)
+		config.min_swap = math.min(a, b)
+		config.max_swap = math.max(a, b)
 
-		config['shuffle_index'] = SWAP_MODES[forms.gettext(mode_combo)]
-		config['hk_complete'] = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
-		config['completed_games'] = {}
+		config.shuffle_index = SWAP_MODES[forms.gettext(mode_combo)]
+		config.hk_complete = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
+		config.completed_games = {}
 
-		config['plugins'] = {}
-		config['plugin_settings'] = {}
-		config['plugin_state'] = {}
+		config.plugins = {}
+		config.plugin_settings = {}
+		config.plugin_state = {}
 
 		local selected_plugin = forms.gettext(plugin_combo)
 		if selected_plugin ~= '[None]' then
-			table.insert(config['plugins'], plugins_meta[selected_plugin])
+			table.insert(config.plugins, plugins_meta[selected_plugin])
 		end
 
 		-- internal information for output
-		config['frame_count'] = 0
-		config['total_swaps'] = 0
-		config['game_frame_count'] = {}
-		config['game_swaps'] = {}
+		config.frame_count = 0
+		config.total_swaps = 0
+		config.game_frame_count = {}
+		config.game_swaps = {}
 	end
 
 	function random_seed()
@@ -173,7 +173,7 @@ function module.initial_setup(callback)
 
 	seed_text = forms.textbox(form, 0, 100, 20, "UNSIGNED", 10, 10)
 	forms.label(form, "Seed", 115, 13, 40, 20)
-	forms.settext(seed_text, config['seed'] or random_seed())
+	forms.settext(seed_text, config.seed or random_seed())
 
 	forms.button(form, "Randomize Seed", function()
 		forms.settext(seed_text, random_seed())
@@ -182,8 +182,8 @@ function module.initial_setup(callback)
 	min_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 10, 40)
 	max_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 62, 40)
 	forms.label(form, "Min/Max Swap Time (in seconds)", 115, 43, 200, 20)
-	forms.settext(min_text, config['min_swap'] or 15)
-	forms.settext(max_text, config['max_swap'] or 45)
+	forms.settext(min_text, config.min_swap or 15)
+	forms.settext(max_text, config.max_swap or 45)
 
 	local _SWAP_MODES = {}
 	for k,v in pairs(SWAP_MODES) do
@@ -196,7 +196,7 @@ function module.initial_setup(callback)
 
 	hk_complete = forms.dropdown(form, HOTKEY_OPTIONS, 10, 100, 150, 20)
 	forms.label(form, "Hotkey: Game Completed", 165, 103, 150, 20)
-	forms.settext(hk_complete, config['hk_complete'] or 'Ctrl+Shift+End')
+	forms.settext(hk_complete, config.hk_complete or 'Ctrl+Shift+End')
 
 	plugin_combo = forms.dropdown(form, plugins_table, 10, 130, 150, 20)
 	forms.label(form, "Game Plugin", 165, 133, 150, 20)
