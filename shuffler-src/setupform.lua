@@ -1,8 +1,8 @@
 local module = {}
 
 function module.initial_setup(callback)
-	local form, seed_text, min_text, max_text, resume, start_btn, plugin_combo
-	local hk_complete
+	local form, seed_text, min_text, max_text, resume, start_btn
+	local mode_combo, hk_complete, plugin_combo
 
 	local plugins_table = {'[None]'}
 	local plugins_meta = {}
@@ -18,6 +18,9 @@ function module.initial_setup(callback)
 		end
 	end
 
+	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
+	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed (Alphabetical) Order'] = 0}
+
 	-- I believe none of these conflict with default Bizhawk hotkeys
 	local HOTKEY_OPTIONS = {
 		'Ctrl+Shift+End',
@@ -31,6 +34,7 @@ function module.initial_setup(callback)
 	function start_handler()
 		local setup = not forms.ischecked(resume)
 		if setup then save_new_settings() end
+		get_games_list(true) -- force refresh of the games list
 
 		forms.destroy(form)
 		plugin_setup(config['plugins'], 1)
@@ -94,6 +98,12 @@ function module.initial_setup(callback)
 				end,
 				getData = function(setting) return tonumber(forms.gettext(setting.input) or "0") end,
 			},
+			['info'] = {
+				make = function(setting, y)
+					forms.label(form, setting.text, 10, y+3, 305, 20)
+				end,
+				getData = function(setting) return false end,
+			},
 		}
 
 		local y = 40
@@ -105,7 +115,9 @@ function module.initial_setup(callback)
 		local next_fn = function()
 			for _,setting in ipairs(plugin.settings) do
 				local meta = SETTINGS_TYPES[setting.type:lower()]
-				if meta ~= nil then config['plugin_settings'][setting.name] = meta.getData(setting) end
+				if meta ~= nil and setting.name ~= nil then
+					config['plugin_settings'][setting.name] = meta.getData(setting)
+				end
 			end
 
 			forms.destroy(form)
@@ -131,6 +143,7 @@ function module.initial_setup(callback)
 		config['min_swap'] = math.min(a, b)
 		config['max_swap'] = math.max(a, b)
 
+		config['shuffle_index'] = SWAP_MODES[forms.gettext(mode_combo)]
 		config['hk_complete'] = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
 		config['completed_games'] = {}
 
@@ -167,13 +180,20 @@ function module.initial_setup(callback)
 	forms.settext(seed_text, config['seed'] or random_seed())
 	forms.button(form, "Randomize Seed", randomize_seed, 160, 10, 150, 20)
 
-	min_text = forms.textbox(form, 0, 40, 20, "UNSIGNED", 10, 40)
-	forms.label(form, "Minimum Swap Time (in seconds)", 55, 43, 200, 20)
+	min_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 10, 40)
+	max_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 62, 40)
+	forms.label(form, "Min/Max Swap Time (in seconds)", 115, 43, 200, 20)
 	forms.settext(min_text, config['min_swap'] or 15)
-
-	max_text = forms.textbox(form, 0, 40, 20, "UNSIGNED", 10, 70)
-	forms.label(form, "Maximum Swap Time (in seconds)", 55, 73, 200, 20)
 	forms.settext(max_text, config['max_swap'] or 45)
+
+	local _SWAP_MODES = {}
+	for k,v in pairs(SWAP_MODES) do
+		table.insert(_SWAP_MODES, k)
+	end
+
+	mode_combo = forms.dropdown(form, _SWAP_MODES, 10, 70, 150, 20)
+	forms.label(form, "Shuffler Swap Mode", 165, 73, 150, 20)
+	forms.settext(mode_combo, SWAP_MODES_DEFAULT)
 
 	hk_complete = forms.dropdown(form, HOTKEY_OPTIONS, 10, 100, 150, 20)
 	forms.label(form, "Hotkey: Game Completed", 165, 103, 150, 20)

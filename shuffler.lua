@@ -18,32 +18,23 @@ PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 
--- Check if folder exists --
-function folder_exists(strFolderName)
-	local fileHandle, strError = io.open(strFolderName.."\\*.*","r")
-	if fileHandle ~= nil then
-		io.close(fileHandle)
-		return true
-	else
-		if string.match(strError,"No such file or directory") then
-			return false
-		else
-			return true
-		end
-	end
+-- check if folder exists
+function path_exists(p)
+	local ok, err, code = os.rename(p, p)
+	-- code 13 is permission denied, but it's there
+	if not ok and code == 13 then return true end
+	return ok, err
+end
+
+function make_dir(p)
+	if path_exists(p .. '/') then return end
+	os.execute('mkdir "' .. p .. '"')
 end
 
 -- folders needed for the shuffler to run
--- folder_exists is checking if any file exists in these folders.
-if folder_exists('output-info') == false then
-	os.execute('mkdir output-info')
-end
-if folder_exists(GAMES_FOLDER) == false then
-	os.execute('mkdir "' .. GAMES_FOLDER .. '"')
-end
-if folder_exists(STATES_FOLDER) == false then
-	os.execute('mkdir "' .. STATES_FOLDER .. '"')
-end
+make_dir('output-info')
+make_dir(GAMES_FOLDER)
+make_dir(STATES_FOLDER)
 
 -- loads primary config file
 function load_config(f)
@@ -97,9 +88,9 @@ function table_subtract(t2, t1)
 end
 
 -- returns a table containing all files in a given directory
-function get_dir_contents(dir, update)
-	local TEMP_FILE = 'shuffler-src/.file-list.txt'
-	if update ~= false then
+function get_dir_contents(dir, tmp, force)
+	local TEMP_FILE = tmp or 'shuffler-src/.file-list.txt'
+	if force ~= false or not path_exists(TEMP_FILE) then
 		local cmd = 'ls ' .. dir .. ' > ' .. TEMP_FILE
 		if PLATFORM == 'WIN' then
 			cmd = 'dir ' .. dir .. ' /B > ' .. TEMP_FILE
@@ -117,8 +108,9 @@ function get_dir_contents(dir, update)
 end
 
 -- get list of games
-function get_games_list()
-	local games = get_dir_contents(GAMES_FOLDER, false)
+function get_games_list(force)
+	local LIST_FILE = '.games-list.txt'
+	local games = get_dir_contents(GAMES_FOLDER, GAMES_FOLDER .. '/' .. LIST_FILE, force or false)
 	local toremove = {}
 
 	-- find .cue files and remove the associated bin/iso
@@ -137,7 +129,7 @@ function get_games_list()
 	end
 
 	table_subtract(games, toremove)
-	table_subtract(games, { 'plugin.lua', '.savestates' })
+	table_subtract(games, { LIST_FILE, '.savestates' })
 	table_subtract(games, config['completed_games'])
 	return games
 end
@@ -182,32 +174,17 @@ function get_next_game()
 	local prev = config['current_game'] or nil
 	local all_games = get_games_list()
 
-	if config['plugin_state'].autoshuffle ~= false then
-		-- randomize it
+	-- shuffle_index == -1 represents fully random shuffle order
+	if config.shuffle_index < 0 then
 		-- remove the currently loaded game and see if there are any other options
 		table_subtract(all_games, { prev })
 		if #all_games == 0 then return prev end
 		return all_games[math.random(#all_games)]
 	else
 		-- manually select the next one
-		-- hopefully the games list stays in the same order unless games are added
 		if #all_games == 1 then return prev end
-		
-		-- find out what index we are.
-		-- there's probably a better way to do this.
-		local this_index = 1
-		for i = 1, #all_games do
-			if prev == all_games[i] then
-				this_index = i
-			end
-		end
-		-- check if we cycled
-		this_index = this_index + 1
-		if this_index > #all_games then
-			this_index = 1
-		end
-
-		return all_games[this_index]
+		config.shuffle_index = (config.shuffle_index % #all_games) + 1
+		return all_games[config.shuffle_index]
 	end
 end
 
@@ -387,9 +364,6 @@ else
 	client.displaymessages(false)
 	local setup = require('shuffler-src.setupform')
 	setup.initial_setup(complete_setup)
-	
-	-- Initialize the game files
-	get_dir_contents(GAMES_FOLDER, true)
 end
 
 prev_input = input.get()
@@ -424,18 +398,9 @@ while true do
 		-- the time buffer should hopefully prevent somebody from attempting to
 		-- press the hotkey and the game swapping, marking the wrong game complete
 		if input_rise[config['hk_complete']] and frames_since_restart > math.min(3, config['min_swap']/2) * 60 then mark_complete() end
-		
-		if config['plugin_state'].autoshuffle ~= false then
-			-- time to swap!
-		    if frame_count >= next_swap_time then swap_game() end	
-		else
-			if config['plugin_state'].manual_shuffle_request == true then
-				if frames_since_restart > 20 then
-					config['plugin_state'].manual_shuffle_request = false
-					swap_game()
-				end
-			end
-		end
+
+		-- time to swap!
+	    if frame_count >= next_swap_time then swap_game() end
 	end
 
 	emu.frameadvance()

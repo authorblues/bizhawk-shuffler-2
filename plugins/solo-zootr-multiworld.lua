@@ -18,17 +18,13 @@ local plugin = {}
 -- this setting is crucially important! without it, loading states will crash
 local EXPANSION_WARNING = 'Enable "Use Expansion Slot" under Bizhawk\'s N64 menu!'
 
-local shuffle_random = 'Random'
-local shuffle_manual = 'Manual (P2 L Button)'
-
 plugin.name = "Solo ZOOTR Multiworld"
 plugin.settings =
 {
 	-- some people prefer to see the world name I guess
 	{ name='othernames', type='select', label='Show Other Names As',
 		options={'Someone', 'Link #', 'World #'}, default='Someone' },
-	{ name='shufflemode', type='select', label='Shuffle Mode',
-		options={shuffle_random, shuffle_manual}, default=shuffle_random },
+	{ name='swapbutton', type='boolean', label='Force Game Swap on P2 L Button?' },
 
 	-- add an info block for the required settings
 	{ type='info', text=EXPANSION_WARNING, }
@@ -140,14 +136,7 @@ end
 
 function plugin.on_setup(data, settings)
 	data.itemqueues = data.itemqueues or {}
-
-	if settings.shufflemode ~= shuffle_manual then
-		data.autoshuffle = true
-	else
-		data.autoshuffle = false
-	end
-	
-	for i = 1,20 do print(EXPANSION_WARNING) end
+	for i = 1,10 do print(EXPANSION_WARNING) end
 end
 
 function plugin.on_game_load(data, settings)
@@ -199,18 +188,12 @@ function plugin.on_frame(data, settings)
 			print('internal count too high? adding a filler item')
 			table.insert(data.itemqueues[player_num], 0)
 		end
-		
-		-- see if we're initiating a manual shuffle
-		-- this is debounced in the main shuffler
-		if settings.shufflemode == shuffle_manual then
-			-- Check the L Button
-			local keyTable = joypad.get(2)
-			if keyTable.L == true then
-				data.manual_shuffle_request = true
-			else
-				data.manual_shuffle_request = false
-			end
-		end
+	end
+
+	if settings.swapbutton then
+		local currL = joypad.get(2).L
+		if not data.prevL and currL then swap_game() end
+		data.prevL = currL
 	end
 end
 
