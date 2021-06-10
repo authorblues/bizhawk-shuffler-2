@@ -1,7 +1,8 @@
 local module = {}
 
 function module.initial_setup(callback)
-	local form, seed_text, min_text, max_text, resume, start_btn
+	local form, resume, start_btn
+	local seed_text, min_text, max_text
 	local mode_combo, hk_complete, plugin_combo
 
 	local plugins_table = {'[None]'}
@@ -169,51 +170,56 @@ function module.initial_setup(callback)
 		return math.random(999999999)
 	end
 
+	local y = 10
 	form = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup")
 
-	seed_text = forms.textbox(form, 0, 100, 20, "UNSIGNED", 10, 10)
-	forms.label(form, "Seed", 115, 13, 40, 20)
+	seed_text = forms.textbox(form, 0, 100, 20, "UNSIGNED", 10, y)
+	forms.label(form, "Seed", 115, y+3, 40, 20)
 	forms.settext(seed_text, config.seed or random_seed())
 
 	forms.button(form, "Randomize Seed", function()
 		forms.settext(seed_text, random_seed())
-	end, 160, 10, 150, 20)
+	end, 160, y, 150, 20)
+	y = y + 30
 
-	min_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 10, 40)
-	max_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 62, 40)
-	forms.label(form, "Min/Max Swap Time (in seconds)", 115, 43, 200, 20)
+	min_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 10, y)
+	max_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 62, y)
+	forms.label(form, "Min/Max Swap Time (in seconds)", 115, y+3, 200, 20)
 	forms.settext(min_text, config.min_swap or 15)
 	forms.settext(max_text, config.max_swap or 45)
+	y = y + 30
 
 	local _SWAP_MODES = {}
 	for k,v in pairs(SWAP_MODES) do
 		table.insert(_SWAP_MODES, k)
 	end
 
-	mode_combo = forms.dropdown(form, _SWAP_MODES, 10, 70, 150, 20)
-	forms.label(form, "Shuffler Swap Mode", 165, 73, 150, 20)
+	mode_combo = forms.dropdown(form, _SWAP_MODES, 10, y, 150, 20)
+	forms.label(form, "Shuffler Swap Order", 165, y+3, 150, 20)
 	forms.settext(mode_combo, SWAP_MODES_DEFAULT)
+	y = y + 30
 
-	hk_complete = forms.dropdown(form, HOTKEY_OPTIONS, 10, 100, 150, 20)
-	forms.label(form, "Hotkey: Game Completed", 165, 103, 150, 20)
+	hk_complete = forms.dropdown(form, HOTKEY_OPTIONS, 10, y, 150, 20)
+	forms.label(form, "Hotkey: Game Completed", 165, y+3, 150, 20)
 	forms.settext(hk_complete, config.hk_complete or 'Ctrl+Shift+End')
+	y = y + 30
 
-	plugin_combo = forms.dropdown(form, plugins_table, 10, 130, 150, 20)
-	forms.label(form, "Game Plugin", 165, 133, 150, 20)
+	plugin_combo = forms.dropdown(form, plugins_table, 10, y, 150, 20)
+	forms.label(form, "Game Plugin", 165, y+3, 150, 20)
+	y = y + 30
 
-	resume = forms.checkbox(form, "Resuming a run?", 10, 160)
+	resume = forms.checkbox(form, "Resuming a run?", 10, y)
 	forms.setproperty(resume, "Width", 150)
-	start_btn = forms.button(form, "Start New Shuffler", start_handler, 160, 160, 150, 20)
+	start_btn = forms.button(form, "Start New Shuffler", start_handler, 160, y, 150, 20)
+	y = y + 30
 
-	function toggle_resuming()
+	forms.addclick(resume, function()
 		if forms.ischecked(resume) then
 			forms.settext(start_btn, "Resume Existing Shuffler")
 		else
 			forms.settext(start_btn, "Start New Shuffler")
 		end
-	end
-
-	forms.addclick(resume, toggle_resuming)
+	end)
 end
 
 return module
