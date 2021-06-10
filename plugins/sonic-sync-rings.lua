@@ -8,6 +8,7 @@
 local plugin = {}
 
 plugin.name = "Sonic Ring Sync"
+plugin.author = "authorblues"
 plugin.settings = {}
 
 -- called once at the start

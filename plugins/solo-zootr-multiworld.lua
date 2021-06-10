@@ -15,10 +15,11 @@
 
 local plugin = {}
 
+plugin.name = "Solo ZOOTR Multiworld"
+plugin.author = "authorblues"
+
 -- this setting is crucially important! without it, loading states will crash
 local EXPANSION_WARNING = 'Enable "Use Expansion Slot" under Bizhawk\'s N64 menu!'
-
-plugin.name = "Solo ZOOTR Multiworld"
 plugin.settings =
 {
 	-- some people prefer to see the world name I guess

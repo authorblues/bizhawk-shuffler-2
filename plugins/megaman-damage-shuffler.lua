@@ -17,6 +17,7 @@
 local plugin = {}
 
 plugin.name = "Megaman Damage Shuffler"
+plugin.author = "authorblues"
 plugin.settings =
 {
 	-- enable this feature to have health and lives synchronized across games
