@@ -234,7 +234,10 @@ function swap_game_delay(f)
 end
 
 function update_next_swap_time()
-	swap_game_delay(math.random(config.min_swap * 60, config.max_swap * 60))
+	next_swap_time = math.huge -- infinity
+	if config.auto_shuffle then
+		swap_game_delay(math.random(config.min_swap * 60, config.max_swap * 60))
+	end
 end
 
 function starts_with(a, b)

@@ -137,6 +137,7 @@ function module.initial_setup(callback)
 		config.seed = tonumber(forms.gettext(seed_text) or "0")
 		config.nseed = config.seed
 
+		config.auto_shuffle = true
 		local a = tonumber(forms.gettext(min_text) or "15")
 		local b = tonumber(forms.gettext(max_text) or "45")
 		config.min_swap = math.min(a, b)
