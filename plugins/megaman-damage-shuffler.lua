@@ -29,6 +29,36 @@ local prevdata = {}
 local shouldSwap = function() return false end
 
 local function checkHealthLives(data, currhp, currlc, maxhp, minhp)
+	-- health must be within an acceptable range to count
+	-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
+	if currhp >= minhp and currhp <= maxhp then
+		local prevhp = data.prevhp
+		data.prevhp = currhp
+
+		-- swap if health goes down, its that simple!
+		-- don't swap on 0 because we can check life count for that
+		if prevhp ~= nil and currhp < prevhp and currhp > 0 then return true end
+	end
+
+	local prevlc = data.prevlc
+	data.prevlc = currlc
+
+	-- check to see if the life count went down
+	if prevlc ~= nil and currlc < prevlc then
+		return true
+	end
+
+	-- continue
+	return false
+end
+
+local function delayHealthLives(data, currhp, currlc, maxhp, minhp, delay)
+	-- health must be within an acceptable range to count
+	-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
+	if currhp < minhp or currhp > maxhp then
+		return false
+	end
+
 	-- retrieve previous health and lives before backup
 	local prevhp = data.prevhp
 	local prevlc = data.prevlc
@@ -37,12 +67,19 @@ local function checkHealthLives(data, currhp, currlc, maxhp, minhp)
 	data.prevhp = currhp
 	data.prevlc = currlc
 
-	-- health must be within an acceptable range to count
-	-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
-	if prevhp ~= nil and currhp < prevhp
-		and currhp >= minhp and currhp <= maxhp
-		and prevhp >= minhp and prevhp <= maxhp then
+	-- this delay ensures that when the game ticks away health for the end of a level,
+	-- we can catch its purpose and hopefully not swap, since this isnt damage related
+	if data.hpcountdown ~= nil and data.hpcountdown > 0 then
+		data.hpcountdown = data.hpcountdown - 1
+		if data.hpcountdown == 0 and currhp > 0 then
 			return true
+		end
+	end
+
+	-- Rockman & Forte drops the health to zero for deaths and for the ends of levels
+	-- if the health goes to 0, we will rely on the life count to tell us whether to swap
+	if prevhp ~= nil and currhp < prevhp then
+		data.hpcountdown = delay
 	end
 
 	-- check to see if the life count went down
@@ -50,7 +87,6 @@ local function checkHealthLives(data, currhp, currlc, maxhp, minhp)
 		return true
 	end
 
-	-- continue
 	return false
 end
 
@@ -72,48 +108,19 @@ local function _mmxHealthLives(gamemeta)
 	end
 end
 
+local function _snesHealthLives(gamemeta)
+	return function(data)
+		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
+		local currlc = mainmemory.read_s8(gamemeta.addr_lc)
+		return delayHealthLives(data, currhp, currlc, gamemeta.max_hp, gamemeta.min_hp, 3)
+	end
+end
+
 local function _signedHealthLives(gamemeta)
 	return function(data)
 		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
 		local currlc = mainmemory.read_s8(gamemeta.addr_lc)
 		return checkHealthLives(data, currhp, currlc, gamemeta.max_hp, gamemeta.min_hp)
-	end
-end
-
-local function _delayHealthLives(gamemeta)
-	return function(data)
-		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
-		local currlc = mainmemory.read_u8(gamemeta.addr_lc)
-
-		-- retrieve previous health and lives before backup
-		local prevhp = data.prevhp
-		local prevlc = data.prevlc
-
-		-- backup current health and lives
-		data.prevhp = currhp
-		data.prevlc = currlc
-
-		-- this delay ensures that when the game ticks away health for the end of a level,
-		-- we can catch its purpose and hopefully not swap, since this isnt damage related
-		if data.hpcountdown ~= nil and data.hpcountdown > 0 then
-			data.hpcountdown = data.hpcountdown - 1
-			if data.hpcountdown == 0 and currhp > 0 then
-				return true
-			end
-		end
-
-		-- Rockman & Forte drops the health to zero for deaths and for the ends of levels
-		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
-		if prevhp ~= nil and currhp < prevhp then
-			data.hpcountdown = 3
-		end
-
-		-- check to see if the life count went down
-		if prevlc ~= nil and currlc < prevlc then
-			return true
-		end
-
-		return false
 	end
 end
 
@@ -129,8 +136,8 @@ local gamedata = {
 	['mmx2']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB3, addr_maxhp=0x1FD1, min_hp=0 },
 	['mmx3']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB4, addr_maxhp=0x1FD2, min_hp=0 },
 
-	['rm&f'   ]={ swapMethod=_delayHealthLives, addr_hp=0x0C2F, addr_lc=0x0B7E, max_hp=28, min_hp=0 },
-	['mm7snes']={ swapMethod=_delayHealthLives, addr_hp=0x0C2E, addr_lc=0x0B81, max_hp=28, min_hp=0 },
+	['rm&f'   ]={ swapMethod=_snesHealthLives, addr_hp=0x0C2F, addr_lc=0x0B7E, max_hp=28, min_hp=0 },
+	['mm7snes']={ swapMethod=_snesHealthLives, addr_hp=0x0C2E, addr_lc=0x0B81, max_hp=28, min_hp=0 },
 
 	['mm1gb']={ swapMethod=_signedHealthLives, addr_hp=0x1FA3, addr_lc=0x0108, max_hp=152, min_hp=0 },
 	['mm2gb']={ swapMethod=_signedHealthLives, addr_hp=0x0FD0, addr_lc=0x0FE8, max_hp=152, min_hp=0 },
@@ -465,7 +472,7 @@ end
 function plugin.on_frame(data, settings)
 	-- run the check method for each individual game
 	if shouldSwap(prevdata) and frames_since_restart > 10 then
-		swap_game_delay(5)
+		swap_game_delay(3)
 	end
 end
 
