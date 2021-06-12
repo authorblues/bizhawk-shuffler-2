@@ -220,6 +220,9 @@ function swap_game()
 	config.sound = client.GetSoundOn()
 	client.SetSoundOn(false)
 
+	-- force another frame to pass to get the mute to take effect
+	if emu.getsystemid() ~= "NULL" then emu.frameadvance() end
+
 	-- save an updated randomizer seed
 	config.nseed = math.random(9999999999)
 	save_config(config, 'shuffler-src/config.lua')
@@ -356,7 +359,6 @@ if emu.getsystemid() ~= "NULL" then
 	write_data('output-info/current-game.txt', strip_ext(get_current_game()))
 
 	update_next_swap_time()
-	client.SetSoundOn(config.sound or true)
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_game_load ~= nil then
 			plugin.on_game_load(config.plugin_state, config.plugin_settings)
@@ -373,6 +375,11 @@ prev_input = input.get()
 frames_since_restart = 0
 while true do
 	if emu.getsystemid() ~= "NULL" and running then
+		if frames_since_restart == 1 then
+			-- wait for a frame to pass before turning sound back on
+			client.SetSoundOn(config.sound or true)
+		end
+
 		local frame_count = (config.frame_count or 0) + 1
 		config.frame_count = frame_count
 		frames_since_restart = frames_since_restart + 1
