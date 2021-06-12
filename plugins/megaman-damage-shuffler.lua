@@ -144,6 +144,8 @@ local gamedata = {
 	['mm3gb']={ swapMethod=_signedHealthLives, addr_hp=0x1E9C, addr_lc=0x1D08, max_hp=152, min_hp=0 },
 	['mm4gb']={ swapMethod=_signedHealthLives, addr_hp=0x1EAE, addr_lc=0x1F34, max_hp=152, min_hp=0 },
 	['mm5gb']={ swapMethod=_signedHealthLives, addr_hp=0x1E9E, addr_lc=0x1F34, max_hp=152, min_hp=0 },
+
+	['mm8psx']={ swapMethod=_standardHealthLives, addr_hp=0x15E283, addr_lc=0x1C3370, max_hp=40, min_hp=0 },
 }
 
 -- same RAM maps across versions?
@@ -457,6 +459,8 @@ local romhashes = {
 	['9EE67E66412F1FF6C7E71D9DEBE5AC62978CE3C7'] = 'mm5gb', -- Rockman World 5 (J) [S][T+Eng].gb
 	['94B19DE4425D1F5D0B74CE41348B4246E7A41E85'] = 'mm5gb', -- Rockman World 5 (J) [S][T-Eng].gb
 	['EE7AD85273983A63BC32B011617D13E1EA879463'] = 'mm5gb', -- Rockman World 5 (J) [S][t1].gb
+	-- Mega Man 8 PSX rom hashes
+	['CA2E63F7'] = 'mm8psx',
 }
 
 function plugin.on_game_load(data, settings)
