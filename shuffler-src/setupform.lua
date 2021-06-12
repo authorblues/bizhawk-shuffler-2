@@ -35,7 +35,6 @@ function module.initial_setup(callback)
 	function start_handler()
 		local setup = not forms.ischecked(resume)
 		if setup then save_new_settings() end
-		get_games_list(true) -- force refresh of the games list
 
 		forms.destroy(form)
 		plugin_setup(config.plugins, 1)

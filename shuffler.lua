@@ -125,6 +125,11 @@ function get_games_list(force)
 				end
 			end
 			fp:close()
+		-- ccd/img format?
+		elseif ends_with(filename, '.ccd') then
+			local primary = filename:sub(1, #filename-4)
+			table.insert(toremove, primary .. '.img')
+			table.insert(toremove, primary .. '.sub')
 		end
 	end
 
@@ -308,6 +313,7 @@ function complete_setup()
 		end
 	end
 
+	local games = get_games_list(true) -- force refresh of the games list
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config.nseed)
 
