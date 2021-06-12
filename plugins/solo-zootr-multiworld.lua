@@ -141,6 +141,8 @@ function plugin.on_setup(data, settings)
 end
 
 function plugin.on_game_load(data, settings)
+	-- this should forcibly debounce the L press
+	data.prevL = true
 end
 
 function plugin.on_frame(data, settings)
