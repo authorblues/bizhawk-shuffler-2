@@ -18,6 +18,8 @@ PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 
+MIN_BIZHAWK_VERSION = "2.6.1"
+
 -- check if folder exists
 function path_exists(p)
 	local ok, err, code = os.rename(p, p)
@@ -261,6 +263,24 @@ function strip_ext(filename)
 	return filename:sub(1, ndx-1)
 end
 
+function checkversion(reqversion)
+	local curr, reqd = {}, {}
+	for x in string.gmatch(client.getversion(), "%d+") do
+		table.insert(curr, tonumber(x))
+	end
+	for x in string.gmatch(reqversion, "%d+") do
+		table.insert(reqd, tonumber(x))
+	end
+	while #curr < #reqd do table.insert(curr, 0) end
+
+	for i=1,#reqd do
+		if curr[i]<reqd[i] then
+			return false
+		end
+	end
+	return true
+end
+
 -- this is going to be an APPROXIMATION and is not a substitute for an actual
 -- timer. games do not run at a consistent or exact 60 fps, so this method is
 -- provided purely for entertainment purposes
@@ -306,7 +326,13 @@ function complete_setup()
 	if config.plugins ~= nil then
 		for _,pmodpath in ipairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
-			print('Plugin loaded: ' .. pmodule.name)
+			if pmodule.minversion and checkversion(pmodule.minversion) then
+				print('Plugin loaded: ' .. pmodule.name)
+			else
+				print(pmodule.name .. ' requires Bizhawk version ' .. pmodule.minversion .. '+')
+				print("-- Currently installed version: " .. client.getversion())
+				print("-- Please update your Bizhawk installation to use this plugin")
+			end
 			if pmodule ~= nil and pmodule.on_setup ~= nil then
 				pmodule.on_setup(config.plugin_state, config.plugin_settings)
 			end
@@ -373,8 +399,14 @@ if emu.getsystemid() ~= "NULL" then
 else
 	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
 	client.displaymessages(false)
-	local setup = require('shuffler-src.setupform')
-	setup.initial_setup(complete_setup)
+	if checkversion(MIN_BIZHAWK_VERSION) then
+		local setup = require('shuffler-src.setupform')
+		setup.initial_setup(complete_setup)
+	else
+		print("Expected Bizhawk version " .. MIN_BIZHAWK_VERSION .. "+")
+		print("-- Currently installed version: " .. client.getversion())
+		print("-- Please update your Bizhawk installation")
+	end
 end
 
 prev_input = input.get()
