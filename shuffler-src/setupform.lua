@@ -53,6 +53,7 @@ function module.initial_setup(callback)
 			['boolean'] = {
 				make = function(setting, y)
 					setting.input = forms.checkbox(form, setting.label, 10, y)
+					if setting.default then forms.setproperty(setting.input, "Checked", true) end
 					forms.setproperty(setting.input, "Width", 330)
 				end,
 				getData = function(setting) return forms.ischecked(setting.input) end,
@@ -87,6 +88,7 @@ function module.initial_setup(callback)
 			['text'] = {
 				make = function(setting, y)
 					setting.input = forms.textbox(form, "", 150, 20, nil, 10, y)
+					if setting.default then forms.settext(setting.input, setting.default) end
 					forms.label(form, setting.label, 165, y+3, 150, 20)
 				end,
 				getData = function(setting) return forms.gettext(setting.input) end,
@@ -94,6 +96,7 @@ function module.initial_setup(callback)
 			['number'] = {
 				make = function(setting, y)
 					setting.input = forms.textbox(form, "", 150, 20, setting.datatype, 10, y)
+					if setting.default then forms.settext(setting.input, setting.default) end
 					forms.label(form, setting.label, 165, y+3, 150, 20)
 				end,
 				getData = function(setting) return tonumber(forms.gettext(setting.input) or "0") end,
