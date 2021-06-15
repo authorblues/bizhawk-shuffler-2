@@ -36,11 +36,11 @@ function plugin.on_setup(data, settings)
 
 	-- setup colors table
 	data.colors = {}
-	data.colors._ndx = 0
+	data.clrndx = 0
 end
 
 function plugin.on_game_load(data, settings)
-	fillcolor = data.colors[get_current_game()] or 0
+	fillcolor = data.colors[get_current_game()]
 	if not fillcolor then
 		local colorhex, opacity
 
@@ -51,8 +51,8 @@ function plugin.on_game_load(data, settings)
 
 		-- if no color name was found, select from a list of default colors
 		if colorhex == nil and settings.autocolor then
-			data.colors._ndx = (data.colors._ndx % #DEFAULT_COLORS) + 1
-			colorhex = DEFAULT_COLORS[data.colors._ndx]
+			data.clrndx = (data.clrndx % #DEFAULT_COLORS) + 1
+			colorhex = DEFAULT_COLORS[data.clrndx]
 		end
 
 		if colorhex ~= nil then
@@ -61,7 +61,7 @@ function plugin.on_game_load(data, settings)
 				local alpha = bit.lshift(settings.opacity * 255 / 100, 24)
 				fillcolor = fillcolor + alpha
 			end
-		end
+		else fillcolor = 0 end
 
 		data.colors[get_current_game()] = fillcolor
 	end
