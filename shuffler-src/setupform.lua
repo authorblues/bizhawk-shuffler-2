@@ -332,16 +332,16 @@ function module.initial_setup(callback)
 	plugin_label = forms.label(setup_window, "No Plugins Loaded", 165, y+3, 150, 20)
 	y = y + 30
 
-	resume = forms.checkbox(setup_window, "Resuming a run?", 10, y)
+	resume = forms.checkbox(setup_window, "Resuming a session?", 10, y)
 	forms.setproperty(resume, "Width", 150)
-	start_btn = forms.button(setup_window, "Start New Shuffler", start_handler, 160, y, 150, 20)
+	start_btn = forms.button(setup_window, "Start New Session", start_handler, 160, y, 150, 20)
 	y = y + 30
 
 	forms.addclick(resume, function()
 		if forms.ischecked(resume) then
-			forms.settext(start_btn, "Resume Existing Shuffler")
+			forms.settext(start_btn, "Resume Previous Session")
 		else
-			forms.settext(start_btn, "Start New Shuffler")
+			forms.settext(start_btn, "Start New Session")
 		end
 	end)
 end
