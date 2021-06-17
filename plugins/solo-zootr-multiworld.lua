@@ -134,7 +134,7 @@ end
 
 function plugin.on_setup(data, settings)
 	data.itemqueues = data.itemqueues or {}
-	for i = 1,10 do print(EXPANSION_WARNING) end
+	for i = 1,3 do print(EXPANSION_WARNING) end
 end
 
 function plugin.on_game_load(data, settings)
