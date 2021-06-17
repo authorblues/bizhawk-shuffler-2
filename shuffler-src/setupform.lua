@@ -1,26 +1,232 @@
 local module = {}
 
+local NEWLINE = "\r\n"
+
+function module.make_plugin_window(plugins, main_plugin_label)
+	local plugin_combo, info_box, enabled_label
+	local SETTINGS_X = 370
+
+	local selected_plugin = nil
+	local plugin_map = {}
+
+	local SETTINGS_TYPES =
+	{
+		['boolean'] = {
+			make = function(plugin, win, setting, x, y)
+				setting.input = forms.checkbox(win, setting.label, x, y)
+				if setting.default or setting._value then forms.setproperty(setting.input, "Checked", true) end
+				forms.setproperty(setting.input, "Width", 330)
+
+				table.insert(plugin._ui, setting.input)
+				return 30
+			end,
+			getData = function(setting) return forms.ischecked(setting.input) end,
+		},
+		['romlist'] = {
+			make = function(plugin, win, setting, x, y)
+				setting.input = forms.dropdown(win, get_games_list(), x, y, 200, 20)
+				local label = forms.label(win, setting.label, x+205, y+3, 100, 20)
+				if setting._value then forms.settext(setting.input, setting._value) end
+
+				table.insert(plugin._ui, setting.input)
+				table.insert(plugin._ui, label)
+				return 30
+			end,
+			getData = function(setting) return forms.gettext(setting.input) end,
+		},
+		['file'] = {
+			make = function(plugin, win, setting, x, y)
+				local click = function()
+					setting._response = forms.openfile(setting.filename,
+						setting.directory, setting.filter) or setting._response
+					forms.settext(setting.input, setting._response)
+				end
+				setting.input = forms.button(win, "[ Select File ]", click, x, y, 200, 20)
+				if setting._value then
+					setting._response = setting._value
+					forms.settext(setting.input, setting._response)
+				end
+				local label = forms.label(win, setting.label, x+205, y+3, 100, 20)
+
+				table.insert(plugin._ui, setting.input)
+				table.insert(plugin._ui, label)
+				return 30
+			end,
+			getData = function(setting) return setting._response or nil end,
+		},
+		['select'] = {
+			make = function(plugin, win, setting, x, y)
+				setting.input = forms.dropdown(win, setting.options, x, y, 150, 20)
+				if setting.default then forms.settext(setting.input, setting.default) end
+				if setting._value then forms.settext(setting.input, setting._value) end
+				local label = forms.label(win, setting.label, x+155, y+3, 150, 20)
+
+				table.insert(plugin._ui, setting.input)
+				table.insert(plugin._ui, label)
+				return 30
+			end,
+			getData = function(setting) return forms.gettext(setting.input) end,
+		},
+		['text'] = {
+			make = function(plugin, win, setting, x, y)
+				setting.input = forms.textbox(win, "", 150, 20, nil, x, y)
+				if setting.default then forms.settext(setting.input, setting.default) end
+				if setting._value then forms.settext(setting.input, setting._value) end
+				local label = forms.label(win, setting.label, x+155, y+3, 150, 20)
+
+				table.insert(plugin._ui, setting.input)
+				table.insert(plugin._ui, label)
+				return 30
+			end,
+			getData = function(setting) return forms.gettext(setting.input) end,
+		},
+		['number'] = {
+			make = function(plugin, win, setting, x, y)
+				setting.input = forms.textbox(win, "", 150, 20, setting.datatype, x, y)
+				if setting.default then forms.settext(setting.input, setting.default) end
+				if setting._value then forms.settext(setting.input, setting._value) end
+				local label = forms.label(win, setting.label, x+155, y+3, 150, 20)
+
+				table.insert(plugin._ui, setting.input)
+				table.insert(plugin._ui, label)
+				return 30
+			end,
+			getData = function(setting) return tonumber(forms.gettext(setting.input) or "0") end,
+		},
+	}
+
+	function setup_plugin_settings(win, x, plugin)
+		if plugin == nil then return end
+		plugin._ui = {}
+
+		local y = 40
+		for _,setting in ipairs(plugin.settings) do
+			local meta = SETTINGS_TYPES[setting.type:lower()]
+			if meta ~= nil then y = y + meta.make(plugin, win, setting, x, y) end
+		end
+	end
+
+	local plugin_window = forms.newform(700, 600, "Plugins Setup")
+
+	function save_plugin_settings()
+		local enabled_count = 0
+		for _,plugin in ipairs(plugins) do
+			plugin._enabled = forms.ischecked(plugin._ui._enabled)
+			if plugin._enabled then
+				enabled_count = enabled_count + 1
+				for _,setting in ipairs(plugin.settings) do
+					local meta = SETTINGS_TYPES[setting.type:lower()]
+					if meta ~= nil and setting.name ~= nil and meta.getData ~= nil then
+						setting._value = meta.getData(setting)
+					end
+				end
+			end
+		end
+
+		local enabled_count_str = tostring(enabled_count)
+		local plural = "s"
+		if enabled_count == 0 then enabled_count_str = "No" end
+		if enabled_count == 1 then plural = "" end
+		forms.settext(main_plugin_label, string.format("%s Plugin%s Loaded", enabled_count_str, plural))
+
+		-- close plugin window if open
+		forms.destroy(plugin_window)
+	end
+
+	function update_plugins()
+		local enabled_list, enabled_count = "", 0
+		for _,plugin in ipairs(plugins) do
+			local plugin_selected = (forms.gettext(plugin_combo) == plugin.name)
+			if plugin_selected then
+				selected_plugin = plugin.name
+				local text = plugin.name .. NEWLINE
+				text = text .. "by " .. (plugin.author or "Unknown") .. NEWLINE .. NEWLINE
+				if plugin.description then
+					local desc = plugin.description
+					desc = desc:gsub('\n[\t ]*', NEWLINE) -- fix newlines and remove line-leading whitespace
+					desc = desc:match( "^%s*(.-)%s*$" ) -- remove string-leading and -trailing whitespace
+					text = text .. desc
+				end
+				forms.settext(info_box, text)
+			end
+
+			local plugin_enabled = forms.ischecked(plugin._ui._enabled)
+			if plugin_enabled then
+				enabled_list = enabled_list .. ", " .. plugin.name
+				enabled_count = enabled_count + 1
+			end
+			forms.setproperty(plugin._ui._enabled, "Visible", plugin_selected)
+			for _,ui in ipairs(plugin._ui) do
+				forms.setproperty(ui, "Visible", plugin_selected and plugin_enabled)
+			end
+		end
+
+		forms.settext(enabled_label, string.format("Enabled Plugins (%d): %s", enabled_count, enabled_list:sub(3)))
+	end
+
+	function correct_enabled_misclick()
+		if forms.gettext(plugin_combo) ~= selected_plugin then
+			local prev_plugin = plugin_map[selected_plugin]
+			local curr_plugin = plugin_map[forms.gettext(plugin_combo)]
+
+			local target_state = forms.ischecked(prev_plugin._ui._enabled)
+			forms.setproperty(prev_plugin._ui._enabled, "Checked", not target_state)
+			forms.setproperty(curr_plugin._ui._enabled, "Checked", target_state)
+		end
+		update_plugins()
+	end
+
+	local plugin_names = {'[ Choose a Plugin ]'}
+	for _,plugin in ipairs(plugins) do
+		local name = plugin.name
+		table.insert(plugin_names, name)
+		plugin_map[name] = plugin
+
+		setup_plugin_settings(plugin_window, SETTINGS_X, plugin)
+		plugin._ui._enabled = forms.checkbox(plugin_window, "Enabled", SETTINGS_X, 10)
+		forms.setproperty(plugin._ui._enabled, "Visible", false)
+		forms.setproperty(plugin._ui._enabled, "Width", 330)
+		forms.setproperty(plugin._ui._enabled, "Checked", plugin._enabled)
+		forms.addclick(plugin._ui._enabled, correct_enabled_misclick)
+
+		for _,ui in ipairs(plugin._ui) do
+			forms.setproperty(ui, "Visible", false)
+		end
+	end
+
+	plugin_combo = forms.dropdown(plugin_window, plugin_names, 10, 10, 280, 20)
+	forms.button(plugin_window, "Select", update_plugins, 300, 10, 60, 22)
+
+	info_box = forms.textbox(plugin_window, "", 350, 450, nil, 10, 40, true, false, "Vertical")
+	forms.setproperty(info_box, "ReadOnly", true)
+
+	enabled_label = forms.label(plugin_window, "", 10, 500, 665, 20)
+	forms.button(plugin_window, "Save and Close", save_plugin_settings, 520, 530, 150, 20)
+
+	update_plugins()
+	return plugin_window
+end
+
 function module.initial_setup(callback)
-	local form, resume, start_btn
+	local setup_window, resume, start_btn
 	local seed_text, min_text, max_text
-	local mode_combo, hk_complete, plugin_combo
+	local mode_combo, hk_complete, plugin_label
+	local plugin_window = -1
 
-	local plugins_table = {'[None]'}
-	local plugins_meta = {}
-
+	local plugins = {}
 	for _,filename in ipairs(get_dir_contents(PLUGINS_FOLDER)) do
 		-- ignore non-lua files
 		if ends_with(filename, '.lua') then
 			local pname = filename:sub(1, #filename-4)
-			local plugin = require(PLUGINS_FOLDER .. '.' .. pname)
-
-			table.insert(plugins_table, plugin.name)
-			plugins_meta[plugin.name] = pname
+			local pmodule = require(PLUGINS_FOLDER .. '.' .. pname)
+			pmodule._enabled = false
+			pmodule._module = pname
+			table.insert(plugins, pmodule)
 		end
 	end
 
 	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
-	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed (Alphabetical) Order'] = 0}
+	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0}
 
 	-- I believe none of these conflict with default Bizhawk hotkeys
 	local HOTKEY_OPTIONS = {
@@ -33,106 +239,11 @@ function module.initial_setup(callback)
 	}
 
 	function start_handler()
-		local setup = not forms.ischecked(resume)
-		if setup then save_new_settings() end
+		if not forms.ischecked(resume) then save_new_settings() end
+		get_games_list(true) -- force refresh of the games list
 
-		forms.destroy(form)
-		plugin_setup(config.plugins, 1)
-	end
-
-	function create_plugin_settings_window(plugin, plist, px)
-		if plugin == nil or #(plugin.settings or {}) == 0 then
-			return plugin_setup(plist, px+1)
-		end
-
-		local form = forms.newform(340, 110 + 30 * #plugin.settings, "Plugin Setup")
-		forms.label(form, 'Plugin Setup for ' .. plugin.name, 10, 13, 310, 20)
-
-		local SETTINGS_TYPES =
-		{
-			['boolean'] = {
-				make = function(setting, y)
-					setting.input = forms.checkbox(form, setting.label, 10, y)
-					if setting.default then forms.setproperty(setting.input, "Checked", true) end
-					forms.setproperty(setting.input, "Width", 330)
-				end,
-				getData = function(setting) return forms.ischecked(setting.input) end,
-			},
-			['romlist'] = {
-				make = function(setting, y)
-					setting.input = forms.dropdown(form, get_games_list(), 10, y, 200, 20)
-					forms.label(form, setting.label, 215, y+3, 100, 20)
-				end,
-				getData = function(setting) return forms.gettext(setting.input) end,
-			},
-			['file'] = {
-				make = function(setting, y)
-					local click = function()
-						setting._response = forms.openfile(setting.filename,
-							setting.directory, setting.filter) or setting._response
-						forms.settext(setting.input, setting._response)
-					end
-					setting.input = forms.button(form, "[ Select File ]", click, 10, y, 200, 20)
-					forms.label(form, setting.label, 215, y+3, 100, 20)
-				end,
-				getData = function(setting) return setting._response or nil end,
-			},
-			['select'] = {
-				make = function(setting, y)
-					setting.input = forms.dropdown(form, setting.options, 10, y, 150, 20)
-					if setting.default then forms.settext(setting.input, setting.default) end
-					forms.label(form, setting.label, 165, y+3, 150, 20)
-				end,
-				getData = function(setting) return forms.gettext(setting.input) end,
-			},
-			['text'] = {
-				make = function(setting, y)
-					setting.input = forms.textbox(form, "", 150, 20, nil, 10, y)
-					if setting.default then forms.settext(setting.input, setting.default) end
-					forms.label(form, setting.label, 165, y+3, 150, 20)
-				end,
-				getData = function(setting) return forms.gettext(setting.input) end,
-			},
-			['number'] = {
-				make = function(setting, y)
-					setting.input = forms.textbox(form, "", 150, 20, setting.datatype, 10, y)
-					if setting.default then forms.settext(setting.input, setting.default) end
-					forms.label(form, setting.label, 165, y+3, 150, 20)
-				end,
-				getData = function(setting) return tonumber(forms.gettext(setting.input) or "0") end,
-			},
-			['info'] = {
-				make = function(setting, y)
-					forms.label(form, setting.text, 10, y+3, 305, 20)
-				end,
-			},
-		}
-
-		local y = 40
-		for _,setting in ipairs(plugin.settings) do
-			local meta = SETTINGS_TYPES[setting.type:lower()]
-			if meta ~= nil then meta.make(setting, y); y = y + 30 end
-		end
-
-		local next_fn = function()
-			for _,setting in ipairs(plugin.settings) do
-				local meta = SETTINGS_TYPES[setting.type:lower()]
-				if meta ~= nil and setting.name ~= nil and meta.getData ~= nil then
-					config.plugin_settings[setting.name] = meta.getData(setting)
-				end
-			end
-
-			forms.destroy(form)
-			plugin_setup(plist, px+1)
-		end
-
-		local save = forms.button(form, "Save Settings", next_fn, 160, y, 150, 20)
-	end
-
-	function plugin_setup(plist, px)
-		if px > #plist then return callback() end
-		local plugin = require(PLUGINS_FOLDER .. '.' .. plist[px])
-		create_plugin_settings_window(plugin, plist, px)
+		forms.destroy(setup_window)
+		callback()
 	end
 
 	function save_new_settings()
@@ -151,12 +262,16 @@ function module.initial_setup(callback)
 		config.completed_games = {}
 
 		config.plugins = {}
-		config.plugin_settings = {}
-		config.plugin_state = {}
-
-		local selected_plugin = forms.gettext(plugin_combo)
-		if selected_plugin ~= '[None]' then
-			table.insert(config.plugins, plugins_meta[selected_plugin])
+		for _,plugin in ipairs(plugins) do
+			if plugin._enabled then
+				local plugin_data = { ['state']={}, ['settings']={} }
+				for _,setting in ipairs(plugin.settings) do
+					if setting.name ~= nil and setting._value ~= nil then
+						plugin_data.settings[setting.name] = setting._value
+					end
+				end
+				config.plugins[plugin._module] = plugin_data
+			end
 		end
 
 		-- internal information for output
@@ -166,6 +281,10 @@ function module.initial_setup(callback)
 		config.game_swaps = {}
 	end
 
+	function main_cleanup()
+		forms.destroy(plugin_window)
+	end
+
 	function random_seed()
 		math.randomseed(os.time() + os.clock()*1000)
 		for i = 0, 1000 do math.random() end
@@ -173,20 +292,20 @@ function module.initial_setup(callback)
 	end
 
 	local y = 10
-	form = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup")
+	setup_window = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup", main_cleanup)
 
-	seed_text = forms.textbox(form, 0, 100, 20, "UNSIGNED", 10, y)
-	forms.label(form, "Seed", 115, y+3, 40, 20)
+	seed_text = forms.textbox(setup_window, 0, 100, 20, "UNSIGNED", 10, y)
+	forms.label(setup_window, "Seed", 115, y+3, 40, 20)
 	forms.settext(seed_text, config.seed or random_seed())
 
-	forms.button(form, "Randomize Seed", function()
+	forms.button(setup_window, "Randomize Seed", function()
 		forms.settext(seed_text, random_seed())
 	end, 160, y, 150, 20)
 	y = y + 30
 
-	min_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 10, y)
-	max_text = forms.textbox(form, 0, 48, 20, "UNSIGNED", 62, y)
-	forms.label(form, "Min/Max Swap Time (in seconds)", 115, y+3, 200, 20)
+	min_text = forms.textbox(setup_window, 0, 48, 20, "UNSIGNED", 10, y)
+	max_text = forms.textbox(setup_window, 0, 48, 20, "UNSIGNED", 62, y)
+	forms.label(setup_window, "Min/Max Swap Time (in seconds)", 115, y+3, 200, 20)
 	forms.settext(min_text, config.min_swap or 15)
 	forms.settext(max_text, config.max_swap or 45)
 	y = y + 30
@@ -196,23 +315,26 @@ function module.initial_setup(callback)
 		table.insert(_SWAP_MODES, k)
 	end
 
-	mode_combo = forms.dropdown(form, _SWAP_MODES, 10, y, 150, 20)
-	forms.label(form, "Shuffler Swap Order", 165, y+3, 150, 20)
+	mode_combo = forms.dropdown(setup_window, _SWAP_MODES, 10, y, 150, 20)
+	forms.label(setup_window, "Shuffler Swap Order", 165, y+3, 150, 20)
 	forms.settext(mode_combo, SWAP_MODES_DEFAULT)
 	y = y + 30
 
-	hk_complete = forms.dropdown(form, HOTKEY_OPTIONS, 10, y, 150, 20)
-	forms.label(form, "Hotkey: Game Completed", 165, y+3, 150, 20)
+	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
+	forms.label(setup_window, "Hotkey: Game Completed", 165, y+3, 150, 20)
 	forms.settext(hk_complete, config.hk_complete or 'Ctrl+Shift+End')
 	y = y + 30
 
-	plugin_combo = forms.dropdown(form, plugins_table, 10, y, 150, 20)
-	forms.label(form, "Game Plugin", 165, y+3, 150, 20)
+	forms.button(setup_window, "Setup Plugins", function()
+		forms.destroy(plugin_window)
+		plugin_window = module.make_plugin_window(plugins, plugin_label)
+	end, 10, y, 150, 20)
+	plugin_label = forms.label(setup_window, "No Plugins Loaded", 165, y+3, 150, 20)
 	y = y + 30
 
-	resume = forms.checkbox(form, "Resuming a run?", 10, y)
+	resume = forms.checkbox(setup_window, "Resuming a run?", 10, y)
 	forms.setproperty(resume, "Width", 150)
-	start_btn = forms.button(form, "Start New Shuffler", start_handler, 160, y, 150, 20)
+	start_btn = forms.button(setup_window, "Start New Shuffler", start_handler, 160, y, 150, 20)
 	y = y + 30
 
 	forms.addclick(resume, function()

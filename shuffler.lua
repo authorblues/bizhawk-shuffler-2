@@ -213,7 +213,8 @@ function swap_game()
 	if get_current_game() ~= nil then
 		for _,plugin in ipairs(plugins) do
 			if plugin.on_game_save ~= nil then
-				plugin.on_game_save(config.plugin_state, config.plugin_settings)
+				local pdata = config.plugins[plugin._module]
+				plugin.on_game_save(pdata.state, pdata.settings)
 			end
 		end
 	end
@@ -264,6 +265,9 @@ function strip_ext(filename)
 end
 
 function checkversion(reqversion)
+	-- nil string means no requirements, so of course true
+	if reqversion == nil then return true end
+
 	local curr, reqd = {}, {}
 	for x in string.gmatch(client.getversion(), "%d+") do
 		table.insert(curr, tonumber(x))
@@ -305,7 +309,8 @@ function mark_complete()
 	print(get_current_game() .. ' marked complete')
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_complete ~= nil then
-			plugin.on_complete(config.plugin_state, config.plugin_settings)
+			local pdata = config.plugins[plugin._module]
+			plugin.on_complete(pdata.state, pdata.settings)
 		end
 	end
 
@@ -324,9 +329,9 @@ end
 
 function complete_setup()
 	if config.plugins ~= nil then
-		for _,pmodpath in ipairs(config.plugins) do
+		for pmodpath,pdata in pairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
-			if pmodule.minversion and checkversion(pmodule.minversion) then
+			if checkversion(pmodule.minversion) then
 				print('Plugin loaded: ' .. pmodule.name)
 			else
 				print(pmodule.name .. ' requires Bizhawk version ' .. pmodule.minversion .. '+')
@@ -334,7 +339,7 @@ function complete_setup()
 				print("-- Please update your Bizhawk installation to use this plugin")
 			end
 			if pmodule ~= nil and pmodule.on_setup ~= nil then
-				pmodule.on_setup(config.plugin_state, config.plugin_settings)
+				pmodule.on_setup(pdata.state, pdata.settings)
 			end
 		end
 	end
@@ -367,8 +372,9 @@ if emu.getsystemid() ~= "NULL" then
 
 	-- load plugin configuration
 	if config.plugins ~= nil then
-		for _,pmodpath in ipairs(config.plugins) do
+		for pmodpath,pdata in pairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
+			pmodule._module = pmodpath
 			if pmodule ~= nil then table.insert(plugins, pmodule) end
 		end
 	end
@@ -393,7 +399,8 @@ if emu.getsystemid() ~= "NULL" then
 	update_next_swap_time()
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_game_load ~= nil then
-			plugin.on_game_load(config.plugin_state, config.plugin_settings)
+			local pdata = config.plugins[plugin._module]
+			plugin.on_game_load(pdata.state, pdata.settings)
 		end
 	end
 else
@@ -433,7 +440,8 @@ while true do
 		-- let plugins do operations each frame
 		for _,plugin in ipairs(plugins) do
 			if plugin.on_frame ~= nil then
-				plugin.on_frame(config.plugin_state, config.plugin_settings)
+				local pdata = config.plugins[plugin._module]
+				plugin.on_frame(pdata.state, pdata.settings)
 			end
 		end
 

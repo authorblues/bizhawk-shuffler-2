@@ -1,15 +1,13 @@
---[[
-	This plugin is designed for Sonic 1, 2, and 3 in a shuffle. This syncs the
-	ring count across all three games. They have very similar RAM maps, so the
-	addresses were the same for all three games, but if you needed to do different
-	things for each game, you could check rom hashes with gameinfo.getromhash()
---]]
-
 local plugin = {}
 
 plugin.name = "Sonic Ring Sync"
 plugin.author = "authorblues"
 plugin.settings = {}
+
+plugin.description =
+[[
+	This plugin is designed for Sonic 1, 2, and 3 in a shuffle. Ring counts should be synchronized across all three games.
+]]
 
 -- called once at the start
 function plugin.on_setup(data)

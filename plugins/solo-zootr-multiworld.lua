@@ -1,18 +1,3 @@
---[[
-	SOLO ZOOTR MULTIWORLD
-	Written by authorblues, with significant help from TestRunner
-
-	Create a multiworld randomizer seed and generate roms for all players.
-	Put them all in the games/ folder, and the plugin will shuffle like normal,
-	sending items between seeds when necessary.
-
-	Special Thanks:
-	WizzrobeZC for the initial suggestion
-	SpikeVegeta for streaming ZOOTR shuffler and making everybody
-		say "it would be cool if they shared items"
-	You for reading the source code of a plugin I wrote :^)
---]]
-
 local plugin = {}
 
 plugin.name = "Solo ZOOTR Multiworld"
@@ -26,10 +11,22 @@ plugin.settings =
 	{ name='othernames', type='select', label='Show Other Names As',
 		options={'Someone', 'Link #', 'World #'}, default='Someone' },
 	{ name='swapbutton', type='boolean', label='Force Game Swap on P2 L Button?' },
-
-	-- add an info block for the required settings
-	{ type='info', text=EXPANSION_WARNING, }
 }
+
+plugin.description =
+[[
+	Enable "Use Expansion Slot" under Bizhawk's N64 menu!
+	Enable "Use Expansion Slot" under Bizhawk's N64 menu!
+	Enable "Use Expansion Slot" under Bizhawk's N64 menu!
+
+	Thanks to TestRunner for significant help
+
+	Create a multiworld randomizer seed and generate roms for all players. Put them all in the games/ folder, and the plugin will shuffle like normal, sending items between seeds when necessary.
+
+	Special Thanks:
+	- WizzrobeZC for the initial suggestion
+	- Spikevegeta for streaming ZOOTR shuffler and making everybody say "it would be cool if they shared items"
+]]
 
 local rando_context
 local coop_context = -1

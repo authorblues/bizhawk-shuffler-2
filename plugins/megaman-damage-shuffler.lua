@@ -1,19 +1,3 @@
---[[
-	THE MEGA MAN DAMAGE SHUFFLER
-
-	The game swaps any time Megaman takes damage. Checks SHA-1 hashes of
-	different rom versions, so if you use a version of the rom that isn't
-	recognized, nothing special will happen in that game (no swap on hit).
-	This means other games can be mixed in.
-
-	Supports:
-	- Mega Man 1-6 NES
-	- Mega Man 7 SNES
-	- Mega Man X 1-3 SNES
-	- Rockman & Forte SNES
-	- Mega Man I-V GB
---]]
-
 local plugin = {}
 
 plugin.name = "Megaman Damage Shuffler"
@@ -23,6 +7,18 @@ plugin.settings =
 	-- enable this feature to have health and lives synchronized across games
 	--{ name='healthsync', type='boolean', label='Synchronize Health/Lives' },
 }
+
+plugin.description =
+[[
+	Automatically swaps games any time Megaman takes damage. Checks SHA-1 hashes of different rom versions, so if you use a version of the rom that isn't recognized, nothing special will happen in that game (no swap on hit).
+
+	Supports:
+	- Mega Man 1-6 NES
+	- Mega Man 7 SNES
+	- Mega Man X 1-3 SNES
+	- Rockman & Forte SNES
+	- Mega Man I-V GB
+]]
 
 local prevdata = {}
 
