@@ -17,6 +17,7 @@ PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
 PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
+DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
 MIN_BIZHAWK_VERSION = "2.6.1"
 
@@ -91,7 +92,7 @@ end
 
 -- returns a table containing all files in a given directory
 function get_dir_contents(dir, tmp, force)
-	local TEMP_FILE = tmp or 'shuffler-src/.file-list.txt'
+	local TEMP_FILE = tmp or DEFAULT_CMD_OUTPUT
 	if force ~= false or not path_exists(TEMP_FILE) then
 		local cmd = 'ls ' .. dir .. ' > ' .. TEMP_FILE
 		if PLATFORM == 'WIN' then
@@ -327,6 +328,19 @@ function mark_complete()
 	end
 end
 
+function cwd()
+	local cmd = 'pwd > ' .. DEFAULT_CMD_OUTPUT
+	if PLATFORM == 'WIN' then
+		cmd = 'cd > ' .. DEFAULT_CMD_OUTPUT
+	end
+	os.execute(cmd)
+
+	local fp = io.open(DEFAULT_CMD_OUTPUT, 'r')
+	local resp = fp:read("*all")
+	fp:close()
+	return resp:match( "^%s*(.-)%s*$" )
+end
+
 function complete_setup()
 	if config.plugins ~= nil then
 		for pmodpath,pdata in pairs(config.plugins) do
@@ -345,6 +359,15 @@ function complete_setup()
 	end
 
 	local games = get_games_list(true) -- force refresh of the games list
+	if #games == 0 then
+		local sep = '/'
+		if PLATFORM == 'WIN' then sep = '\\' end
+
+		print('No games found in the expected directory. Did you put them somewhere else?')
+		if cwd ~= nil then print(string.format("Expected: %s%s%s", cwd(), sep, GAMES_FOLDER)) end
+		return
+	end
+
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config.nseed)
 
