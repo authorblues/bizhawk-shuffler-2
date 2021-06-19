@@ -24,7 +24,10 @@ function module.make_plugin_window(plugins, main_plugin_label)
 		},
 		['romlist'] = {
 			make = function(plugin, win, setting, x, y)
-				setting.input = forms.dropdown(win, get_games_list(), x, y, 200, 20)
+				local games_list = get_games_list()
+				table.insert(games_list, "")
+
+				setting.input = forms.dropdown(win, games_list, x, y, 200, 20)
 				local label = forms.label(win, setting.label, x+205, y+3, 100, 20)
 				if setting._value then forms.settext(setting.input, setting._value) end
 
