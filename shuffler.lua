@@ -170,8 +170,8 @@ function file_exists(f)
 end
 
 -- we don't load the savestate here because (for some unbelievably f***ed up reason),
--- client.openrom() causes the whole script to reload, forcing us to use userdata
--- storage to determine if this is the initial execution of the script, or a reload
+-- client.openrom() causes the whole script to reload, forcing us to use a convoluted
+-- method to determine if this is the initial execution of the script, or a reload
 -- caused by openrom(). in any case, loading the savestate here seems to run into
 -- a race condition, so we load the savestate at the beginning of the reloaded script
 function load_game(g)
