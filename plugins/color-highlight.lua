@@ -65,7 +65,6 @@ function plugin.on_game_load(data, settings)
 end
 
 function plugin.on_frame(data, settings)
-	gui.clearGraphics()
 	gui.drawBox(0, 0, client.screenwidth(), client.screenheight(), 0, fillcolor, "client")
 end
 
