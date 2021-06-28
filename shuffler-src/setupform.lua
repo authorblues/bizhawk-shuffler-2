@@ -111,6 +111,9 @@ function module.make_plugin_window(plugins, main_plugin_label)
 
 	local plugin_window = forms.newform(700, 600, "Plugins Setup")
 
+	local plugin_error_text = forms.label(plugin_window, "", SETTINGS_X, 43, 300, 200)
+	forms.setproperty(plugin_error_text, "Visible", false)
+
 	function save_plugin_settings()
 		local enabled_count = 0
 		for _,plugin in ipairs(plugins) do
@@ -151,6 +154,16 @@ function module.make_plugin_window(plugins, main_plugin_label)
 					text = text .. desc
 				end
 				forms.settext(info_box, text)
+
+				local bad_version = not checkversion(plugin.minversion)
+				if bad_version then
+					forms.setproperty(plugin._ui._enabled, "Enabled", false)
+					forms.setproperty(plugin._ui._enabled, "Checked", false)
+					forms.settext(plugin_error_text,
+						string.format("This plugin is designed for Bizhawk version %s+\r\nYou are using Bizhawk version %s",
+							plugin.minversion or MIN_BIZHAWK_VERSION, client.getversion()))
+				end
+				forms.setproperty(plugin_error_text, "Visible", bad_version)
 			end
 
 			local plugin_enabled = forms.ischecked(plugin._ui._enabled)

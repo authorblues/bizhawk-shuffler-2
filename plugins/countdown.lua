@@ -2,6 +2,7 @@ local plugin = {}
 
 plugin.name = "Countdown to Swap"
 plugin.author = "authorblues"
+plugin.minversion = "2.6.2"
 plugin.settings =
 {
 	{ name='threshold', type='number', label='Threshold (in seconds)', default=3 },
