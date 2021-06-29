@@ -419,6 +419,9 @@ if emu.getsystemid() ~= "NULL" then
 	-- update game name
 	write_data('output-info/current-game.txt', strip_ext(get_current_game()))
 
+	gui.use_surface('client')
+	gui.clearGraphics()
+
 	update_next_swap_time()
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_game_load ~= nil then
