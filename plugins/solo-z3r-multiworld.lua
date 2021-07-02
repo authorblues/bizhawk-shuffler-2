@@ -142,7 +142,7 @@ function plugin.on_frame(data, settings)
 		if recv_count < queue_len and mainmemory.read_s8(incoming_item_addr) == 0 then
 			local obj = data.itemqueues[this_player_id][recv_count+1]
 			mainmemory.write_s8(incoming_item_addr, obj.item)
-			mainmemory.write_s8(incoming_player_addr, obj.player)
+			mainmemory.write_s8(incoming_player_addr, obj.src)
 			mainmemory.write_s16_le(recv_count_addr, recv_count+1)
 		end
 	elseif get_game_mode() == 0x00 then
