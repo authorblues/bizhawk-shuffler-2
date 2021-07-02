@@ -13,10 +13,10 @@ plugin.description =
 
 	Create a multiworld randomizer seed and generate roms for all players. Put them all in the games/ folder, and the plugin will shuffle like normal, sending items between seeds when necessary.
 
-	Special thanks to Aerinon for offering significant help to get this working. Thanks also to Ankou for helping me sort out weird SNES+Bizhawk issues.
+	Special thanks to Aerinon for providing significant help to get this working. Thanks also to Ankou for helping me sort out weird SNES+Bizhawk issues.
 ]]
 
-local this_player_id
+local this_player_id = -1
 
 local rom_name_addr = 0x7FC0 -- 15 bytes
 local outgoing_item_addr = 0x02D8
@@ -25,49 +25,19 @@ local incoming_item_addr = 0xF4D2
 local incoming_player_addr = 0xF4D3
 local recv_count_addr = 0xF4F0 -- 2 bytes
 
-local is_game_loaded = {
-    [0x00] = false, --Triforce / Zelda startup screens
-    [0x01] = false, --Game Select screen
-    [0x02] = false, --Copy Player Mode
-    [0x03] = false, --Erase Player Mode
-    [0x04] = false, --Name Player Mode
-    [0x05] = false, --Loading Game Mode
-    [0x06] = true,  --Pre Dungeon Mode
-    [0x07] = true,  --Dungeon Mode
-    [0x08] = true,  --Pre Overworld Mode
-    [0x09] = true,  --Overworld Mode
-    [0x0A] = true,  --Pre Overworld Mode (special overworld)
-    [0x0B] = true,  --Overworld Mode (special overworld)
-    [0x0C] = true,  --???? I think we can declare this one unused, almost with complete certainty.
-    [0x0D] = true,  --Blank Screen
-    [0x0E] = true,  --Text Mode/Item Screen/Map
-    [0x0F] = true,  --Closing Spotlight
-    [0x10] = true,  --Opening Spotlight
-    [0x11] = true,  --Happens when you fall into a hole from the OW.
-    [0x12] = true,  --Death Mode
-    [0x13] = true,  --Boss Victory Mode (refills stats)
-    [0x14] = false, --History Mode (Title Screen Demo)
-    [0x15] = true,  --Module for Magic Mirror
-    [0x16] = true,  --Module for refilling stats after boss.
-    [0x17] = false, --Restart mode (save and quit)
-    [0x18] = true,  --Ganon exits from Agahnim's body. Chase Mode.
-    [0x19] = true,  --Triforce Room scene
-    [0x1A] = false, --End sequence
-    [0x1B] = false, --Screen to select where to start from (House, sanctuary, etc.)
-}
+local SRAM_DATA_START = 0xF000
+local SRAM_DATA_SIZE = 0x3E4
+
+local prev_sram_data = nil
 
 local function is_normal_gameplay()
-	local game_mode = mainmemory.read_s8(0x0010)
-	return is_game_loaded[game_mode]
+	local g = mainmemory.read_s8(0x0010)
+	return g == 0x07 or g == 0x09 or g == 0x0B
 end
 
-function plugin.on_setup(data, settings)
-	data.itemqueues = data.itemqueues or {}
-end
-
-function read_BCD_to_delimiter(addr, stop)
+local function read_BCD_to_delimiter(addr, stop)
 	local result = 0
-	while 1 do
+	for i = 1,20 do
 		local value = memory.read_s8(addr, "CARTROM")
 		if value == stop then break end
 		result = (result * 10) + (value - 0x30)
@@ -75,6 +45,52 @@ function read_BCD_to_delimiter(addr, stop)
 	end
 
 	return result, addr+1
+end
+
+local function get_sram_data()
+	return mainmemory.readbyterange(SRAM_DATA_START, SRAM_DATA_SIZE)
+end
+
+local function get_changes(old, new)
+	local changes = {}
+	for addr,oldvalue in pairs(old) do
+		local diff = bit.bxor(oldvalue, new[addr])
+		if diff ~= 0 then
+			local cstr = string.format('%04x,%02x', addr, diff)
+			table.insert(changes, cstr)
+		end
+	end
+	return table.concat(changes, ';')
+end
+
+-- this assumes no values are anything other than primatives
+local function table_equal(t1, t2)
+	for k,v1 in pairs(t1) do
+		local v2 = t2[k]
+		-- if there isn't a matching value or types differ
+		if v2 == nil or type(v1) ~= type(v2) then
+			return false
+		end
+		-- if the primative values don't match
+		if v1 ~= v2 then return false end
+	end
+	return true
+end
+
+local function add_item_if_unique(list, item)
+	for _,v in ipairs(list) do
+		if table_equal(v, item) then
+			return false
+		end
+	end
+
+	table.insert(list, item)
+	return true
+end
+
+function plugin.on_setup(data, settings)
+	data.itemqueues = data.itemqueues or {}
+	data.queuedsend = data.queuedsend or {}
 end
 
 function plugin.on_game_load(data, settings)
@@ -87,10 +103,14 @@ function plugin.on_game_load(data, settings)
 	this_player_id = read_BCD_to_delimiter(addr, 0x5F)
 
 	data.itemqueues[this_player_id] = data.itemqueues[this_player_id] or {}
+	data.queuedsend[this_player_id] = data.queuedsend[this_player_id] or {}
+	prev_sram_data = get_sram_data()
 end
 
 function plugin.on_frame(data, settings)
 	local player_id, item_id
+	local sram_data = get_sram_data()
+
 	if is_normal_gameplay() then
 		player_id = mainmemory.read_s8(outgoing_player_addr)
 		item_id = mainmemory.read_s8(outgoing_item_addr)
@@ -99,9 +119,7 @@ function plugin.on_frame(data, settings)
 		data.prev_player = player_id
 
 		if player_id ~= 0 and prev_player == 0 then
-			data.itemqueues[player_id] = data.itemqueues[player_id] or {}
-			table.insert(data.itemqueues[player_id], {item=item_id, player=this_player_id})
-
+			table.insert(data.queuedsend[this_player_id], {item=item_id, src=this_player_id, target=player_id})
 			mainmemory.write_s8(outgoing_player_addr, 0)
 			data.prev_player = 0
 		end
@@ -120,6 +138,17 @@ function plugin.on_frame(data, settings)
 			mainmemory.write_s16_le(recv_count_addr, recv_count+1)
 		end
 	end
+
+	-- when SRAM changes arrive and a
+	local changes = get_changes(prev_sram_data, sram_data)
+	if #data.queuedsend[this_player_id] > 0 and #changes > 0 then
+		local item = table.remove(data.queuedsend[this_player_id], 1)
+		item.meta = changes -- add the sram changes to the object to identify repeats
+		data.itemqueues[item.target] = data.itemqueues[item.target] or {}
+		add_item_if_unique(data.itemqueues[item.target], item)
+	end
+
+	prev_sram_data = sram_data
 end
 
 return plugin
