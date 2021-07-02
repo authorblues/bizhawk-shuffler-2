@@ -30,11 +30,17 @@ local SRAM_DATA_SIZE = 0x3E4
 
 local prev_sram_data = nil
 
+local function get_game_mode()
+	return mainmemory.read_s8(0x0010)
+end
+
 local function is_normal_gameplay()
-	local g = mainmemory.read_s8(0x0010)
+	local g = get_game_mode()
 	return g == 0x07 or g == 0x09 or g == 0x0B
 end
 
+-- takes an address and a delimiter as parameters
+-- returns integer equivalent of BCD value and address following delimiter
 local function read_BCD_to_delimiter(addr, stop)
 	local result = 0
 	for i = 1,20 do
@@ -51,6 +57,7 @@ local function get_sram_data()
 	return mainmemory.readbyterange(SRAM_DATA_START, SRAM_DATA_SIZE)
 end
 
+-- returns sram changes as a consistent, serialized string
 local function get_changes(old, new)
 	local changes = {}
 	for addr,oldvalue in pairs(old) do
@@ -63,7 +70,8 @@ local function get_changes(old, new)
 	return table.concat(changes, ';')
 end
 
--- this assumes no values are anything other than primatives
+-- this assumes no values are anything other than primitive and
+-- are guaranteed to have the same keys (this is not a general purpose function)
 local function table_equal(t1, t2)
 	for k,v1 in pairs(t1) do
 		local v2 = t2[k]
@@ -71,7 +79,7 @@ local function table_equal(t1, t2)
 		if v2 == nil or type(v1) ~= type(v2) then
 			return false
 		end
-		-- if the primative values don't match
+		-- if the primitive values don't match
 		if v1 ~= v2 then return false end
 	end
 	return true
@@ -137,9 +145,14 @@ function plugin.on_frame(data, settings)
 			mainmemory.write_s8(incoming_player_addr, obj.player)
 			mainmemory.write_s16_le(recv_count_addr, recv_count+1)
 		end
+	elseif get_game_mode() == 0x00 then
+		-- if we somehow got to the title screen (reset?) with items queued to
+		-- be sent, but we never saw the sram changes, the player was very
+		-- naughty and tried to create a race condition. very naughty! bad player!
+		data.queuedsend[this_player_id] = {}
 	end
 
-	-- when SRAM changes arrive and a
+	-- when SRAM changes arrive and there are items queued to be sent, match them up
 	local changes = get_changes(prev_sram_data, sram_data)
 	if #data.queuedsend[this_player_id] > 0 and #changes > 0 then
 		local item = table.remove(data.queuedsend[this_player_id], 1)
