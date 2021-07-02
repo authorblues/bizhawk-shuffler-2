@@ -67,6 +67,7 @@ local function get_changes(old, new)
 			table.insert(changes, cstr)
 		end
 	end
+	table.sort(changes)
 	return table.concat(changes, ';')
 end
 
