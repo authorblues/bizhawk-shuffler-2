@@ -216,7 +216,7 @@ function module.make_plugin_window(plugins, main_plugin_label)
 	info_box = forms.textbox(plugin_window, "", 350, 450, nil, 10, 40, true, false, "Vertical")
 	forms.setproperty(info_box, "ReadOnly", true)
 
-	enabled_label = forms.label(plugin_window, "", 10, 500, 665, 20)
+	enabled_label = forms.label(plugin_window, "", 10, 500, 500, 50)
 	forms.button(plugin_window, "Save and Close", save_plugin_settings, 520, 530, 150, 20)
 
 	update_plugins()
