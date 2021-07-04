@@ -351,6 +351,7 @@ function complete_setup()
 				print(pmodule.name .. ' requires Bizhawk version ' .. pmodule.minversion .. '+')
 				print("-- Currently installed version: " .. client.getversion())
 				print("-- Please update your Bizhawk installation to use this plugin")
+				config.plugins[pmodpath] = nil
 			end
 			if pmodule ~= nil and pmodule.on_setup ~= nil then
 				pmodule.on_setup(pdata.state, pdata.settings)
