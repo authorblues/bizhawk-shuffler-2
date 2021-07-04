@@ -111,6 +111,9 @@ function get_dir_contents(dir, tmp, force)
 	return file_list
 end
 
+-- types of files to ignore in the games directory
+local IGNORED_FILE_EXTS = { '.msu', '.pcm' }
+
 -- get list of games
 function get_games_list(force)
 	local LIST_FILE = '.games-list.txt'
@@ -134,6 +137,12 @@ function get_games_list(force)
 			local primary = filename:sub(1, #filename-4)
 			table.insert(toremove, primary .. '.img')
 			table.insert(toremove, primary .. '.sub')
+		end
+
+		for _,ext in ipairs(IGNORED_FILE_EXTS) do
+			if ends_with(filename, ext) then
+				table.insert(toremove, filename)
+			end
 		end
 	end
 
