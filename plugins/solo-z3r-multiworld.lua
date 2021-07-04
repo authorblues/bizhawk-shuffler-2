@@ -154,12 +154,16 @@ function plugin.on_frame(data, settings)
 	end
 
 	-- when SRAM changes arrive and there are items queued to be sent, match them up
-	local changes = get_changes(prev_sram_data, sram_data)
-	if #data.queuedsend[this_player_id] > 0 and #changes > 0 then
-		local item = table.remove(data.queuedsend[this_player_id], 1)
-		item.meta = changes -- add the sram changes to the object to identify repeats
-		data.itemqueues[item.target] = data.itemqueues[item.target] or {}
-		add_item_if_unique(data.itemqueues[item.target], item)
+	if #data.queuedsend[this_player_id] > 0 then
+		-- calculate the changes only when there are items queued
+		-- this operation is expensive!
+		local changes = get_changes(prev_sram_data, sram_data)
+		if #changes > 0 then
+			local item = table.remove(data.queuedsend[this_player_id], 1)
+			item.meta = changes -- add the sram changes to the object to identify repeats
+			data.itemqueues[item.target] = data.itemqueues[item.target] or {}
+			add_item_if_unique(data.itemqueues[item.target], item)
+		end
 	end
 
 	prev_sram_data = sram_data
