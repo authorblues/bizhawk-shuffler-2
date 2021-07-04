@@ -20,6 +20,7 @@ STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
 MIN_BIZHAWK_VERSION = "2.6.1"
+RECOMMENDED_LUA_CORE = "LuaInterface"
 
 -- check if folder exists
 function path_exists(p)
@@ -440,6 +441,11 @@ else
 		print("Expected Bizhawk version " .. MIN_BIZHAWK_VERSION .. "+")
 		print("-- Currently installed version: " .. client.getversion())
 		print("-- Please update your Bizhawk installation")
+	end
+
+	if client.get_lua_engine() ~= RECOMMENDED_LUA_CORE then
+		print("[!] It is recommended to use the " .. RECOMMENDED_LUA_CORE ..
+			" core (currently using " .. client.get_lua_engine() .. ")")
 	end
 end
 
