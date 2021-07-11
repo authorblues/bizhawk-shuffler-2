@@ -378,7 +378,7 @@ function complete_setup()
 	end
 
 	save_config(config, 'shuffler-src/config.lua')
-	math.randomseed(config.nseed)
+	math.randomseed(config.nseed or config.seed)
 
 	if config.frame_count == 0 then
 		print('deleting savestates!')
@@ -431,7 +431,9 @@ if emu.getsystemid() ~= "NULL" then
 	gui.use_surface('client')
 	gui.clearGraphics()
 
+	math.randomseed(config.nseed or config.seed)
 	update_next_swap_time()
+
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_game_load ~= nil then
 			local pdata = config.plugins[plugin._module]
