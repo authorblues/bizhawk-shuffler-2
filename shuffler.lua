@@ -388,8 +388,11 @@ function complete_setup()
 	-- whatever the current state is, update the output file
 	output_completed()
 
-	-- load first game
-	swap_game()
+	-- if there is already a listed current game, this is a resumed session
+	-- otherwise, call swap_game() to setup for the first game load
+	if config.current_game ~= nil then
+		load_game(config.current_game)
+	else swap_game() end
 end
 
 -- load primary configuration
