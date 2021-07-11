@@ -302,9 +302,8 @@ function module.initial_setup(callback)
 	end
 
 	function random_seed()
-		math.randomseed(os.time() + os.clock()*1000)
-		for i = 0, 1000 do math.random() end
-		return math.random(999999999)
+		math.randomseed(os.time() + os.clock()*100000)
+		return math.random(MAX_INTEGER)
 	end
 
 	local y = 10

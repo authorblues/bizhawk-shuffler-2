@@ -21,6 +21,7 @@ DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
 MIN_BIZHAWK_VERSION = "2.6.1"
 RECOMMENDED_LUA_CORE = "LuaInterface"
+MAX_INTEGER = 999999999
 
 -- check if folder exists
 function path_exists(p)
@@ -243,7 +244,7 @@ function swap_game()
 	if emu.getsystemid() ~= "NULL" then emu.frameadvance() end
 
 	-- save an updated randomizer seed
-	config.nseed = math.random(9999999999)
+	config.nseed = math.random(MAX_INTEGER)
 	save_config(config, 'shuffler-src/config.lua')
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
