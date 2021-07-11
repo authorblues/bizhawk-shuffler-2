@@ -162,14 +162,9 @@ function delete_savestates()
 	os.execute(cmd)
 end
 
-function get_current_game()
-	return config.current_game or nil
-end
-
 function save_current_game()
-	local g = get_current_game()
-	if g ~= nil then
-		savestate.save(STATES_FOLDER .. '/' .. g .. '.state')
+	if config.current_game ~= nil then
+		savestate.save(string.format("%s/%s.state", STATES_FOLDER, config.current_game))
 	end
 end
 
@@ -216,13 +211,13 @@ function swap_game()
 	-- (you might think we should just disable the timer at this point, but this
 	-- allows new games to be added mid-run without the timer being disabled)
 	local next_game = get_next_game()
-	if next_game == get_current_game() then
+	if next_game == config.current_game then
 		update_next_swap_time()
 		return false
 	end
 
 	-- swap_game() is used for the first load, so check if a game is loaded
-	if get_current_game() ~= nil then
+	if config.current_game ~= nil then
 		for _,plugin in ipairs(plugins) do
 			if plugin.on_game_save ~= nil then
 				local pdata = config.plugins[plugin._module]
@@ -248,7 +243,7 @@ function swap_game()
 	save_config(config, 'shuffler-src/config.lua')
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
-	load_game(get_current_game())
+	load_game(config.current_game)
 	return true
 end
 
@@ -317,8 +312,8 @@ end
 
 function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
-	table.insert(config.completed_games, get_current_game())
-	print(get_current_game() .. ' marked complete')
+	table.insert(config.completed_games, config.current_game)
+	print(config.current_game .. ' marked complete')
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_complete ~= nil then
 			local pdata = config.plugins[plugin._module]
@@ -414,14 +409,14 @@ if emu.getsystemid() ~= "NULL" then
 		end
 	end
 
-	local state = STATES_FOLDER .. '/' .. get_current_game() .. '.state'
+	local state = STATES_FOLDER .. '/' .. config.current_game .. '.state'
 	if file_exists(state) then
 		savestate.load(state)
 	end
 
 	-- update swap counter for this game
-	local new_swaps = (config.game_swaps[get_current_game()] or 0) + 1
-	config.game_swaps[get_current_game()] = new_swaps
+	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
+	config.game_swaps[config.current_game] = new_swaps
 	write_data('output-info/current-swaps.txt', new_swaps)
 
 	-- update total swap counter
@@ -429,7 +424,7 @@ if emu.getsystemid() ~= "NULL" then
 	write_data('output-info/total-swaps.txt', config.total_swaps)
 
 	-- update game name
-	write_data('output-info/current-game.txt', strip_ext(get_current_game()))
+	write_data('output-info/current-game.txt', strip_ext(config.current_game))
 
 	gui.use_surface('client')
 	gui.clearGraphics()
@@ -473,8 +468,8 @@ while true do
 		frames_since_restart = frames_since_restart + 1
 
 		-- update the frame count specifically for the active game as well
-		local cgf = (config.game_frame_count[get_current_game()] or 0) + 1
-		config.game_frame_count[get_current_game()] = cgf
+		local cgf = (config.game_frame_count[config.current_game] or 0) + 1
+		config.game_frame_count[config.current_game] = cgf
 
 		-- save time info to files for OBS display
 		write_data('output-info/total-time.txt', frames_to_time(frame_count))
