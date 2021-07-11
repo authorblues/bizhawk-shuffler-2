@@ -203,14 +203,16 @@ function get_next_game()
 end
 
 -- save current game's savestate, backup config, and load new game
-function swap_game()
+function swap_game(next_game)
 	-- if a swap has already happened, don't call again
 	if not running then return false end
+
+	-- if no game provided, call get_next_game()
+	next_game = next_game or get_next_game()
 
 	-- if the game isn't changing, stop here and just update the timer
 	-- (you might think we should just disable the timer at this point, but this
 	-- allows new games to be added mid-run without the timer being disabled)
-	local next_game = get_next_game()
 	if next_game == config.current_game then
 		update_next_swap_time()
 		return false
