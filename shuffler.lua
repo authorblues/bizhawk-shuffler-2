@@ -200,7 +200,7 @@ function get_next_game()
 	-- check to make sure that all of the games correspond to actual
 	-- game files that can be opened
 	local all_exist = true
-	for i,game in ipairs(all_games) then
+	for i,game in ipairs(all_games) do
 		all_exist = all_exist and file_exists(GAMES_FOLDER .. '/' .. game)
 	end
 
@@ -449,8 +449,11 @@ if emu.getsystemid() ~= "NULL" then
 	-- update game name
 	write_data('output-info/current-game.txt', strip_ext(config.current_game))
 
-	gui.use_surface('client')
-	gui.clearGraphics()
+	-- this code just outright crashes on Bizhawk 2.6.1, go figure
+	if checkversion("2.6.2") then
+		gui.use_surface('client')
+		gui.clearGraphics()
+	end
 
 	math.randomseed(config.nseed or config.seed)
 	update_next_swap_time()
