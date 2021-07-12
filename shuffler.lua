@@ -197,6 +197,18 @@ function get_next_game()
 	local prev = config.current_game or nil
 	local all_games = get_games_list()
 
+	-- check to make sure that all of the games correspond to actual
+	-- game files that can be opened
+	local all_exist = true
+	for i,game in ipairs(all_games) then
+		all_exist = all_exist and file_exists(GAMES_FOLDER .. '/' .. game)
+	end
+
+	-- if any of the games are missing, force a refresh of the game list
+	if not all_exist then
+		all_games = get_games_list(true)
+	end
+
 	-- shuffle_index == -1 represents fully random shuffle order
 	if config.shuffle_index < 0 then
 		-- remove the currently loaded game and see if there are any other options
