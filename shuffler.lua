@@ -181,7 +181,10 @@ end
 -- caused by openrom(). in any case, loading the savestate here seems to run into
 -- a race condition, so we load the savestate at the beginning of the reloaded script
 function load_game(g)
-	client.openrom(GAMES_FOLDER .. '/' .. g)
+	local filename = GAMES_FOLDER .. '/' .. g
+	if not file_exists(filename) then return false end
+	client.openrom(filename)
+	return true
 end
 
 function get_next_game()
@@ -245,8 +248,7 @@ function swap_game(next_game)
 	save_config(config, 'shuffler-src/config.lua')
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
-	load_game(config.current_game)
-	return true
+	return load_game(config.current_game)
 end
 
 function swap_game_delay(f)
