@@ -162,9 +162,15 @@ function delete_savestates()
 	os.execute(cmd)
 end
 
+function get_savestate_file(game)
+	game = game or config.current_game
+	if game == nil then error('no game specified for savestate file') end
+	return string.format("%s/%s.state", STATES_FOLDER, game)
+end
+
 function save_current_game()
 	if config.current_game ~= nil then
-		savestate.save(string.format("%s/%s.state", STATES_FOLDER, config.current_game))
+		savestate.save(get_savestate_file())
 	end
 end
 
@@ -416,10 +422,8 @@ if emu.getsystemid() ~= "NULL" then
 		end
 	end
 
-	local state = STATES_FOLDER .. '/' .. config.current_game .. '.state'
-	if file_exists(state) then
-		savestate.load(state)
-	end
+	local state = get_savestate_file()
+	if file_exists(state) then savestate.load(state) end
 
 	-- update swap counter for this game
 	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
