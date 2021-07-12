@@ -33,7 +33,7 @@ end
 
 function make_dir(p)
 	if path_exists(p .. '/') then return end
-	os.execute('mkdir "' .. p .. '"')
+	os.execute(string.format('mkdir "%s"', p))
 end
 
 -- folders needed for the shuffler to run
@@ -54,12 +54,12 @@ function dump(o)
 		if type(o) == 'table' then
 			local s = ''
 			for k,v in pairs(o) do
-				if type(k) ~= 'number' then k = '"'..k..'"' end
-				s = s..a..'['..k..'] = '.._dump(v, '', '')..','..b
+				if type(k) ~= 'number' then k = string.format('"%s"', k) end
+				s = s..a..string.format('[%s] = %s,', k, _dump(v, "", ""))..b
 			end
 			return '{'..b..s..'}'..b
 		elseif type(o) == 'string' then
-			return '"' .. o .. '"'
+			return string.format('"%s"', o)
 		else
 			return tostring(o)
 		end
@@ -96,9 +96,9 @@ end
 function get_dir_contents(dir, tmp, force)
 	local TEMP_FILE = tmp or DEFAULT_CMD_OUTPUT
 	if force ~= false or not path_exists(TEMP_FILE) then
-		local cmd = 'ls ' .. dir .. ' > ' .. TEMP_FILE
+		local cmd = string.format('ls "%s" > %s', dir, TEMP_FILE)
 		if PLATFORM == 'WIN' then
-			cmd = 'dir ' .. dir .. ' /B > ' .. TEMP_FILE
+			cmd = string.format('dir "%s" /B > %s', dir, TEMP_FILE)
 		end
 		os.execute(cmd)
 	end
@@ -155,9 +155,9 @@ end
 
 -- delete savestates folder
 function delete_savestates()
-	local cmd = 'rm -rf "' .. STATES_FOLDER .. '"'
+	local cmd = string.format('rm -rf "%s"', STATES_FOLDER)
 	if PLATFORM == 'WIN' then
-		cmd = 'rmdir "' .. STATES_FOLDER .. '" /S /Q'
+		cmd = string.format('rmdir "%s" /S /Q', STATES_FOLDER)
 	end
 	os.execute(cmd)
 end
@@ -339,9 +339,9 @@ function mark_complete()
 end
 
 function cwd()
-	local cmd = 'pwd > ' .. DEFAULT_CMD_OUTPUT
+	local cmd = string.format('pwd > %s', DEFAULT_CMD_OUTPUT)
 	if PLATFORM == 'WIN' then
-		cmd = 'cd > ' .. DEFAULT_CMD_OUTPUT
+		cmd = string.format('cd > %s', DEFAULT_CMD_OUTPUT)
 	end
 	os.execute(cmd)
 
@@ -358,7 +358,7 @@ function complete_setup()
 			if checkversion(pmodule.minversion) then
 				print('Plugin loaded: ' .. pmodule.name)
 			else
-				print(pmodule.name .. ' requires Bizhawk version ' .. pmodule.minversion .. '+')
+				print(string.format('%s requires Bizhawk version %s+', pmodule.name, pmodule.minversion))
 				print("-- Currently installed version: " .. client.getversion())
 				print("-- Please update your Bizhawk installation to use this plugin")
 				config.plugins[pmodpath] = nil
@@ -452,14 +452,14 @@ else
 		local setup = require('shuffler-src.setupform')
 		setup.initial_setup(complete_setup)
 	else
-		print("Expected Bizhawk version " .. MIN_BIZHAWK_VERSION .. "+")
+		print(string.format("Expected Bizhawk version %s+", MIN_BIZHAWK_VERSION))
 		print("-- Currently installed version: " .. client.getversion())
 		print("-- Please update your Bizhawk installation")
 	end
 
 	if client.get_lua_engine() ~= RECOMMENDED_LUA_CORE then
-		print("[!] It is recommended to use the " .. RECOMMENDED_LUA_CORE ..
-			" core (currently using " .. client.get_lua_engine() .. ")")
+		print(string.format("[!] It is recommended to use the %s core (currently using %s)",
+			RECOMMENDED_LUA_CORE, client.get_lua_engine()))
 	end
 end
 
