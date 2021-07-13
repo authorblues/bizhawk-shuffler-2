@@ -17,6 +17,7 @@ plugin.description =
 ]]
 
 local this_player_id = -1
+local this_seed = -1
 
 local rom_name_addr = 0x7FC0 -- 15 bytes
 local rom_name_pattern = { 0x45, 0x52, nil, nil, nil, 0x5F, nil, 0x5F, nil, 0x5F }
@@ -100,8 +101,7 @@ local function add_item_if_unique(list, item)
 end
 
 function plugin.on_setup(data, settings)
-	data.itemqueues = data.itemqueues or {}
-	data.queuedsend = data.queuedsend or {}
+	data.meta = data.meta or {}
 end
 
 function plugin.on_game_load(data, settings)
@@ -127,17 +127,22 @@ function plugin.on_game_load(data, settings)
 
 	protocol, addr = read_BCD_to_delimiter(addr, 0x5F)
 	team_id, addr = read_BCD_to_delimiter(addr, 0x5F)
-	this_player_id = read_BCD_to_delimiter(addr, 0x5F)
+	this_player_id, addr = read_BCD_to_delimiter(addr, 0x5F)
+	this_seed = read_BCD_to_delimiter(addr, 0x00)
 
-	data.itemqueues[this_player_id] = data.itemqueues[this_player_id] or {}
-	data.queuedsend[this_player_id] = data.queuedsend[this_player_id] or {}
 	prev_sram_data = get_sram_data()
+	data.meta[this_seed] = data.meta[this_seed] or {itemqueues={}, queuedsend={}}
+
+	local meta = data.meta[this_seed]
+	meta.itemqueues[this_player_id] = meta.itemqueues[this_player_id] or {}
+	meta.queuedsend[this_player_id] = meta.queuedsend[this_player_id] or {}
 end
 
 function plugin.on_frame(data, settings)
 	-- no player id means that the rom isn't Z3R
 	if this_player_id == -1 then return end
 
+	local meta = data.meta[this_seed]
 	local player_id, item_id
 	local sram_data = get_sram_data()
 
@@ -149,12 +154,13 @@ function plugin.on_frame(data, settings)
 		data.prev_player = player_id
 
 		if player_id ~= 0 and prev_player == 0 then
-			table.insert(data.queuedsend[this_player_id], {item=item_id, src=this_player_id, target=player_id})
+			table.insert(meta.queuedsend[this_player_id],
+				{item=item_id, src=this_player_id, target=player_id})
 			mainmemory.write_s8(outgoing_player_addr, 0)
 			data.prev_player = 0
 		end
 
-		local queue_len = #data.itemqueues[this_player_id]
+		local queue_len = #meta.itemqueues[this_player_id]
 		local recv_count = mainmemory.read_s16_le(recv_count_addr)
 		if mainmemory.read_s16_le(recv_count_addr) > queue_len then
 			mainmemory.write_s16_le(recv_count_addr, 0)
@@ -162,7 +168,7 @@ function plugin.on_frame(data, settings)
 		end
 
 		if recv_count < queue_len and mainmemory.read_s8(incoming_item_addr) == 0 then
-			local obj = data.itemqueues[this_player_id][recv_count+1]
+			local obj = meta.itemqueues[this_player_id][recv_count+1]
 			mainmemory.write_s8(incoming_item_addr, obj.item)
 			mainmemory.write_s8(incoming_player_addr, obj.src)
 			mainmemory.write_s16_le(recv_count_addr, recv_count+1)
@@ -171,19 +177,19 @@ function plugin.on_frame(data, settings)
 		-- if we somehow got to the title screen (reset?) with items queued to
 		-- be sent, but we never saw the sram changes, the player was very
 		-- naughty and tried to create a race condition. very naughty! bad player!
-		data.queuedsend[this_player_id] = {}
+		meta.queuedsend[this_player_id] = {}
 	end
 
 	-- when SRAM changes arrive and there are items queued to be sent, match them up
-	if #data.queuedsend[this_player_id] > 0 then
+	if #meta.queuedsend[this_player_id] > 0 then
 		-- calculate the changes only when there are items queued
 		-- this operation is expensive!
 		local changes = get_changes(prev_sram_data, sram_data)
 		if #changes > 0 then
-			local item = table.remove(data.queuedsend[this_player_id], 1)
+			local item = table.remove(meta.queuedsend[this_player_id], 1)
 			item.meta = changes -- add the sram changes to the object to identify repeats
-			data.itemqueues[item.target] = data.itemqueues[item.target] or {}
-			add_item_if_unique(data.itemqueues[item.target], item)
+			meta.itemqueues[item.target] = meta.itemqueues[item.target] or {}
+			add_item_if_unique(meta.itemqueues[item.target], item)
 		end
 	end
 
