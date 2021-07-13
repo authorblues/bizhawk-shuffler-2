@@ -115,11 +115,11 @@ function module.make_plugin_window(plugins, main_plugin_label)
 	forms.setproperty(plugin_error_text, "Visible", false)
 
 	function save_plugin_settings()
-		local enabled_count = 0
+		local enabled_list = {}
 		for _,plugin in ipairs(plugins) do
 			plugin._enabled = forms.ischecked(plugin._ui._enabled)
 			if plugin._enabled then
-				enabled_count = enabled_count + 1
+				table.insert(enabled_list, plugin.name)
 				for _,setting in ipairs(plugin.settings) do
 					local meta = SETTINGS_TYPES[setting.type:lower()]
 					if meta ~= nil and setting.name ~= nil and meta.getData ~= nil then
@@ -129,11 +129,12 @@ function module.make_plugin_window(plugins, main_plugin_label)
 			end
 		end
 
-		local enabled_count_str = tostring(enabled_count)
-		local plural = "s"
-		if enabled_count == 0 then enabled_count_str = "No" end
-		if enabled_count == 1 then plural = "" end
-		forms.settext(main_plugin_label, string.format("%s Plugin%s Loaded", enabled_count_str, plural))
+		local enabled_count_str = tostring(#enabled_list)
+		if #enabled_list == 0 then enabled_count_str = "No" end
+
+		local output = string.format("%s Plugins Loaded", enabled_count_str)
+		if #enabled_list == 1 then output = enabled_list[1] end
+		forms.settext(main_plugin_label, output)
 
 		-- close plugin window if open
 		forms.destroy(plugin_window)
