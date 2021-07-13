@@ -19,6 +19,8 @@ plugin.description =
 local this_player_id = -1
 
 local rom_name_addr = 0x7FC0 -- 15 bytes
+local rom_name_pattern = { 0x45, 0x52, nil, nil, nil, 0x5F, nil, 0x5F, nil, 0x5F }
+
 local outgoing_item_addr = 0x02D8
 local outgoing_player_addr = 0xC098
 local incoming_item_addr = 0xF4D2
@@ -103,11 +105,27 @@ function plugin.on_setup(data, settings)
 end
 
 function plugin.on_game_load(data, settings)
+	-- a handful of checks to make sure this is a SNES game first
+	local has_cartrom = false
+	for i,domain in ipairs(memory.getmemorydomainlist()) do
+		if domain == "CARTROM" then has_cartrom = true end
+	end
+
+	-- if the cartrom isn't present, or it is too small, bail
+	if not has_cartrom then return end
+	if memory.getmemorydomainsize("CARTROM") < 0x200000 then return end
+
+	-- if the rom name does not seem to be from a valid Z3R rom, ignore it
+	for i,val in ipairs(rom_name_pattern) do
+		local mem = memory.read_s8(rom_name_addr + i - 1, "CARTROM")
+		if val ~= nil and mem ~= val then return end
+	end
+
 	--this_player_id = tonumber(get_current_game():match("_P(%d+)_"))
-	local version, team_id = 0, 0
+	local protocol, team_id = 0, 0
 	local addr = rom_name_addr + 2
 
-	version, addr = read_BCD_to_delimiter(addr, 0x5F)
+	protocol, addr = read_BCD_to_delimiter(addr, 0x5F)
 	team_id, addr = read_BCD_to_delimiter(addr, 0x5F)
 	this_player_id = read_BCD_to_delimiter(addr, 0x5F)
 
@@ -117,6 +135,9 @@ function plugin.on_game_load(data, settings)
 end
 
 function plugin.on_frame(data, settings)
+	-- no player id means that the rom isn't Z3R
+	if this_player_id == -1 then return end
+
 	local player_id, item_id
 	local sram_data = get_sram_data()
 
