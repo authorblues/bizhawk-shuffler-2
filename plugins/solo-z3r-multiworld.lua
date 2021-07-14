@@ -5,6 +5,7 @@ plugin.author = "authorblues"
 
 plugin.settings =
 {
+	{ name='swapbutton', type='boolean', label='Force Game Swap on P2 L Button?' },
 }
 
 plugin.description =
@@ -102,6 +103,9 @@ end
 
 function plugin.on_setup(data, settings)
 	data.meta = data.meta or {}
+
+	-- this should forcibly debounce the L press
+	data.prevL = true
 end
 
 function plugin.on_game_load(data, settings)
@@ -194,6 +198,12 @@ function plugin.on_frame(data, settings)
 	end
 
 	prev_sram_data = sram_data
+
+	if settings.swapbutton then
+		local currL = joypad.get(2).L
+		if not data.prevL and currL then swap_game() end
+		data.prevL = currL
+	end
 end
 
 return plugin
