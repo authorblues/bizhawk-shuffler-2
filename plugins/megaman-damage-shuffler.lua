@@ -463,16 +463,16 @@ local romhashes = {
 	['94B19DE4425D1F5D0B74CE41348B4246E7A41E85'] = 'mm5gb', -- Rockman World 5 (J) [S][T-Eng].gb
 	['EE7AD85273983A63BC32B011617D13E1EA879463'] = 'mm5gb', -- Rockman World 5 (J) [S][t1].gb
 	-- Mega Man Wily Wars GEN rom hashes
-	['BCB911E16D17172033027034FBC6FE450779A9C7'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f1].bin
-	['78979480BEE91944A50529D79E0FA811458A8056'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f2].bin
-	['EA9AE2043C97DB716A8D31EE90E581C3D75F4E3E'] = 'mmwwgen', -- Mega Man - The Wily Wars (E).bin
-	['A435AC53589A29DBB655662C942DAAB425D3F6BD'] = 'mmwwgen', -- Rockman Megaworld (J) [!].bin
-	['4DFCF5C07106F6DB4D8B7E73A053BB46A21686C3'] = 'mmwwgen', -- Rockman Megaworld (J) [a1][!].bin
-	['BC802C54BABAF4FB7D0D773E1E971F63EDA391F4'] = 'mmwwgen', -- Rockman Megaworld (J) [b1].bin
-	['58115AF6876DD770304E1315AD8C6FA109646E16'] = 'mmwwgen', -- Rockman Megaworld (J) [b2].bin
-	['5FD037714E7C552398314D7F91C64523B2BF5232'] = 'mmwwgen', -- Rockman Megaworld (J) [b3].bin
-	['1C6FB73FB07B66D4E7307CA0C9CCE970B89DFB3B'] = 'mmwwgen', -- Rockman Megaworld (J) [f1].bin
-	['D41DCB4BC3CBB9A21438B70B8859EF4B9D956764'] = 'mmwwgen', -- Rockman Megaworld (J) [h1C].bin
+	['3A69E358628E49B6744C9D2C07F874D6'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f1].bin
+	['B47C78AF48D843C9D52FF9DEE1CBE98C'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f2].bin
+	['BB891AEC8A7DFE6164033F57AF2025BD'] = 'mmwwgen', -- Mega Man - The Wily Wars (E).bin
+	['520D081A450B5E9F127369E6EC1BE43E'] = 'mmwwgen', -- Rockman Megaworld (J) [!].bin
+	['7A25E5249C0A406F20F76BEF45DC3202'] = 'mmwwgen', -- Rockman Megaworld (J) [a1][!].bin
+	['9501EAB8C7BB3FB097EE1699B8132BC3'] = 'mmwwgen', -- Rockman Megaworld (J) [b1].bin
+	['04130F704DC564F7BFDF3A12992B5FD2'] = 'mmwwgen', -- Rockman Megaworld (J) [b2].bin
+	['4C26D10F82D5B5B9E6526BE1E8C5446B'] = 'mmwwgen', -- Rockman Megaworld (J) [b3].bin
+	['6C2A6A01CB0F46186AB93766DD430A50'] = 'mmwwgen', -- Rockman Megaworld (J) [f1].bin
+	['7FE51160D8055E813245ADD4B1E3DA42'] = 'mmwwgen', -- Rockman Megaworld (J) [h1C].bin
 	-- Mega Man 8 PSX rom hashes
 	['CA2E63F7'] = 'mm8psx',
 	-- Mega Man X4 PSX rom hashes
