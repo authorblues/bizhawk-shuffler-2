@@ -134,6 +134,7 @@ local gamedata = {
 	['mmx2']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB3, addr_maxhp=0x1FD1, min_hp=0 },
 	['mmx3']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB4, addr_maxhp=0x1FD2, min_hp=0 },
 	['mmx4psx']={ swapMethod=_mmxHealthLives, addr_hp=0x141924, addr_lc=0x172204, addr_maxhp=0x172206, min_hp=0 },
+	['mmx5psx']={ swapMethod=_mmxHealthLives, addr_hp=0x09A0FC, addr_lc=0x0D1C45, addr_maxhp=0x0D1C47, min_hp=0 },
 
 	['rm&f'   ]={ swapMethod=_snesHealthLives, addr_hp=0x0C2F, addr_lc=0x0B7E, max_hp=28, min_hp=0 },
 	['mm7snes']={ swapMethod=_snesHealthLives, addr_hp=0x0C2E, addr_lc=0x0B81, max_hp=28, min_hp=0 },
@@ -462,6 +463,14 @@ local romhashes = {
 	['CA2E63F7'] = 'mm8psx',
 	-- Mega Man X4 PSX rom hashes
 	['314E06A8'] = 'mmx4psx',
+	-- Mega Man X5 PSX rom hashes
+	['1C64D6EA'] = 'mmx5psx',
+	['614E644C'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.5].xdelta
+	['A54F3FF4'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8 (No Music Changes + No Script Changes)].xdelta
+	['F46B745A'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8 (No Music Changes)].xdelta
+	['80E0EB75'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8 (No Script Changes)].xdelta
+	['2E3E04A9'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8].xdelta
+	['05557ECA'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v2.0 BETA 9].xdelta
 }
 
 function plugin.on_game_load(data, settings)
