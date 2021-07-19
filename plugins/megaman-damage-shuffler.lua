@@ -17,7 +17,7 @@ plugin.description =
 	- Mega Man 7 SNES
 	- Mega Man 8 PSX
 	- Mega Man X 1-3 SNES
-	- Mega Man X4 PSX
+	- Mega Man X4, X5 PSX
 	- Rockman & Forte SNES
 	- Mega Man I-V GB
 ]]
