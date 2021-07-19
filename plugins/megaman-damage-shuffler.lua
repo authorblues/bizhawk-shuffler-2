@@ -15,7 +15,9 @@ plugin.description =
 	Supports:
 	- Mega Man 1-6 NES
 	- Mega Man 7 SNES
+	- Mega Man 8 PSX
 	- Mega Man X 1-3 SNES
+	- Mega Man X4 PSX
 	- Rockman & Forte SNES
 	- Mega Man I-V GB
 ]]
@@ -131,6 +133,7 @@ local gamedata = {
 	['mmx1']={ swapMethod=_mmxHealthLives, addr_hp=0x0BCF, addr_lc=0x1F80, addr_maxhp=0x1F9A, min_hp=0 },
 	['mmx2']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB3, addr_maxhp=0x1FD1, min_hp=0 },
 	['mmx3']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB4, addr_maxhp=0x1FD2, min_hp=0 },
+	['mmx4psx']={ swapMethod=_mmxHealthLives, addr_hp=0x141924, addr_lc=0x172204, addr_maxhp=0x172206, min_hp=0 },
 
 	['rm&f'   ]={ swapMethod=_snesHealthLives, addr_hp=0x0C2F, addr_lc=0x0B7E, max_hp=28, min_hp=0 },
 	['mm7snes']={ swapMethod=_snesHealthLives, addr_hp=0x0C2E, addr_lc=0x0B81, max_hp=28, min_hp=0 },
@@ -457,6 +460,8 @@ local romhashes = {
 	['EE7AD85273983A63BC32B011617D13E1EA879463'] = 'mm5gb', -- Rockman World 5 (J) [S][t1].gb
 	-- Mega Man 8 PSX rom hashes
 	['CA2E63F7'] = 'mm8psx',
+	-- Mega Man X4 PSX rom hashes
+	['314E06A8'] = 'mmx4psx',
 }
 
 function plugin.on_game_load(data, settings)
