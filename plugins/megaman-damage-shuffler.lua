@@ -27,128 +27,152 @@ local prevdata = {}
 
 local shouldSwap = function() return false end
 
-local function checkHealthLives(data, currhp, currlc, maxhp, minhp)
-	-- health must be within an acceptable range to count
-	-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
-	if currhp >= minhp and currhp <= maxhp then
+local function swapMethod(gamemeta)
+	return function(data)
+		local currhp = gamemeta.gethp()
+		local currlc = gamemeta.getlc()
+
+		local maxhp = gamemeta.maxhp()
+		local minhp = gamemeta.minhp or 0
+
+		-- health must be within an acceptable range to count
+		-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
+		if currhp < minhp or currhp > maxhp then
+			return false
+		end
+
+		-- retrieve previous health and lives before backup
 		local prevhp = data.prevhp
+		local prevlc = data.prevlc
+
+		-- backup current health and lives
 		data.prevhp = currhp
+		data.prevlc = currlc
 
-		-- swap if health goes down, its that simple!
-		-- don't swap on 0 because we can check life count for that
-		if prevhp ~= nil and currhp < prevhp and currhp > 0 then return true end
-	end
+		-- this delay ensures that when the game ticks away health for the end of a level,
+		-- we can catch its purpose and hopefully not swap, since this isnt damage related
+		if data.hpcountdown ~= nil and data.hpcountdown > 0 then
+			data.hpcountdown = data.hpcountdown - 1
+			if data.hpcountdown == 0 and currhp > 0 then
+				return true
+			end
+		end
 
-	local prevlc = data.prevlc
-	data.prevlc = currlc
+		-- if the health goes to 0, we will rely on the life count to tell us whether to swap
+		if prevhp ~= nil and currhp < prevhp then
+			data.hpcountdown = gamemeta.delay or 3
+		end
 
-	-- check to see if the life count went down
-	if prevlc ~= nil and currlc < prevlc then
-		return true
-	end
-
-	-- continue
-	return false
-end
-
-local function delayHealthLives(data, currhp, currlc, maxhp, minhp, delay)
-	-- health must be within an acceptable range to count
-	-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
-	if currhp < minhp or currhp > maxhp then
-		return false
-	end
-
-	-- retrieve previous health and lives before backup
-	local prevhp = data.prevhp
-	local prevlc = data.prevlc
-
-	-- backup current health and lives
-	data.prevhp = currhp
-	data.prevlc = currlc
-
-	-- this delay ensures that when the game ticks away health for the end of a level,
-	-- we can catch its purpose and hopefully not swap, since this isnt damage related
-	if data.hpcountdown ~= nil and data.hpcountdown > 0 then
-		data.hpcountdown = data.hpcountdown - 1
-		if data.hpcountdown == 0 and currhp > 0 then
+		-- check to see if the life count went down
+		if prevlc ~= nil and currlc < prevlc then
 			return true
 		end
-	end
 
-	-- Rockman & Forte drops the health to zero for deaths and for the ends of levels
-	-- if the health goes to 0, we will rely on the life count to tell us whether to swap
-	if prevhp ~= nil and currhp < prevhp then
-		data.hpcountdown = delay
-	end
-
-	-- check to see if the life count went down
-	if prevlc ~= nil and currlc < prevlc then
-		return true
-	end
-
-	return false
-end
-
-local function _standardHealthLives(gamemeta)
-	return function(data)
-		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
-		local currlc = mainmemory.read_u8(gamemeta.addr_lc)
-		return checkHealthLives(data, currhp, currlc, gamemeta.max_hp, gamemeta.min_hp)
-	end
-end
-
--- mmx seems to use LMB as a one-frame rise to indicate damage was taken
-local function _mmxHealthLives(gamemeta)
-	return function(data)
-		local currhp = bit.band(mainmemory.read_u8(gamemeta.addr_hp), 0x7F)
-		local currlc = mainmemory.read_u8(gamemeta.addr_lc)
-		local maxhp = mainmemory.read_u8(gamemeta.addr_maxhp)
-		return checkHealthLives(data, currhp, currlc, maxhp, 0)
-	end
-end
-
-local function _snesHealthLives(gamemeta)
-	return function(data)
-		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
-		local currlc = mainmemory.read_s8(gamemeta.addr_lc)
-		return delayHealthLives(data, currhp, currlc, gamemeta.max_hp, gamemeta.min_hp, 3)
-	end
-end
-
-local function _signedHealthLives(gamemeta)
-	return function(data)
-		local currhp = mainmemory.read_u8(gamemeta.addr_hp)
-		local currlc = mainmemory.read_s8(gamemeta.addr_lc)
-		return checkHealthLives(data, currhp, currlc, gamemeta.max_hp, gamemeta.min_hp)
+		return false
 	end
 end
 
 local gamedata = {
-	['mm1nes']={ swapMethod=_standardHealthLives, addr_hp=0x006A, addr_lc=0x00A6, max_hp=28, min_hp=0 },
-	['mm2nes']={ swapMethod=_standardHealthLives, addr_hp=0x06C0, addr_lc=0x00A8, max_hp=28, min_hp=0 },
-	['mm3nes']={ swapMethod=_standardHealthLives, addr_hp=0x00A2, addr_lc=0x00AE, max_hp=156, min_hp=128 },
-	['mm4nes']={ swapMethod=_standardHealthLives, addr_hp=0x00B0, addr_lc=0x00A1, max_hp=156, min_hp=128 },
-	['mm5nes']={ swapMethod=_standardHealthLives, addr_hp=0x00B0, addr_lc=0x00BF, max_hp=156, min_hp=128 },
-	['mm6nes']={ swapMethod=_standardHealthLives, addr_hp=0x03E5, addr_lc=0x00A9, max_hp=27, min_hp=0 },
-
-	['mmwwgen']={ swapMethod=_standardHealthLives, addr_hp=0xA3FE, addr_lc=0xCB39, max_hp=28, min_hp=0 },
-
-	['mmx1']={ swapMethod=_mmxHealthLives, addr_hp=0x0BCF, addr_lc=0x1F80, addr_maxhp=0x1F9A, min_hp=0 },
-	['mmx2']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB3, addr_maxhp=0x1FD1, min_hp=0 },
-	['mmx3']={ swapMethod=_mmxHealthLives, addr_hp=0x09FF, addr_lc=0x1FB4, addr_maxhp=0x1FD2, min_hp=0 },
-	['mmx4psx']={ swapMethod=_mmxHealthLives, addr_hp=0x141924, addr_lc=0x172204, addr_maxhp=0x172206, min_hp=0 },
-	['mmx5psx']={ swapMethod=_mmxHealthLives, addr_hp=0x09A0FC, addr_lc=0x0D1C45, addr_maxhp=0x0D1C47, min_hp=0 },
-
-	['rm&f'   ]={ swapMethod=_snesHealthLives, addr_hp=0x0C2F, addr_lc=0x0B7E, max_hp=28, min_hp=0 },
-	['mm7snes']={ swapMethod=_snesHealthLives, addr_hp=0x0C2E, addr_lc=0x0B81, max_hp=28, min_hp=0 },
-
-	['mm1gb']={ swapMethod=_signedHealthLives, addr_hp=0x1FA3, addr_lc=0x0108, max_hp=152, min_hp=0 },
-	['mm2gb']={ swapMethod=_signedHealthLives, addr_hp=0x0FD0, addr_lc=0x0FE8, max_hp=152, min_hp=0 },
-	['mm3gb']={ swapMethod=_signedHealthLives, addr_hp=0x1E9C, addr_lc=0x1D08, max_hp=152, min_hp=0 },
-	['mm4gb']={ swapMethod=_signedHealthLives, addr_hp=0x1EAE, addr_lc=0x1F34, max_hp=152, min_hp=0 },
-	['mm5gb']={ swapMethod=_signedHealthLives, addr_hp=0x1E9E, addr_lc=0x1F34, max_hp=152, min_hp=0 },
-
-	['mm8psx']={ swapMethod=_standardHealthLives, addr_hp=0x15E283, addr_lc=0x1C3370, max_hp=40, min_hp=0 },
+	['mm1nes']={ -- Mega Man NES
+		gethp=function() return mainmemory.read_u8(0x006A) end,
+		getlc=function() return mainmemory.read_u8(0x00A6) end,
+		maxhp=function() return 28 end,
+	},
+	['mm2nes']={ -- Mega Man 2 NES
+		gethp=function() return mainmemory.read_u8(0x06C0) end,
+		getlc=function() return mainmemory.read_u8(0x00A8) end,
+		maxhp=function() return 28 end,
+	},
+	['mm3nes']={ -- Mega Man 3 NES
+		gethp=function() return bit.band(mainmemory.read_u8(0x00A2), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x00AE) end,
+		maxhp=function() return 28 end,
+	},
+	['mm4nes']={ -- Mega Man 4 NES
+		gethp=function() return bit.band(mainmemory.read_u8(0x00B0), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x00A1) end,
+		maxhp=function() return 28 end,
+	},
+	['mm5nes']={ -- Mega Man 5 NES
+		gethp=function() return bit.band(mainmemory.read_u8(0x00B0), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x00BF) end,
+		maxhp=function() return 28 end,
+	},
+	['mm6nes']={ -- Mega Man 6 NES
+		gethp=function() return mainmemory.read_u8(0x03E5) end,
+		getlc=function() return mainmemory.read_u8(0x00A9) end,
+		maxhp=function() return 27 end,
+	},
+	['mm7snes']={ -- Mega Man 7 SNES
+		gethp=function() return mainmemory.read_u8(0x0C2E) end,
+		getlc=function() return mainmemory.read_s8(0x0B81) end,
+		maxhp=function() return 28 end,
+	},
+	['mm8psx']={ -- Mega Man 8 PSX
+		gethp=function() return mainmemory.read_u8(0x15E283) end,
+		getlc=function() return mainmemory.read_u8(0x1C3370) end,
+		maxhp=function() return 40 end,
+	},
+	['mmwwgen']={ -- Mega Man Wily Wars GEN
+		gethp=function() return mainmemory.read_u8(0xA3FE) end,
+		getlc=function() return mainmemory.read_u8(0xCB39) end,
+		maxhp=function() return 28 end,
+	},
+	['rm&f']={ -- Rockman & Forte SNES
+		gethp=function() return mainmemory.read_u8(0x0C2F) end,
+		getlc=function() return mainmemory.read_s8(0x0B7E) end,
+		maxhp=function() return 28 end,
+	},
+	['mmx1']={ -- Mega Man X SNES
+		gethp=function() return bit.band(mainmemory.read_u8(0x0BCF), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x1F80) end,
+		maxhp=function() return mainmemory.read_u8(0x1F9A) end,
+	},
+	['mmx2']={ -- Mega Man X2 SNES
+		gethp=function() return bit.band(mainmemory.read_u8(0x09FF), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x1FB3) end,
+		maxhp=function() return mainmemory.read_u8(0x1FD1) end,
+	},
+	['mmx3']={ -- Mega Man X3 SNES
+		gethp=function() return mainmemory.read_u8(0x09FF) end,
+		getlc=function() return mainmemory.read_u8(0x1FB4) end,
+		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
+	},
+	['mmx4psx']={ -- Mega Man X4 PSX
+		gethp=function() return bit.band(mainmemory.read_u8(0x141924), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x172204) end,
+		maxhp=function() return mainmemory.read_u8(0x172206) end,
+	},
+	['mmx5psx']={ -- Mega Man X5 PSX
+		gethp=function() return bit.band(mainmemory.read_u8(0x09A0FC), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x0D1C45) end,
+		maxhp=function() return mainmemory.read_u8(0x0D1C47) end,
+	},
+	['mm1gb']={ -- Mega Man I GB
+		gethp=function() return mainmemory.read_u8(0x1FA3) end,
+		getlc=function() return mainmemory.read_s8(0x0108) end,
+		maxhp=function() return 152 end,
+	},
+	['mm2gb']={ -- Mega Man II GB
+		gethp=function() return mainmemory.read_u8(0x0FD0) end,
+		getlc=function() return mainmemory.read_s8(0x0FE8) end,
+		maxhp=function() return 152 end,
+	},
+	['mm3gb']={ -- Mega Man III GB
+		gethp=function() return mainmemory.read_u8(0x1E9C) end,
+		getlc=function() return mainmemory.read_s8(0x1D08) end,
+		maxhp=function() return 152 end,
+	},
+	['mm4gb']={ -- Mega Man IV GB
+		gethp=function() return mainmemory.read_u8(0x1EAE) end,
+		getlc=function() return mainmemory.read_s8(0x1F34) end,
+		maxhp=function() return 152 end,
+	},
+	['mm5gb']={ -- Mega Man V GB
+		gethp=function() return mainmemory.read_u8(0x1E9E) end,
+		getlc=function() return mainmemory.read_s8(0x1F34) end,
+		maxhp=function() return 152 end,
+	},
 }
 
 -- same RAM maps across versions?
@@ -493,7 +517,7 @@ function plugin.on_game_load(data, settings)
 		print('unrecognized hash for ' .. gameinfo.getromname() .. ': ' .. gameinfo.getromhash())
 	else
 		local gamemeta = gamedata[whichgame]
-		shouldSwap = gamemeta.swapMethod(gamemeta)
+		shouldSwap = gamemeta.swapMethod or swapMethod(gamemeta)
 	end
 end
 
