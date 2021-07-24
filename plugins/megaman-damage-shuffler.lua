@@ -53,7 +53,7 @@ local function swapMethod(gamemeta)
 		-- we can catch its purpose and hopefully not swap, since this isnt damage related
 		if data.hpcountdown ~= nil and data.hpcountdown > 0 then
 			data.hpcountdown = data.hpcountdown - 1
-			if data.hpcountdown == 0 and currhp > 0 then
+			if data.hpcountdown == 0 and currhp > minhp then
 				return true
 			end
 		end
