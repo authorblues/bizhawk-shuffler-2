@@ -20,17 +20,19 @@ plugin.description =
 local this_player_id = -1
 local this_seed = -1
 
-local rom_name_addr = 0x7FC0 -- 15 bytes
-local rom_name_pattern = { 0x45, 0x52, nil, nil, nil, 0x5F, nil, 0x5F, nil, 0x5F }
+local ROM_NAME_ADDR = 0x7FC0 -- 15 bytes
+local ROM_NAME_PATTERN = { 0x45, 0x52, nil, nil, nil, 0x5F, nil, 0x5F, nil, 0x5F }
 
-local outgoing_item_addr = 0x02D8
-local outgoing_player_addr = 0xC098
-local incoming_item_addr = 0xF4D2
-local incoming_player_addr = 0xF4D3
-local recv_count_addr = 0xF4F0 -- 2 bytes
+local OUTGOING_ITEM_ADDR = 0x02D8
+local OUTGOING_PLAYER_ADDR = 0xC098
+local INCOMING_ITEM_ADDR = 0xF4D2
+local INCOMING_PLAYER_ADDR = 0xF4D3
+local RECV_COUNT_ADDR = 0xF4F0 -- 2 bytes
 
 local SRAM_DATA_START = 0xF000
 local SRAM_DATA_SIZE = 0x3E4
+
+local CLEAR_DELAY_FRAMES = 2
 
 local prev_sram_data = nil
 
@@ -120,14 +122,14 @@ function plugin.on_game_load(data, settings)
 	if memory.getmemorydomainsize("CARTROM") < 0x200000 then return end
 
 	-- if the rom name does not seem to be from a valid Z3R rom, ignore it
-	for i,val in ipairs(rom_name_pattern) do
-		local mem = memory.read_s8(rom_name_addr + i - 1, "CARTROM")
+	for i,val in ipairs(ROM_NAME_PATTERN) do
+		local mem = memory.read_s8(ROM_NAME_ADDR + i - 1, "CARTROM")
 		if val ~= nil and mem ~= val then return end
 	end
 
 	--this_player_id = tonumber(get_current_game():match("_P(%d+)_"))
 	local protocol, team_id = 0, 0
-	local addr = rom_name_addr + 2
+	local addr = ROM_NAME_ADDR + 2
 
 	protocol, addr = read_BCD_to_delimiter(addr, 0x5F)
 	team_id, addr = read_BCD_to_delimiter(addr, 0x5F)
@@ -135,11 +137,12 @@ function plugin.on_game_load(data, settings)
 	this_seed = read_BCD_to_delimiter(addr, 0x00)
 
 	prev_sram_data = get_sram_data()
-	data.meta[this_seed] = data.meta[this_seed] or {itemqueues={}, queuedsend={}}
+	data.meta[this_seed] = data.meta[this_seed] or {itemqueues={}, queuedsend={}, cleardelay={}}
 
 	local meta = data.meta[this_seed]
 	meta.itemqueues[this_player_id] = meta.itemqueues[this_player_id] or {}
 	meta.queuedsend[this_player_id] = meta.queuedsend[this_player_id] or {}
+	meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] or 0
 end
 
 function plugin.on_frame(data, settings)
@@ -151,8 +154,8 @@ function plugin.on_frame(data, settings)
 	local sram_data = get_sram_data()
 
 	if is_normal_gameplay() then
-		player_id = mainmemory.read_s8(outgoing_player_addr)
-		item_id = mainmemory.read_s8(outgoing_item_addr)
+		player_id = mainmemory.read_s8(OUTGOING_PLAYER_ADDR)
+		item_id = mainmemory.read_s8(OUTGOING_ITEM_ADDR)
 
 		local prev_player = data.prev_player or 0
 		data.prev_player = player_id
@@ -160,22 +163,30 @@ function plugin.on_frame(data, settings)
 		if player_id ~= 0 and prev_player == 0 then
 			table.insert(meta.queuedsend[this_player_id],
 				{item=item_id, src=this_player_id, target=player_id})
-			mainmemory.write_s8(outgoing_player_addr, 0)
+			meta.cleardelay[this_player_id] = CLEAR_DELAY_FRAMES
 			data.prev_player = 0
 		end
 
 		local queue_len = #meta.itemqueues[this_player_id]
-		local recv_count = mainmemory.read_s16_le(recv_count_addr)
-		if mainmemory.read_s16_le(recv_count_addr) > queue_len then
-			mainmemory.write_s16_le(recv_count_addr, 0)
+		local recv_count = mainmemory.read_s16_le(RECV_COUNT_ADDR)
+		if mainmemory.read_s16_le(RECV_COUNT_ADDR) > queue_len then
+			mainmemory.write_s16_le(RECV_COUNT_ADDR, 0)
 			recv_count = 0
 		end
 
-		if recv_count < queue_len and mainmemory.read_s8(incoming_item_addr) == 0 then
+		if recv_count < queue_len and mainmemory.read_s8(INCOMING_ITEM_ADDR) == 0 then
 			local obj = meta.itemqueues[this_player_id][recv_count+1]
-			mainmemory.write_s8(incoming_item_addr, obj.item)
-			mainmemory.write_s8(incoming_player_addr, obj.src)
-			mainmemory.write_s16_le(recv_count_addr, recv_count+1)
+			mainmemory.write_s8(INCOMING_ITEM_ADDR, obj.item)
+			mainmemory.write_s8(INCOMING_PLAYER_ADDR, obj.src)
+			mainmemory.write_s16_le(RECV_COUNT_ADDR, recv_count+1)
+		end
+
+		if (meta.cleardelay[this_player_id] or 0) > 0 then
+			meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] - 1
+			if meta.cleardelay[this_player_id] == 0 then
+				mainmemory.write_s8(OUTGOING_PLAYER_ADDR, 0)
+				mainmemory.write_s8(OUTGOING_ITEM_ADDR, 0)
+			end
 		end
 	elseif get_game_mode() == 0x00 then
 		-- if we somehow got to the title screen (reset?) with items queued to
