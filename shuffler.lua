@@ -21,7 +21,7 @@ DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
 MIN_BIZHAWK_VERSION = "2.6.1"
 RECOMMENDED_LUA_CORE = "LuaInterface"
-MAX_INTEGER = 999999999
+MAX_INTEGER = 99999999
 
 -- check if folder exists
 function path_exists(p)
@@ -261,8 +261,14 @@ function swap_game(next_game)
 	-- force another frame to pass to get the mute to take effect
 	if emu.getsystemid() ~= "NULL" then emu.frameadvance() end
 
+	-- unique game count, for debug purposes
+	config.game_count = 0
+	for k,v in pairs(config.game_swaps) do
+		config.game_count = config.game_count + 1
+	end
+
 	-- save an updated randomizer seed
-	config.nseed = math.random(MAX_INTEGER)
+	config.nseed = math.random(MAX_INTEGER) + config.frame_count
 	save_config(config, 'shuffler-src/config.lua')
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
