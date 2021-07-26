@@ -105,11 +105,29 @@ function get_dir_contents(dir, tmp, force)
 
 	local file_list = {}
 	local fp = io.open(TEMP_FILE, 'r')
-	for x in fp:lines() do
+	for x in read_lines_from_handle(fp) do
 		table.insert(file_list, x)
 	end
 	fp:close()
 	return file_list
+end
+
+function read_lines_from_handle(handle)
+	local iter = handle:lines()
+	if client.get_lua_engine() ~= "NLua" then return iter end
+
+	return function()
+		-- KopiLua's file:lines implementation is broken and always throws an error on EOF
+		-- So we need to catch that and signal the end of the iterator
+		local success, line = pcall(iter)
+		if success then
+			-- KopiLua's file:lines does not trim carriage returns which breaks code based on get_dir_contents
+			line = line:gsub('\r$', '')
+			return line
+		else
+			return nil
+		end
+	end
 end
 
 -- types of files to ignore in the games directory
@@ -126,7 +144,7 @@ function get_games_list(force)
 		if ends_with(filename, '.cue') then
 			-- open the cue file, oh god here we go...
 			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
-			for line in fp:lines() do
+			for line in read_lines_from_handle(fp) do
 				-- look for the line that starts with FILE and remove the rest of the stuff
 				if starts_with(line, "FILE") and ends_with(line, "BINARY") then
 					table.insert(toremove, line:sub(7, -9))
