@@ -169,7 +169,7 @@ function plugin.on_frame(data, settings)
 
 		local queue_len = #meta.itemqueues[this_player_id]
 		local recv_count = mainmemory.read_s16_le(RECV_COUNT_ADDR)
-		if mainmemory.read_s16_le(RECV_COUNT_ADDR) > queue_len then
+		if recv_count > queue_len then
 			mainmemory.write_s16_le(RECV_COUNT_ADDR, 0)
 			recv_count = 0
 		end
