@@ -253,6 +253,8 @@ function module.initial_setup(callback)
 		'Alt+Shift+End',
 		'Alt+Shift+Delete',
 		'Alt+Shift+D',
+		'Backslash (above Enter)',
+		'RightCtrl',
 	}
 
 	function start_handler()
@@ -275,7 +277,7 @@ function module.initial_setup(callback)
 		config.max_swap = math.max(a, b)
 
 		config.shuffle_index = SWAP_MODES[forms.gettext(mode_combo)]
-		config.hk_complete = forms.gettext(hk_complete) or 'Ctrl+Shift+End'
+		config.hk_complete = (forms.gettext(hk_complete) or 'Ctrl+Shift+End'):match("[^%s]+")
 		config.completed_games = {}
 
 		config.plugins = {}
