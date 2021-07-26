@@ -37,12 +37,12 @@ function plugin.on_setup(data, settings)
 end
 
 function plugin.on_game_load(data, settings)
-	fillcolor = data.colors[get_current_game()]
+	fillcolor = data.colors[config.current_game]
 	if not fillcolor then
 		local colorhex, opacity
 
 		-- find hex color from ROM filename
-		for match in get_current_game():gmatch('_([0-9a-fA-F]+)%.') do
+		for match in config.current_game:gmatch('_([0-9a-fA-F]+)%.') do
 			if #match == 6 then colorhex = match end
 		end
 
@@ -60,7 +60,7 @@ function plugin.on_game_load(data, settings)
 			end
 		else fillcolor = 0 end
 
-		data.colors[get_current_game()] = fillcolor
+		data.colors[config.current_game] = fillcolor
 	end
 end
 
