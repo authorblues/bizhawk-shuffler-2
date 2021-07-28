@@ -15,6 +15,8 @@ plugin.description =
 	Create a multiworld randomizer seed and generate roms for all players. Put them all in the games/ folder, and the plugin will shuffle like normal, sending items between seeds when necessary.
 
 	Special thanks to Aerinon for providing significant help to get this working. Thanks also to Ankou for helping me sort out weird SNES+Bizhawk issues.
+
+	TIP: Generate seeds with unique sprites and name the players according to the sprites, so that send/recv messages will be meaningful and easily understood.
 ]]
 
 local this_player_id = -1
