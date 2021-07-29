@@ -34,7 +34,7 @@ local RECV_COUNT_ADDR = 0xF4F0 -- 2 bytes
 local SRAM_DATA_START = 0xF000
 local SRAM_DATA_SIZE = 0x3E4
 
-local CLEAR_DELAY_FRAMES = 2
+local CLEAR_DELAY_FRAMES = 1
 
 local prev_sram_data = nil
 
@@ -182,19 +182,21 @@ function plugin.on_frame(data, settings)
 			mainmemory.write_s8(INCOMING_PLAYER_ADDR, obj.src)
 			mainmemory.write_s16_le(RECV_COUNT_ADDR, recv_count+1)
 		end
-
-		if (meta.cleardelay[this_player_id] or 0) > 0 then
-			meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] - 1
-			if meta.cleardelay[this_player_id] == 0 then
-				mainmemory.write_s8(OUTGOING_PLAYER_ADDR, 0)
-				mainmemory.write_s8(OUTGOING_ITEM_ADDR, 0)
-			end
-		end
 	elseif get_game_mode() == 0x00 then
 		-- if we somehow got to the title screen (reset?) with items queued to
 		-- be sent, but we never saw the sram changes, the player was very
 		-- naughty and tried to create a race condition. very naughty! bad player!
 		meta.queuedsend[this_player_id] = {}
+	end
+
+	-- clear the outgoing items addresses no matter the gamemode
+	if (meta.cleardelay[this_player_id] or 0) > 0 then
+		if meta.cleardelay[this_player_id] == 0 then
+			mainmemory.write_s8(OUTGOING_PLAYER_ADDR, 0)
+			mainmemory.write_s8(OUTGOING_ITEM_ADDR, 0)
+		else
+			meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] - 1
+		end
 	end
 
 	-- when SRAM changes arrive and there are items queued to be sent, match them up
