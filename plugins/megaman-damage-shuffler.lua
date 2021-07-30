@@ -10,14 +10,16 @@ plugin.settings =
 
 plugin.description =
 [[
-	Automatically swaps games any time Megaman takes damage. Checks SHA-1 hashes of different rom versions, so if you use a version of the rom that isn't recognized, nothing special will happen in that game (no swap on hit).
+	Automatically swaps games any time Megaman takes damage. Checks hashes of different rom versions, so if you use a version of the rom that isn't recognized, nothing special will happen in that game (no swap on hit).
 
 	Supports:
 	- Mega Man 1-6 NES
 	- Mega Man 7 SNES
 	- Mega Man 8 PSX
 	- Mega Man X 1-3 SNES
-	- Mega Man X4, X5 PSX
+	- Mega Man X3 PSX (PAL & NTSC-J)
+	- Mega Man X 4-6 PSX
+	- Mega Man Xtreme 1 & 2 GBC
 	- Rockman & Forte SNES
 	- Mega Man I-V GB
 	- Mega Man Wily Wars GEN
@@ -27,7 +29,7 @@ local prevdata = {}
 
 local shouldSwap = function() return false end
 
-local function swapMethod(gamemeta)
+local function generic_swap(gamemeta)
 	return function(data)
 		local currhp = gamemeta.gethp()
 		local currlc = gamemeta.getlc()
@@ -138,6 +140,16 @@ local gamedata = {
 		getlc=function() return mainmemory.read_u8(0x1FB4) end,
 		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
 	},
+	['mmx3psx-eu']={ -- Mega Man X3 PSX PAL
+		gethp=function() return mainmemory.read_u8(0x0D8528) end,
+		getlc=function() return mainmemory.read_u8(0x0D8743) end,
+		maxhp=function() return mainmemory.read_u8(0x0D8761) end,
+	},
+	['mmx3psx-jp']={ -- Mega Man X3 PSX NTSC-J
+		gethp=function() return mainmemory.read_u8(0x0D7EDC) end,
+		getlc=function() return mainmemory.read_u8(0x0D80F7) end,
+		maxhp=function() return mainmemory.read_u8(0x0D8115) end,
+	},
 	['mmx4psx']={ -- Mega Man X4 PSX
 		gethp=function() return bit.band(mainmemory.read_u8(0x141924), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x172204) end,
@@ -147,6 +159,16 @@ local gamedata = {
 		gethp=function() return bit.band(mainmemory.read_u8(0x09A0FC), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x0D1C45) end,
 		maxhp=function() return mainmemory.read_u8(0x0D1C47) end,
+	},
+	['mmx6psx-us']={ -- Mega Man X6 PSX NTSC-U
+		gethp=function() return bit.band(mainmemory.read_u8(0x0970FC), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x0CCF09) end,
+		maxhp=function() return mainmemory.read_u8(0x0CCF2B) end,
+	},
+	['mmx6psx-jp']={ -- Mega Man X6 PSX NTSC-J
+		gethp=function() return bit.band(mainmemory.read_u8(0x0987BC), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x0CE5C9) end,
+		maxhp=function() return mainmemory.read_u8(0x0CE5EB) end,
 	},
 	['mm1gb']={ -- Mega Man I GB
 		gethp=function() return mainmemory.read_u8(0x1FA3) end,
@@ -172,6 +194,16 @@ local gamedata = {
 		gethp=function() return mainmemory.read_u8(0x1E9E) end,
 		getlc=function() return mainmemory.read_s8(0x1F34) end,
 		maxhp=function() return 152 end,
+	},
+	['mmx1gbc']={ -- Mega Man Xtreme GBC
+		gethp=function() return bit.band(mainmemory.read_u8(0x0ADC), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x1365) end,
+		maxhp=function() return mainmemory.read_u8(0x1384) end,
+	},
+	['mmx2gbc']={ -- Mega Man Xtreme 2 GBC
+		gethp=function() return bit.band(mainmemory.read_u8(0x0121), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x0065) end,
+		maxhp=function() return mainmemory.read_u8(0x0084) end,
 	},
 }
 
@@ -396,6 +428,9 @@ local romhashes = {
 	['BF8CE9F1EF4756AE4091D938AC6657DD3EFFB769'] = 'mmx3', -- Mega Man X 3 (U) [T+Swe1.0_GCT].smc
 	['B226F7EC59283B05C1E276E2F433893F45027CAC'] = 'mmx3', -- Mega Man X 3 (U).smc
 	['8E0156FC7D6AF6F36B08A5E399C0284C6C5D81B8'] = 'mmx3', -- Rockman X 3 (J).smc
+	-- Mega Man X3 PSX rom hashes
+	['30776FC9'] = 'mmx3psx-eu', -- Mega Man X3 (Europe)
+	['470B67F2'] = 'mmx3psx-jp', -- Rockman X3 (Japan)
 	-- Rockman & Forte SNES rom hashes
 	['111C3514C483F59C00B3AED4E23CE72D44A1EC2F'] = 'rm&f', -- Rockman & Forte (J) [h1].smc
 	['5172400A5B1D0787F4F4CE76609598147BF8ABBD'] = 'rm&f', -- Rockman & Forte (J) [T+Eng1.00-MMB_AGTP].smc
@@ -486,6 +521,9 @@ local romhashes = {
 	['9EE67E66412F1FF6C7E71D9DEBE5AC62978CE3C7'] = 'mm5gb', -- Rockman World 5 (J) [S][T+Eng].gb
 	['94B19DE4425D1F5D0B74CE41348B4246E7A41E85'] = 'mm5gb', -- Rockman World 5 (J) [S][T-Eng].gb
 	['EE7AD85273983A63BC32B011617D13E1EA879463'] = 'mm5gb', -- Rockman World 5 (J) [S][t1].gb
+	-- Mega Man Xtreme GBC rom hashes
+	['C877449BA0889FDCACF23C49B0611D0CA57283C5'] = 'mmx1gbc', -- Mega Man Xtreme (U) [C][!].gbc
+	['CB1811AC8969F6B683DF954B57138DD28EBB40FF'] = 'mmx2gbc', -- Mega Man Xtreme 2 (U) [C][!].gbc
 	-- Mega Man Wily Wars GEN rom hashes
 	['3A69E358628E49B6744C9D2C07F874D6'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f1].bin
 	['B47C78AF48D843C9D52FF9DEE1CBE98C'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f2].bin
@@ -504,11 +542,10 @@ local romhashes = {
 	-- Mega Man X5 PSX rom hashes
 	['1C64D6EA'] = 'mmx5psx',
 	['614E644C'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.5].xdelta
-	['A54F3FF4'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8 (No Music Changes + No Script Changes)].xdelta
-	['F46B745A'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8 (No Music Changes)].xdelta
-	['80E0EB75'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8 (No Script Changes)].xdelta
-	['2E3E04A9'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.8].xdelta
-	['05557ECA'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v2.0 BETA 9].xdelta
+	-- Mega Man X6 PSX rom rom
+	['24454CEE'] = 'mmx6psx-us', -- Mega Man X6 (USA) (v1.0)
+	['F063F536'] = 'mmx6psx-us', -- Mega Man X6 (USA) (v1.1)
+	['A4F84BEC'] = 'mmx6psx-jp', -- Rockman X6 (Japan)
 }
 
 function plugin.on_game_load(data, settings)
@@ -517,7 +554,7 @@ function plugin.on_game_load(data, settings)
 		print('unrecognized hash for ' .. gameinfo.getromname() .. ': ' .. gameinfo.getromhash())
 	else
 		local gamemeta = gamedata[whichgame]
-		shouldSwap = gamemeta.swapMethod or swapMethod(gamemeta)
+		shouldSwap = gamemeta.swap or generic_swap(gamemeta)
 	end
 end
 
