@@ -1,3 +1,15 @@
+--[[ HOW TO ADD YOUR OWN ROM VERSION:
+
+1) find the appropriate tag for your game from the list in the gamedata or romhashes tables.
+    e.g., if you are trying to add a version of MMX5, find the area with the hashes for mmx5psx
+
+2) determine the hash for your version. the easiest way to do this is to run the hash.lua script
+    in the shuffler-src/ folder. it will give you both the hash and the game name
+
+3) add an entry to the romhashes table to map the hash value to the game tag. you can copy an
+    existing entry to get the formatting right if you are unfamiliar with Lua syntax
+--]]
+
 local plugin = {}
 
 plugin.name = "Megaman Damage Shuffler"
