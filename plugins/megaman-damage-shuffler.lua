@@ -47,7 +47,7 @@ local function generic_swap(gamemeta)
 		local currlc = gamemeta.getlc()
 
 		local maxhp = gamemeta.maxhp()
-		local minhp = gamemeta.minhp or 0
+		local minhp = gamemeta.minhp or -math.huge
 
 		-- health must be within an acceptable range to count
 		-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
@@ -59,7 +59,6 @@ local function generic_swap(gamemeta)
 		local prevhp = data.prevhp
 		local prevlc = data.prevlc
 
-		-- backup current health and lives
 		data.prevhp = currhp
 		data.prevlc = currlc
 
@@ -162,12 +161,12 @@ local gamedata = {
 		getlc=function() return mainmemory.read_u8(0x0D80F7) end,
 		maxhp=function() return mainmemory.read_u8(0x0D8115) end,
 	},
-	['mmx4psx']={ -- Mega Man X4 PSX
+	['mmx4psx-us']={ -- Mega Man X4 PSX
 		gethp=function() return bit.band(mainmemory.read_u8(0x141924), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x172204) end,
 		maxhp=function() return mainmemory.read_u8(0x172206) end,
 	},
-	['mmx5psx']={ -- Mega Man X5 PSX
+	['mmx5psx-us']={ -- Mega Man X5 PSX
 		gethp=function() return bit.band(mainmemory.read_u8(0x09A0FC), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x0D1C45) end,
 		maxhp=function() return mainmemory.read_u8(0x0D1C47) end,
@@ -388,6 +387,29 @@ local romhashes = {
 	['DB303209E934BD1111C3FB1CF253F43F4DE0AB73'] = 'mm6nes', -- Rockman 6 - Shijou Saidai no Tatakai!! (J) [o1][T+Chi].nes
 	['17CE145137DD6D3FFEAE3FBBC3E47E4D3D69E6B2'] = 'mm6nes', -- Rockman 6 - Shijou Saidai no Tatakai!! (J) [T+Chi].nes
 	['DD95FAF3FC64BFAF8B8FE2160F2721E1900E1361'] = 'mm6nes', -- Rockman 6 - Shijou Saidai no Tatakai!! (J).nes
+	-- Mega Man 7 SNES rom hashes
+	['D11E3793F46F2B1BD00150438D394E4B13489A14'] = 'mm7snes', -- Mega Man VII (E).smc
+	['DFF515C3634807B09DD3D53AC86BD3D2A6F87521'] = 'mm7snes', -- Mega Man VII (U) [T+Fre_Genius].smc
+	['21680D62F6D078DDDC4374FD5DEA33CAC5417CA8'] = 'mm7snes', -- Mega Man VII (U) [T+Ger198_Reaper].smc
+	['E8F566917E952CF66B7072F82196541356298BFE'] = 'mm7snes', -- Mega Man VII (U) [T+Ita].smc
+	['5E7B0D08E080CDD66D783954DA49EEEEA5BAB641'] = 'mm7snes', -- Mega Man VII (U) [T+Por].smc
+	['88707FC246345FBFCAB7212652B711DC075F4C8D'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Sayans].smc
+	['7B66FF57560EF016103CCE5629AF7DF8914956F7'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Sinister].smc
+	['E5391AE50982E07C68AAF105C490A585944273A6'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Tanero].smc
+	['5F49B65345604DA0EA07B6F9E243F75B3BF65D5B'] = 'mm7snes', -- Mega Man VII (U) [t1].smc
+	['10B017FF2E9BF241ED23F1C302E11F023AC60775'] = 'mm7snes', -- Mega Man VII (U) [t2].smc
+	['DAE01650C00491A5FB767206D0BB5FC0C163FD51'] = 'mm7snes', -- Mega Man VII (U) [t3].smc
+	['6E7C9C9DD397F771303EE4AEC29D106B9F86C832'] = 'mm7snes', -- Mega Man VII (U).smc
+	['195A40598CCC79ED99BC6B266CF955701461AD2B'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f1].smc
+	['77CDF229DBADDF996F37F0399473C248ECDA730D'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f2].smc
+	['30C00AEBA9F3607F593995A789742F6569E5289F'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f3].smc
+	['91DA21BE9CFE16391ACA87C35597BB3BA401F101'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f4].smc
+	['72226D8A50C6EEEFD9EEB7F93AE11E085465754A'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t1].smc
+	['CA1610103BFD310A64AA436B9636B721288C0FB6'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t2].smc
+	['84B58F0B3C525767114227BDC1C9D3FB48856596'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t3].smc
+	['A907F7ECE8A8D89126C466079712282D675486EF'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J).smc
+	-- Mega Man 8 PSX rom hashes
+	['CA2E63F7'] = 'mm8psx',
 	-- Mega Man X SNES rom hashes
 	['8A32570FAD3BFC92C0508C88022FB20412DD7BED'] = 'mmx1', -- Mega Man X (E).smc
 	['449A00631208FBCC8D58209E66D0D488674B7FB1'] = 'mmx1', -- Mega Man X (U) (V1.0) [!].smc
@@ -443,36 +465,15 @@ local romhashes = {
 	-- Mega Man X3 PSX rom hashes
 	['30776FC9'] = 'mmx3psx-eu', -- Mega Man X3 (Europe)
 	['470B67F2'] = 'mmx3psx-jp', -- Rockman X3 (Japan)
-	-- Rockman & Forte SNES rom hashes
-	['111C3514C483F59C00B3AED4E23CE72D44A1EC2F'] = 'rm&f', -- Rockman & Forte (J) [h1].smc
-	['5172400A5B1D0787F4F4CE76609598147BF8ABBD'] = 'rm&f', -- Rockman & Forte (J) [T+Eng1.00-MMB_AGTP].smc
-	['20332C7EEAE8D4D740EEDEFCB2671455C1CC4850'] = 'rm&f', -- Rockman & Forte (J) [T+Eng1.00-RMF_AGTP].smc
-	['CB28F9A32C10EFBD1EDAA9AAC0CC704456539DAF'] = 'rm&f', -- Rockman & Forte (J) [T+Por].smc
-	['49ACC34CE955EBA27ABAD588E28DDD804E6F2C4D'] = 'rm&f', -- Rockman & Forte (J) [T-Eng99%].smc
-	['E98789CCC644A737724F3000F8EB4161E1F59731'] = 'rm&f', -- Rockman & Forte (J) [T-Por].smc
-	['5C6B0679C1A6A040F969A5D08987AA4ECDDF14A1'] = 'rm&f', -- Rockman & Forte (J).smc
-	['BCD2FC38B4E4BF6B811B00301F349E85CA48FE1A'] = 'rm&f', -- Rockman & Forte (Japan).sfc
-	-- Mega Man 7 SNES rom hashes
-	['D11E3793F46F2B1BD00150438D394E4B13489A14'] = 'mm7snes', -- Mega Man VII (E).smc
-	['DFF515C3634807B09DD3D53AC86BD3D2A6F87521'] = 'mm7snes', -- Mega Man VII (U) [T+Fre_Genius].smc
-	['21680D62F6D078DDDC4374FD5DEA33CAC5417CA8'] = 'mm7snes', -- Mega Man VII (U) [T+Ger198_Reaper].smc
-	['E8F566917E952CF66B7072F82196541356298BFE'] = 'mm7snes', -- Mega Man VII (U) [T+Ita].smc
-	['5E7B0D08E080CDD66D783954DA49EEEEA5BAB641'] = 'mm7snes', -- Mega Man VII (U) [T+Por].smc
-	['88707FC246345FBFCAB7212652B711DC075F4C8D'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Sayans].smc
-	['7B66FF57560EF016103CCE5629AF7DF8914956F7'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Sinister].smc
-	['E5391AE50982E07C68AAF105C490A585944273A6'] = 'mm7snes', -- Mega Man VII (U) [T+Spa100_Tanero].smc
-	['5F49B65345604DA0EA07B6F9E243F75B3BF65D5B'] = 'mm7snes', -- Mega Man VII (U) [t1].smc
-	['10B017FF2E9BF241ED23F1C302E11F023AC60775'] = 'mm7snes', -- Mega Man VII (U) [t2].smc
-	['DAE01650C00491A5FB767206D0BB5FC0C163FD51'] = 'mm7snes', -- Mega Man VII (U) [t3].smc
-	['6E7C9C9DD397F771303EE4AEC29D106B9F86C832'] = 'mm7snes', -- Mega Man VII (U).smc
-	['195A40598CCC79ED99BC6B266CF955701461AD2B'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f1].smc
-	['77CDF229DBADDF996F37F0399473C248ECDA730D'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f2].smc
-	['30C00AEBA9F3607F593995A789742F6569E5289F'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f3].smc
-	['91DA21BE9CFE16391ACA87C35597BB3BA401F101'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [f4].smc
-	['72226D8A50C6EEEFD9EEB7F93AE11E085465754A'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t1].smc
-	['CA1610103BFD310A64AA436B9636B721288C0FB6'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t2].smc
-	['84B58F0B3C525767114227BDC1C9D3FB48856596'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J) [t3].smc
-	['A907F7ECE8A8D89126C466079712282D675486EF'] = 'mm7snes', -- Rockman 7 - Shukumei no Taiketsu! (J).smc
+	-- Mega Man X4 PSX rom hashes
+	['314E06A8'] = 'mmx4psx-us',
+	-- Mega Man X5 PSX rom hashes
+	['1C64D6EA'] = 'mmx5psx-us',
+	['614E644C'] = 'mmx5psx-us', -- Mega Man X5 (USA) [Improvement Project Addendum v1.5].xdelta
+	-- Mega Man X6 PSX rom hashes
+	['24454CEE'] = 'mmx6psx-us', -- Mega Man X6 (USA) (v1.0)
+	['F063F536'] = 'mmx6psx-us', -- Mega Man X6 (USA) (v1.1)
+	['A4F84BEC'] = 'mmx6psx-jp', -- Rockman X6 (Japan)
 	-- Mega Man 1 GB rom hashes
 	['2CFAEE20EA657F57CDCF0C7159B88D1339C9651D'] = 'mm1gb', -- Megaman (U) [T+Fre_terminus].gb
 	['5D598A14A2A35AF64FBB08828EB1D425472624F3'] = 'mm1gb', -- Megaman (U) [T+Por_Emuboarding].gb
@@ -536,6 +537,15 @@ local romhashes = {
 	-- Mega Man Xtreme GBC rom hashes
 	['C877449BA0889FDCACF23C49B0611D0CA57283C5'] = 'mmx1gbc', -- Mega Man Xtreme (U) [C][!].gbc
 	['CB1811AC8969F6B683DF954B57138DD28EBB40FF'] = 'mmx2gbc', -- Mega Man Xtreme 2 (U) [C][!].gbc
+	-- Rockman & Forte SNES rom hashes
+	['111C3514C483F59C00B3AED4E23CE72D44A1EC2F'] = 'rm&f', -- Rockman & Forte (J) [h1].smc
+	['5172400A5B1D0787F4F4CE76609598147BF8ABBD'] = 'rm&f', -- Rockman & Forte (J) [T+Eng1.00-MMB_AGTP].smc
+	['20332C7EEAE8D4D740EEDEFCB2671455C1CC4850'] = 'rm&f', -- Rockman & Forte (J) [T+Eng1.00-RMF_AGTP].smc
+	['CB28F9A32C10EFBD1EDAA9AAC0CC704456539DAF'] = 'rm&f', -- Rockman & Forte (J) [T+Por].smc
+	['49ACC34CE955EBA27ABAD588E28DDD804E6F2C4D'] = 'rm&f', -- Rockman & Forte (J) [T-Eng99%].smc
+	['E98789CCC644A737724F3000F8EB4161E1F59731'] = 'rm&f', -- Rockman & Forte (J) [T-Por].smc
+	['5C6B0679C1A6A040F969A5D08987AA4ECDDF14A1'] = 'rm&f', -- Rockman & Forte (J).smc
+	['BCD2FC38B4E4BF6B811B00301F349E85CA48FE1A'] = 'rm&f', -- Rockman & Forte (Japan).sfc
 	-- Mega Man Wily Wars GEN rom hashes
 	['3A69E358628E49B6744C9D2C07F874D6'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f1].bin
 	['B47C78AF48D843C9D52FF9DEE1CBE98C'] = 'mmwwgen', -- Mega Man - The Wily Wars (E) [f2].bin
@@ -547,32 +557,47 @@ local romhashes = {
 	['4C26D10F82D5B5B9E6526BE1E8C5446B'] = 'mmwwgen', -- Rockman Megaworld (J) [b3].bin
 	['6C2A6A01CB0F46186AB93766DD430A50'] = 'mmwwgen', -- Rockman Megaworld (J) [f1].bin
 	['7FE51160D8055E813245ADD4B1E3DA42'] = 'mmwwgen', -- Rockman Megaworld (J) [h1C].bin
-	-- Mega Man 8 PSX rom hashes
-	['CA2E63F7'] = 'mm8psx',
-	-- Mega Man X4 PSX rom hashes
-	['314E06A8'] = 'mmx4psx',
-	-- Mega Man X5 PSX rom hashes
-	['1C64D6EA'] = 'mmx5psx',
-	['614E644C'] = 'mmx5psx', -- Mega Man X5 (USA) [Improvement Project Addendum v1.5].xdelta
-	-- Mega Man X6 PSX rom rom
-	['24454CEE'] = 'mmx6psx-us', -- Mega Man X6 (USA) (v1.0)
-	['F063F536'] = 'mmx6psx-us', -- Mega Man X6 (USA) (v1.1)
-	['A4F84BEC'] = 'mmx6psx-jp', -- Rockman X6 (Japan)
 }
 
+local romnames = {
+	['Mega Man X4'] = 'mmx4psx-us',
+	['Rockman X4'] = 'mmx4psx-jp',
+	['Mega Man X5'] = 'mmx5psx-us',
+	['Rockman X5'] = 'mmx5psx-jp',
+	['Mega Man X6'] = 'mmx6psx-us',
+	['Rockman X6'] = 'mmx6psx-jp',
+}
+
+function get_game_data()
+	local hash = gameinfo.getromhash()
+	local name = gameinfo.getromname()
+
+	-- try to just match the rom hash first
+	local tag = romhashes[hash]
+	if tag ~= nil and gamedata[tag] ~= nil then return gamedata[tag] end
+
+	-- check to see if any of the rom name samples match
+	for x,tag in pairs(romnames) do
+		if string.find(name, x) and gamedata[tag] ~= nil then
+			return gamedata[tag]
+		end
+	end
+
+	return nil
+end
+
 function plugin.on_game_load(data, settings)
-	local whichgame = romhashes[gameinfo.getromhash()]
-	if whichgame == nil then
-		print('unrecognized hash for ' .. gameinfo.getromname() .. ': ' .. gameinfo.getromhash())
-	else
-		local gamemeta = gamedata[whichgame]
-		shouldSwap = gamemeta.swap or generic_swap(gamemeta)
+	local gamemeta = get_game_data()
+	if gamemeta ~= nil then
+		local func = gamemeta.func or generic_swap
+		shouldSwap = func(gamemeta)
 	end
 end
 
 function plugin.on_frame(data, settings)
 	-- run the check method for each individual game
 	if shouldSwap(prevdata) and frames_since_restart > 10 then
+		print('swap time ' .. gameinfo.getromname())
 		swap_game_delay(3)
 	end
 end
