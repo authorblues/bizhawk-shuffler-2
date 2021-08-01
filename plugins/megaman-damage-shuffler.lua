@@ -47,7 +47,7 @@ local function generic_swap(gamemeta)
 		local currlc = gamemeta.getlc()
 
 		local maxhp = gamemeta.maxhp()
-		local minhp = gamemeta.minhp or -math.huge
+		local minhp = gamemeta.minhp or 0
 
 		-- health must be within an acceptable range to count
 		-- ON ACCOUNT OF ALL THE GARBAGE VALUES BEING STORED IN THESE ADDRESSES
