@@ -36,6 +36,7 @@ plugin.description =
 	- Mega Man I-V GB
 	- Mega Man Wily Wars GEN
 	- Mega Man Legends/64
+	- Mega Man Soccer (credit: kalimag)
 ]]
 
 local prevdata = {}
