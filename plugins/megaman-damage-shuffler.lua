@@ -245,6 +245,44 @@ local gamedata = {
 		shield=function() return mainmemory.read_u8(0x0BBD85) end,
 		func=mmlegends,
 	},
+	['mmsoccer']={
+		get_controlled_player = function() return mainmemory.read_u16_le(0x195A) end,
+		get_player_state = function(player_addr) return mainmemory.read_u16_le(player_addr + 0x22) end,
+		is_player_valid = function(player_addr) return player_addr >= 0x1000 and player_addr < 0x1800 and (player_addr % 0x80) == 0 end,
+		get_opponent_score = function()
+			local player_side_flags = mainmemory.read_u16_le(0x0088) -- game swaps team data in memory after half-time
+			if bit.check(player_side_flags, 0) then return mainmemory.read_u8(0x0ADC) end -- if player 1 is on left side, return right side score
+			if bit.check(player_side_flags, 4) then return mainmemory.read_u8(0x0ABC) end -- if player 1 is on right side, return left side score
+		end,
+		is_hit_state = function(state, only_special)
+			return (state == 0x7 and not only_special) or -- tackle knockdown
+				   (state ~= nil and state >= 0x48 and state <= 0x59) or state == 0x5C -- special shot effects
+		end,
+		func = function(gamemeta)
+			return function(data)
+				local prev_player = data.player
+				local prev_state = data.state
+				local prev_opponent_score = data.opponent_score or -math.huge
+
+				local player = gamemeta.get_controlled_player()
+				local state = nil
+				if gamemeta.is_player_valid(player) then
+					state = gamemeta.get_player_state(player)
+				end
+				local opponent_score = gamemeta.get_opponent_score()
+
+				data.player = player
+				data.state = state
+				data.opponent_score = opponent_score
+
+				-- swap if currently controlled character is tackled or hit by special shot
+				if player == prev_player and state ~= prev_state and gamemeta.is_hit_state(state) then return true end
+				-- swap if opponent scores, unless we (probably) already swapped because we got hit by a special shot
+				if opponent_score == prev_opponent_score + 1 and not gamemeta.is_hit_state(state, true) then return true end
+				return false
+			end
+		end,
+	}
 }
 
 -- same RAM maps across versions?
@@ -589,6 +627,9 @@ local romhashes = {
 	-- Mega Man Legends rom hashes
 	['F24FE0AFF01AEC018E2DD558EC4F076CF328129F'] = 'mmlegends-n64', -- Mega Man 64 (USA).n64
 	['C9BCF042'] = 'mmlegends-psx', -- Mega Man Legends (USA).ccd
+	-- Megaman's Soccer SNES rom hashes
+	['7E59C9457829ED3F0FBD9CD0CEEB3432A4739E98'] = 'mmsoccer', -- Mega Man Soccer (USA)
+	['8D9BA291A86A3588823D8CED0F28742B5754C789'] = 'mmsoccer', -- Rockman's Soccer (Japan)
 }
 
 local backupchecks = {
