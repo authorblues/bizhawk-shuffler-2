@@ -35,6 +35,7 @@ plugin.description =
 	- Rockman & Forte SNES
 	- Mega Man I-V GB
 	- Mega Man Wily Wars GEN
+	- Mega Man Legends/64
 ]]
 
 local prevdata = {}
@@ -82,6 +83,18 @@ local function generic_swap(gamemeta)
 		end
 
 		return false
+	end
+end
+
+function mmlegends(gamemeta)
+	local mainfunc = generic_swap(gamemeta)
+	return function(data)
+		local shield = gamemeta.shield()
+		local prevsh = data.prevsh
+
+		data.prevsh = shield
+		if shield == 0 then return false end
+		return mainfunc(data) or (prevsh == 0)
 	end
 end
 
@@ -215,6 +228,22 @@ local gamedata = {
 		gethp=function() return bit.band(mainmemory.read_u8(0x0121), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x0065) end,
 		maxhp=function() return mainmemory.read_u8(0x0084) end,
+	},
+	['mmlegends-n64']={
+		gethp=function() return mainmemory.read_s16_be(0x204A1E) end,
+		getlc=function() return 0 end,
+		maxhp=function() return mainmemory.read_s16_be(0x204A60) end,
+		minhp=-40,
+		shield=function() return mainmemory.read_u8(0x1BC66D) end,
+		func=mmlegends,
+	},
+	['mmlegends-psx']={
+		gethp=function() return mainmemory.read_s16_be(0x0B521E) end,
+		getlc=function() return 0 end,
+		maxhp=function() return mainmemory.read_s16_be(0x0B5260) end,
+		minhp=-40,
+		shield=function() return mainmemory.read_u8(0x0BBD85) end,
+		func=mmlegends,
 	},
 }
 
@@ -557,15 +586,18 @@ local romhashes = {
 	['4C26D10F82D5B5B9E6526BE1E8C5446B'] = 'mmwwgen', -- Rockman Megaworld (J) [b3].bin
 	['6C2A6A01CB0F46186AB93766DD430A50'] = 'mmwwgen', -- Rockman Megaworld (J) [f1].bin
 	['7FE51160D8055E813245ADD4B1E3DA42'] = 'mmwwgen', -- Rockman Megaworld (J) [h1C].bin
+	-- Mega Man Legends rom hashes
+	['F24FE0AFF01AEC018E2DD558EC4F076CF328129F'] = 'mmlegends-n64', -- Mega Man 64 (USA).n64
+	['C9BCF042'] = 'mmlegends-psx', -- Mega Man Legends (USA).ccd
 }
 
-local romnames = {
-	['Mega Man X4'] = 'mmx4psx-us',
-	['Rockman X4'] = 'mmx4psx-jp',
-	['Mega Man X5'] = 'mmx5psx-us',
-	['Rockman X5'] = 'mmx5psx-jp',
-	['Mega Man X6'] = 'mmx6psx-us',
-	['Rockman X6'] = 'mmx6psx-jp',
+local backupchecks = {
+	{ tag='mmx4psx-us', name='Mega Man X4' },
+	{ tag='mmx4psx-jp', name='Rockman X4' },
+	{ tag='mmx5psx-us', name='Mega Man X5' },
+	{ tag='mmx5psx-jp', name='Rockman X5' },
+	{ tag='mmx6psx-us', name='Mega Man X6' },
+	{ tag='mmx6psx-jp', name='Rockman X6' },
 }
 
 function get_game_data()
@@ -577,8 +609,8 @@ function get_game_data()
 	if tag ~= nil and gamedata[tag] ~= nil then return gamedata[tag] end
 
 	-- check to see if any of the rom name samples match
-	for x,tag in pairs(romnames) do
-		if string.find(name, x) and gamedata[tag] ~= nil then
+	for _,check in pairs(backupchecks) do
+		if check.name ~= nil and string.find(name, check.name) and gamedata[tag] ~= nil then
 			return gamedata[tag]
 		end
 	end
@@ -597,7 +629,6 @@ end
 function plugin.on_frame(data, settings)
 	-- run the check method for each individual game
 	if shouldSwap(prevdata) and frames_since_restart > 10 then
-		print('swap time ' .. gameinfo.getromname())
 		swap_game_delay(3)
 	end
 end
