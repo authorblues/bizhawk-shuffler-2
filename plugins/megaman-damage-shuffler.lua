@@ -107,7 +107,6 @@ function mmlegends(gamemeta)
 end
 
 local function battle_and_chase_swap(gamemeta)
-	print('battle_and_chase_swap')
 	local player_addr = gamemeta.player_addr
 	local hit_states = {
 		[0] = nil, -- in menus, before race start
@@ -136,9 +135,9 @@ local function battle_and_chase_swap(gamemeta)
 
 		return (state_changed and is_hit_state) or
 		       (dizzy_changed and dizzy) or
-			   (frozen_changed and frozen) or
-			   (shuriken_changed and shuriken) or
-			   (lightning_changed and lightning)
+		       (frozen_changed and frozen) or
+		       (shuriken_changed and shuriken) or
+		       (lightning_changed and lightning)
 	end
 end
 
@@ -350,15 +349,15 @@ local gamedata = {
 			end
 		end,
 	},
-	['mmb&c-eu'] = {
+	['mmb&c-eu'] = { -- Megaman - Battle & Chase (Europe)
 		func = battle_and_chase_swap,
 		player_addr = 0x135234,
 	},
-	['mmb&c-jp-1.0'] = {
+	['mmb&c-jp-1.0'] = { -- Rockman - Battle & Chase (Japan) (v1.0)
 		func = battle_and_chase_swap,
 		player_addr = 0x13A414,
 	},
-	['mmb&c-jp-1.1'] = {
+	['mmb&c-jp-1.1'] = { -- Rockman - Battle & Chase (Japan) (v1.1)
 		func = battle_and_chase_swap,
 		player_addr = 0x13A310,
 	},
