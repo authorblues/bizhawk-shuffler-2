@@ -107,9 +107,6 @@ end
 
 function plugin.on_setup(data, settings)
 	data.meta = data.meta or {}
-
-	-- this should forcibly debounce the L press
-	data.prevL = true
 end
 
 function plugin.on_game_load(data, settings)
@@ -145,6 +142,9 @@ function plugin.on_game_load(data, settings)
 	meta.itemqueues[this_player_id] = meta.itemqueues[this_player_id] or {}
 	meta.queuedsend[this_player_id] = meta.queuedsend[this_player_id] or {}
 	meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] or 0
+
+	-- this should forcibly debounce the L press
+	data.prevL = true
 end
 
 function plugin.on_frame(data, settings)
