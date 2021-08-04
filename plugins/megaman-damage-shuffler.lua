@@ -43,6 +43,19 @@ local prevdata = {}
 
 local shouldSwap = function() return false end
 
+-- update value in prevdata and return whether the value has changed, new value, and old value
+-- value is only considered changed if it wasn't nil before
+local function update_prev(key, value)
+	local prev_value = prevdata[key]
+	prevdata[key] = value
+	local changed = prev_value ~= nil and value ~= prev_value
+	if changed then 
+		print(string.format('[%s F%d] %s changed from %s to %s',
+			os.date('%H:%M:%S'), emu.framecount(), key, tostring(prev_value), tostring(value)))
+	end
+	return changed, value, prev_value
+end
+
 local function generic_swap(gamemeta)
 	return function(data)
 		local currhp = gamemeta.gethp()
@@ -96,6 +109,42 @@ function mmlegends(gamemeta)
 		data.prevsh = shield
 		if shield == 0 then return false end
 		return mainfunc(data) or (prevsh == 0)
+	end
+end
+
+local function battle_and_chase_swap(gamemeta)
+	print('battle_and_chase_swap')
+	local player_addr = gamemeta.player_addr
+	local hit_states = {
+		[0] = nil, -- in menus, before race start
+		[1] = false, -- normal race state
+		[2] = true, -- spun out
+		[3] = false, -- 180 turn? unknown use
+		[4] = nil, -- after race finish
+		[5] = nil, -- unknown
+		[6] = false, -- bad start
+		[7] = true, -- Duo's special attack
+		[8] = true, -- Sky High Wing, not used by CPUs?
+		[9] = true, -- falling into hole
+		[10] = true, -- blown up/launched into air
+	}
+	return function()
+		local state_changed, state = update_prev('state', mainmemory.read_u8(player_addr + 0x2))
+		local is_hit_state = hit_states[state]
+		if is_hit_state == nil then return false end -- not actively racing or garbage data
+
+		local dizzy_changed, dizzy = update_prev('dizzy', mainmemory.read_u8(player_addr + 0xD4) > 0)
+		local frozen_changed, frozen = update_prev('frozen', mainmemory.read_s16_le(player_addr + 0xFC) > 0)
+		local shuriken_changed, shuriken = update_prev('shuriken', mainmemory.read_s16_le(player_addr + 0xFE) > 0)
+		local flags = mainmemory.read_u8(player_addr + 0xC7)
+		local lightning_changed, lightning = update_prev('lightning', bit.check(flags, 5))
+		--local wheel_damage_changed, wheel_damage = update_prev('wheel_damage',  mainmemory.read_s16_le(player_addr + 0x106) ~= 0) -- Blade Tires, not used by CPUs?
+
+		return (state_changed and is_hit_state) or
+		       (dizzy_changed and dizzy) or
+			   (frozen_changed and frozen) or
+			   (shuriken_changed and shuriken) or
+			   (lightning_changed and lightning)
 	end
 end
 
@@ -283,7 +332,19 @@ local gamedata = {
 				return false
 			end
 		end,
-	}
+	},
+	['mmb&c-eu'] = {
+		func = battle_and_chase_swap,
+		player_addr = 0x135234,
+	},
+	['mmb&c-jp-1.0'] = {
+		func = battle_and_chase_swap,
+		player_addr = 0x13A414,
+	},
+	['mmb&c-jp-1.1'] = {
+		func = battle_and_chase_swap,
+		player_addr = 0x13A310,
+	},
 }
 
 -- same RAM maps across versions?
@@ -631,6 +692,10 @@ local romhashes = {
 	-- Megaman's Soccer SNES rom hashes
 	['7E59C9457829ED3F0FBD9CD0CEEB3432A4739E98'] = 'mmsoccer', -- Mega Man Soccer (USA)
 	['8D9BA291A86A3588823D8CED0F28742B5754C789'] = 'mmsoccer', -- Rockman's Soccer (Japan)
+	-- Mega Man Battle & Chase PSX hashes
+	['975FB63F'] = 'mmb&c-eu', -- Megaman - Battle & Chase (Europe)
+	['8797220B'] = 'mmb&c-jp-1.0', -- Rockman - Battle & Chase (Japan) (v1.0)
+	['4F343C71'] = 'mmb&c-jp-1.1', -- Rockman - Battle & Chase (Japan) (v1.1)
 }
 
 local backupchecks = {
