@@ -114,7 +114,7 @@ local function battle_and_chase_swap(gamemeta)
 		[2] = true, -- spun out
 		[3] = false, -- 180 turn? unknown use
 		[4] = nil, -- after race finish
-		[5] = nil, -- unknown
+		[5] = false, -- roll's spin jump
 		[6] = false, -- bad start
 		[7] = true, -- Duo's special attack
 		[8] = true, -- Sky High Wing, not used by CPUs?
