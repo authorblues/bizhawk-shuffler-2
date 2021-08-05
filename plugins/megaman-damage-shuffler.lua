@@ -154,12 +154,12 @@ local gamedata = {
 		getlc=function() return mainmemory.read_u8(0x1FB3) end,
 		maxhp=function() return mainmemory.read_u8(0x1FD1) end,
 	},
-	['mmx3-us']={ -- Mega Man X3 SNES
+	['mmx3snes-us']={ -- Mega Man X3 SNES
 		gethp=function() return bit.band(mainmemory.read_u8(0x09FF), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x1FB4) end,
 		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
 	},
-	['mmx3-eu']={ -- Mega Man X3 SNES
+	['mmx3snes-eu']={ -- Mega Man X3 SNES
 		gethp=function() return bit.band(mainmemory.read_u8(0x09FF), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x1FB4) end,
 		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
