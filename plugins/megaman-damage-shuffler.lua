@@ -30,6 +30,8 @@ plugin.description =
 
 local prevdata = {}
 
+local swap_scheduled = false
+
 local shouldSwap = function() return false end
 
 -- update value in prevdata and return whether the value has changed, new value, and old value
@@ -133,7 +135,8 @@ local function battle_and_chase_swap(gamemeta)
 		       (dizzy_changed and dizzy) or
 		       (frozen_changed and frozen) or
 		       (shuriken_changed and shuriken) or
-		       (lightning_changed and lightning)
+		       (lightning_changed and lightning),
+			   20
 	end
 end
 
@@ -404,8 +407,12 @@ end
 
 function plugin.on_frame(data, settings)
 	-- run the check method for each individual game
-	if shouldSwap(prevdata) and frames_since_restart > 10 then
-		swap_game_delay(3)
+	if swap_scheduled then return end
+
+	local schedule_swap, delay = shouldSwap(prevdata)
+	if schedule_swap and frames_since_restart > 10 then
+		swap_game_delay(delay or 3)
+		swap_scheduled = true
 	end
 end
 
