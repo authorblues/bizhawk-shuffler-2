@@ -75,7 +75,12 @@ end
 
 -- output data to files (for OBS support)
 function write_data(filename, data, mode)
-	local handle = io.open(filename, mode or 'w')
+	local handle, err = io.open(filename, mode or 'w')
+	if handle == nil then
+		print(string.format("Couldn't write to file: %s", filename))
+		print(err)
+		return
+	end
 	handle:write(data)
 	handle:close()
 end
