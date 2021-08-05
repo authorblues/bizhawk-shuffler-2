@@ -164,18 +164,16 @@ local gamedata = {
 		getlc=function() return mainmemory.read_u8(0x1FB4) end,
 		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
 	},
---[[
 	['mmx3psx-eu']={ -- Mega Man X3 PSX PAL
-		gethp=function() return mainmemory.read_u8(0x0D8528) end,
+		gethp=function() return bit.band(mainmemory.read_u8(0x0D9091), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x0D8743) end,
 		maxhp=function() return mainmemory.read_u8(0x0D8761) end,
 	},
 	['mmx3psx-jp']={ -- Mega Man X3 PSX NTSC-J
-		gethp=function() return mainmemory.read_u8(0x0D7EDC) end,
+		gethp=function() return bit.band(mainmemory.read_u8(0x0D8A45), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x0D80F7) end,
 		maxhp=function() return mainmemory.read_u8(0x0D8115) end,
 	},
---]]
 	['mmx4psx-us']={ -- Mega Man X4 PSX
 		gethp=function() return bit.band(mainmemory.read_u8(0x141924), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x172204) end,
