@@ -29,6 +29,7 @@ plugin.description =
 ]]
 
 local prevdata = {}
+local NO_MATCH = 'NONE'
 
 local shouldSwap = function() return false end
 
@@ -304,45 +305,51 @@ local gamedata = {
 }
 
 local function get_tag_from_hash(target)
+	local resp = nil
 	local fp = io.open('plugins/megaman-hashes.dat', 'r')
 	for x in fp:lines() do
-		local hash, tag = x:match("([0-9A-Fa-f]*)%s+([^ ]*)")
-		if hash == target then return tag end
+		local hash, tag = x:match("^([0-9A-Fa-f]+)%s+(%S+)")
+		if hash == target then resp = tag; break end
 	end
 	fp:close()
-	return nil
+	return resp
 end
 
 local backupchecks = {
-	{ tag='mmx4psx-us', name='Mega Man X4' },
-	{ tag='mmx4psx-jp', name='Rockman X4' },
-	{ tag='mmx5psx-us', name='Mega Man X5' },
-	{ tag='mmx5psx-jp', name='Rockman X5' },
-	{ tag='mmx6psx-us', name='Mega Man X6' },
-	{ tag='mmx6psx-jp', name='Rockman X6' },
 }
 
-local function get_game_data()
+local function get_game_tag()
 	-- try to just match the rom hash first
 	local tag = get_tag_from_hash(gameinfo.getromhash())
-	if tag ~= nil and gamedata[tag] ~= nil then return gamedata[tag] end
+	if tag ~= nil and gamedata[tag] ~= nil then return tag end
 
 	-- check to see if any of the rom name samples match
 	local name = gameinfo.getromname()
 	for _,check in pairs(backupchecks) do
-		if check.name ~= nil and string.find(name, check.name) and gamedata[tag] ~= nil then
-			return gamedata[tag]
-		end
+		if check.test() then return check.tag end
 	end
 
 	return nil
 end
 
+function plugin.on_setup(data, settings)
+	data.tags = data.tags or {}
+end
+
 function plugin.on_game_load(data, settings)
-	local gamemeta = get_game_data()
-	if gamemeta ~= nil then
+	local tag = data.tags[gameinfo.getromhash()] or get_game_tag()
+	data.tags[gameinfo.getromhash()] = tag or NO_MATCH
+
+	-- first time through with a bad match, tag will be nil
+	-- can use this to print a debug message only the first time
+	if tag ~= nil and tag ~= NO_MATCH then
+		print('current game: ' .. tag)
+		local gamemeta = gamedata[tag]
 		local func = gamemeta.func or generic_swap
 		shouldSwap = func(gamemeta)
+	elseif tag == nil then
+		print(string.format('unrecognized? %s (%s)',
+			gameinfo.getromname(), gameinfo.getromhash()))
 	end
 end
 
