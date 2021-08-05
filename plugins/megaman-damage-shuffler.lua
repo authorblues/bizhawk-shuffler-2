@@ -38,10 +38,6 @@ local function update_prev(key, value)
 	local prev_value = prevdata[key]
 	prevdata[key] = value
 	local changed = prev_value ~= nil and value ~= prev_value
-	if changed then 
-		print(string.format('[%s F%d] %s changed from %s to %s',
-			os.date('%H:%M:%S'), emu.framecount(), key, tostring(prev_value), tostring(value)))
-	end
 	return changed, value, prev_value
 end
 
@@ -114,7 +110,7 @@ local function battle_and_chase_swap(gamemeta)
 		[2] = true, -- spun out
 		[3] = false, -- 180 turn? unknown use
 		[4] = nil, -- after race finish
-		[5] = false, -- roll's spin jump
+		[5] = false, -- Roll's spin jump
 		[6] = false, -- bad start
 		[7] = true, -- Duo's special attack
 		[8] = true, -- Sky High Wing, not used by CPUs?
