@@ -167,6 +167,7 @@ function plugin.on_frame(data, settings)
 				{item=item_id, src=this_player_id, target=player_id})
 			meta.cleardelay[this_player_id] = CLEAR_DELAY_FRAMES
 			data.prev_player = 0
+			mainmemory.write_s8(OUTGOING_PLAYER_ADDR, 0)
 		end
 
 		local queue_len = #meta.itemqueues[this_player_id]
