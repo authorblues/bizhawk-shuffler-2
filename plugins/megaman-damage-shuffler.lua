@@ -26,6 +26,7 @@ plugin.description =
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
 	- Mega Man Soccer (credit: kalimag)
+	- Mega Man Battle & Chase (credit: kalimag)
 ]]
 
 local prevdata = {}
@@ -93,7 +94,7 @@ local function generic_swap(gamemeta)
 	end
 end
 
-function mmlegends(gamemeta)
+local function mmlegends(gamemeta)
 	local mainfunc = generic_swap(gamemeta)
 	return function(data)
 		local shield = gamemeta.shield()
@@ -296,20 +297,20 @@ local gamedata = {
 		gmode=function() return memory.read_u8(0x019006, "EWRAM") ~= 0x01 end
 	},
 	['mmlegends-n64']={ -- Mega Man 64
+		func=mmlegends,
 		gethp=function() return mainmemory.read_s16_be(0x204A1E) end,
 		getlc=function() return 0 end,
 		maxhp=function() return mainmemory.read_s16_be(0x204A60) end,
 		minhp=-40,
 		shield=function() return mainmemory.read_u8(0x1BC66D) end,
-		func=mmlegends,
 	},
 	['mmlegends-psx']={ -- Mega Man Legends PSX
+		func=mmlegends,
 		gethp=function() return mainmemory.read_s16_be(0x0B521E) end,
 		getlc=function() return 0 end,
 		maxhp=function() return mainmemory.read_s16_be(0x0B5260) end,
 		minhp=-40,
 		shield=function() return mainmemory.read_u8(0x0BBD85) end,
-		func=mmlegends,
 	},
 	['mmsoccer']={ -- Megaman's Soccer SNES
 		get_controlled_player = function() return mainmemory.read_u16_le(0x195A) end,
@@ -350,16 +351,16 @@ local gamedata = {
 		end,
 	},
 	['mmb&c-eu'] = { -- Megaman - Battle & Chase (Europe)
-		func = battle_and_chase_swap,
-		player_addr = 0x135234,
+		func=battle_and_chase_swap,
+		player_addr=0x135234,
 	},
 	['mmb&c-jp-1.0'] = { -- Rockman - Battle & Chase (Japan) (v1.0)
-		func = battle_and_chase_swap,
-		player_addr = 0x13A414,
+		func=battle_and_chase_swap,
+		player_addr=0x13A414,
 	},
 	['mmb&c-jp-1.1'] = { -- Rockman - Battle & Chase (Japan) (v1.1)
-		func = battle_and_chase_swap,
-		player_addr = 0x13A310,
+		func=battle_and_chase_swap,
+		player_addr=0x13A310,
 	},
 }
 
