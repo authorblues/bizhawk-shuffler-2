@@ -31,7 +31,18 @@ plugin.description =
 local prevdata = {}
 local NO_MATCH = 'NONE'
 
+local swap_scheduled = false
+
 local shouldSwap = function() return false end
+
+-- update value in prevdata and return whether the value has changed, new value, and old value
+-- value is only considered changed if it wasn't nil before
+local function update_prev(key, value)
+	local prev_value = prevdata[key]
+	prevdata[key] = value
+	local changed = prev_value ~= nil and value ~= prev_value
+	return changed, value, prev_value
+end
 
 local function generic_swap(gamemeta)
 	return function(data)
@@ -91,6 +102,42 @@ function mmlegends(gamemeta)
 		data.prevsh = shield
 		if shield == 0 then return false end
 		return mainfunc(data) or (prevsh == 0)
+	end
+end
+
+local function battle_and_chase_swap(gamemeta)
+	local player_addr = gamemeta.player_addr
+	local hit_states = {
+		[0] = nil, -- in menus, before race start
+		[1] = false, -- normal race state
+		[2] = true, -- spun out
+		[3] = false, -- 180 turn? unknown use
+		[4] = nil, -- after race finish
+		[5] = false, -- Roll's spin jump
+		[6] = false, -- bad start
+		[7] = true, -- Duo's special attack
+		[8] = true, -- Sky High Wing, not used by CPUs?
+		[9] = true, -- falling into hole
+		[10] = true, -- blown up/launched into air
+	}
+	return function()
+		local state_changed, state = update_prev('state', mainmemory.read_u8(player_addr + 0x2))
+		local is_hit_state = hit_states[state]
+		if is_hit_state == nil then return false end -- not actively racing or garbage data
+
+		local dizzy_changed, dizzy = update_prev('dizzy', mainmemory.read_u8(player_addr + 0xD4) > 0)
+		local frozen_changed, frozen = update_prev('frozen', mainmemory.read_s16_le(player_addr + 0xFC) > 0)
+		local shuriken_changed, shuriken = update_prev('shuriken', mainmemory.read_s16_le(player_addr + 0xFE) > 0)
+		local flags = mainmemory.read_u8(player_addr + 0xC7)
+		local lightning_changed, lightning = update_prev('lightning', bit.check(flags, 5))
+		--local wheel_damage_changed, wheel_damage = update_prev('wheel_damage',  mainmemory.read_s16_le(player_addr + 0x106) ~= 0) -- Blade Tires, not used by CPUs?
+
+		return (state_changed and is_hit_state) or
+		       (dizzy_changed and dizzy) or
+		       (frozen_changed and frozen) or
+		       (shuriken_changed and shuriken) or
+		       (lightning_changed and lightning),
+			   20
 	end
 end
 
@@ -302,6 +349,18 @@ local gamedata = {
 			end
 		end,
 	},
+	['mmb&c-eu'] = { -- Megaman - Battle & Chase (Europe)
+		func = battle_and_chase_swap,
+		player_addr = 0x135234,
+	},
+	['mmb&c-jp-1.0'] = { -- Rockman - Battle & Chase (Japan) (v1.0)
+		func = battle_and_chase_swap,
+		player_addr = 0x13A414,
+	},
+	['mmb&c-jp-1.1'] = { -- Rockman - Battle & Chase (Japan) (v1.1)
+		func = battle_and_chase_swap,
+		player_addr = 0x13A310,
+	},
 }
 
 local function get_tag_from_hash(target)
@@ -355,8 +414,12 @@ end
 
 function plugin.on_frame(data, settings)
 	-- run the check method for each individual game
-	if shouldSwap(prevdata) and frames_since_restart > 10 then
-		swap_game_delay(3)
+	if swap_scheduled then return end
+
+	local schedule_swap, delay = shouldSwap(prevdata)
+	if schedule_swap and frames_since_restart > 10 then
+		swap_game_delay(delay or 3)
+		swap_scheduled = true
 	end
 end
 
