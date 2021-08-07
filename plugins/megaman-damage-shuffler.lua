@@ -25,6 +25,7 @@ plugin.description =
 	- Mega Man Wily Wars GEN
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
+	- Rockman & Forte WonderSwan (credit: kalimag)
 	- Mega Man Soccer (credit: kalimag)
 	- Mega Man Battle & Chase (credit: kalimag)
 ]]
@@ -311,6 +312,16 @@ local gamedata = {
 		maxhp=function() return mainmemory.read_s16_be(0x0B5260) end,
 		minhp=-40,
 		shield=function() return mainmemory.read_u8(0x0BBD85) end,
+	},
+	['rm&fws']={ -- Rockman & Forte: Mirai Kara no Chousensha (WonderSwan)
+		func=function()
+			return function() -- hp and life counter change in very inconvenient ways, generic_swap doesn't work well here
+				local hit_anim_changed, hit_anim = update_prev('hit_anim', mainmemory.read_u16_le(0x03CE) == 0x66F9)
+				local hp_changed, hp, prev_hp = update_prev('hp', mainmemory.read_u8(0x03B6))
+				return (hit_anim_changed and hit_anim) or --happens on pretty much everything including pits and spikes
+				       (hp_changed and hp < prev_hp and (hp > 0 or hit_anim)) -- slime damage and repeated hits while still in anim.
+			end
+		end,
 	},
 	['mmsoccer']={ -- Megaman's Soccer SNES
 		func=function()
