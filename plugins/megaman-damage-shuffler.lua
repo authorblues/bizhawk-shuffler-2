@@ -313,39 +313,38 @@ local gamedata = {
 		shield=function() return mainmemory.read_u8(0x0BBD85) end,
 	},
 	['mmsoccer']={ -- Megaman's Soccer SNES
-		get_controlled_player = function() return mainmemory.read_u16_le(0x195A) end,
-		get_player_state = function(player_addr) return mainmemory.read_u16_le(player_addr + 0x22) end,
-		is_player_valid = function(player_addr) return player_addr >= 0x1000 and player_addr < 0x1800 and (player_addr % 0x80) == 0 end,
-		get_opponent_score = function()
-			local player_side_flags = mainmemory.read_u16_le(0x0088) -- game swaps team data in memory after half-time
-			if bit.check(player_side_flags, 0) then return mainmemory.read_u8(0x0ADC) end -- if player 1 is on left side, return right side score
-			if bit.check(player_side_flags, 4) then return mainmemory.read_u8(0x0ABC) end -- if player 1 is on right side, return left side score
-		end,
-		is_hit_state = function(state, only_special)
-			return (state == 0x7 and not only_special) or -- tackle knockdown
-				   (state ~= nil and state >= 0x48 and state <= 0x59) or state == 0x5C -- special shot effects
-		end,
-		func = function(gamemeta)
-			return function(data)
-				local prev_player = data.player
-				local prev_state = data.state
-				local prev_opponent_score = data.opponent_score or -math.huge
+		func=function()
+			local function get_controlled_player() return mainmemory.read_u16_le(0x195A) end			
+			local function is_player_valid(player_addr)
+				return player_addr >= 0x1000 and player_addr < 0x1800 and (player_addr % 0x80) == 0
+			end
+			local function get_player_state(player_addr)
+				return is_player_valid(player_addr) and mainmemory.read_u16_le(player_addr + 0x22) or nil
+			end			
+			local function is_hit_state(state, only_special)
+				return (state == 0x7 and not only_special) or -- tackle knockdown
+				       (state ~= nil and state >= 0x48 and state <= 0x59) or state == 0x5C -- special shot effects
+			end
+			local function get_opponent_score(left_addr, right_addr)
+				local player_side_flags = mainmemory.read_u16_le(0x0088) -- game swaps team data in memory after half-time
+				if bit.check(player_side_flags, 0) then return mainmemory.read_u8(right_addr) end
+				if bit.check(player_side_flags, 4) then return mainmemory.read_u8(left_addr) end
+			end
 
-				local player = gamemeta.get_controlled_player()
-				local state = nil
-				if gamemeta.is_player_valid(player) then
-					state = gamemeta.get_player_state(player)
-				end
-				local opponent_score = gamemeta.get_opponent_score()
-
-				data.player = player
-				data.state = state
-				data.opponent_score = opponent_score
+			return function()
+				local player_changed, player = update_prev('player', get_controlled_player())
+				local state_changed, state = update_prev('state', get_player_state(player))
+				local _, opp_score, prev_opp_score = update_prev('opp_score', get_opponent_score(0xABC, 0xADC))
+				local _, tie_score, prev_tie_score = update_prev('tie_score', get_opponent_score(0x94C, 0x094E))
 
 				-- swap if currently controlled character is tackled or hit by special shot
-				if player == prev_player and state ~= prev_state and gamemeta.is_hit_state(state) then return true end
+				if not player_changed and state_changed and is_hit_state(state) then return true, 8 end
 				-- swap if opponent scores, unless we (probably) already swapped because we got hit by a special shot
-				if opponent_score == prev_opponent_score + 1 and not gamemeta.is_hit_state(state, true) then return true end
+				if prev_opp_score and opp_score == prev_opp_score + 1 and not is_hit_state(state, true)
+				   then return true end
+				-- swap if opponent scores in tiebreaker
+				if prev_tie_score and tie_score == prev_tie_score + 1 then return true end
+
 				return false
 			end
 		end,
