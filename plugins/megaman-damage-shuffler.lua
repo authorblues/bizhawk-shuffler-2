@@ -26,6 +26,7 @@ plugin.description =
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
 	- Rockman & Forte WonderSwan (credit: kalimag)
+	- Rockman Battle & Fighters (credit: kalimag)
 	- Mega Man Soccer (credit: kalimag)
 	- Mega Man Battle & Chase (credit: kalimag)
 ]]
@@ -371,6 +372,22 @@ local gamedata = {
 	['mmb&c-jp-1.1'] = { -- Rockman - Battle & Chase (Japan) (v1.1)
 		func=battle_and_chase_swap,
 		player_addr=0x13A310,
+	},
+	['rockman-battle-and-fighters'] = {
+		func=function()
+			return function(data)
+				if mainmemory.read_u8(0x0110) == 1 then -- Power Battle
+					local _, hp, prev_hp = update_prev('hp', mainmemory.read_u16_le(0x023A))
+					return prev_hp and hp < prev_hp
+				elseif mainmemory.read_u8(0x0107) == 1 then -- Power Fighters
+					local _, hp, prev_hp = update_prev('hp', mainmemory.read_u16_le(0x02C2))
+					return prev_hp and hp < prev_hp
+				else
+					data.hp = nil
+					return false
+				end
+			end
+		end
 	},
 }
 
