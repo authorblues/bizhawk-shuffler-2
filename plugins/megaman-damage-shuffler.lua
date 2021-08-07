@@ -28,6 +28,7 @@ plugin.description =
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
 	- Rockman & Forte WonderSwan
+	- Rockman EXE WS
 	- Rockman Battle & Fighters
 	- Mega Man Soccer
 	- Mega Man Battle & Chase
@@ -388,6 +389,14 @@ local gamedata = {
 					data.hp = nil
 					return false
 				end
+			end
+		end
+	},
+	['rockman-exe-ws'] = {
+		func=function()
+			return function()
+				local hit_changed, hit = update_prev('hit', bit.check(mainmemory.read_u8(0x0BDF), 4))
+				return (hit_changed and hit)
 			end
 		end
 	},
