@@ -377,7 +377,7 @@ function cwd()
 	local fp = io.open(DEFAULT_CMD_OUTPUT, 'r')
 	local resp = fp:read("*all")
 	fp:close()
-	return resp:match( "^%s*(.-)%s*$" )
+	return resp:match( "^%s*(.+)%s*$" )
 end
 
 function complete_setup()
