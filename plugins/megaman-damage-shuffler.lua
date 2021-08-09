@@ -1,7 +1,7 @@
 local plugin = {}
 
 plugin.name = "Megaman Damage Shuffler"
-plugin.author = "authorblues"
+plugin.author = "authorblues, kalimag"
 plugin.settings =
 {
 	-- enable this feature to have health and lives synchronized across games
@@ -11,6 +11,8 @@ plugin.settings =
 plugin.description =
 [[
 	Automatically swaps games any time Megaman takes damage. Checks hashes of different rom versions, so if you use a version of the rom that isn't recognized, nothing special will happen in that game (no swap on hit).
+
+	Thanks to kalimag for adding support for all the weird games. Thanks to Smight and ZandraVandra for the initial ideas.
 
 	Supports:
 	- Mega Man 1-6 NES
@@ -25,10 +27,10 @@ plugin.description =
 	- Mega Man Wily Wars GEN
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
-	- Rockman & Forte WonderSwan (credit: kalimag)
-	- Rockman Battle & Fighters (credit: kalimag)
-	- Mega Man Soccer (credit: kalimag)
-	- Mega Man Battle & Chase (credit: kalimag)
+	- Rockman & Forte WonderSwan
+	- Rockman Battle & Fighters
+	- Mega Man Soccer
+	- Mega Man Battle & Chase
 ]]
 
 local prevdata = {}
@@ -326,13 +328,13 @@ local gamedata = {
 	},
 	['mmsoccer']={ -- Megaman's Soccer SNES
 		func=function()
-			local function get_controlled_player() return mainmemory.read_u16_le(0x195A) end			
+			local function get_controlled_player() return mainmemory.read_u16_le(0x195A) end
 			local function is_player_valid(player_addr)
 				return player_addr >= 0x1000 and player_addr < 0x1800 and (player_addr % 0x80) == 0
 			end
 			local function get_player_state(player_addr)
 				return is_player_valid(player_addr) and mainmemory.read_u16_le(player_addr + 0x22) or nil
-			end			
+			end
 			local function is_hit_state(state, only_special)
 				return (state == 0x7 and not only_special) or -- tackle knockdown
 				       (state ~= nil and state >= 0x48 and state <= 0x59) or state == 0x5C -- special shot effects
