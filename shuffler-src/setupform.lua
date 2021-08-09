@@ -72,7 +72,7 @@ function module.make_plugin_window(plugins, main_plugin_label)
 		},
 		['text'] = {
 			make = function(plugin, win, setting, x, y)
-				setting.input = forms.textbox(win, "", 150, 20, nil, x, y)
+				setting.input = forms.textbox(win, "", 150, 20, setting.datatype, x, y)
 				if setting.default then forms.settext(setting.input, setting.default) end
 				if setting._value then forms.settext(setting.input, setting._value) end
 				local label = forms.label(win, setting.label, x+155, y+3, 150, 20)
