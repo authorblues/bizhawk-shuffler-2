@@ -75,6 +75,7 @@ function module.make_plugin_window(plugins, main_plugin_label)
 				setting.input = forms.textbox(win, "", 150, 20, nil, x, y)
 				if setting.default then forms.settext(setting.input, setting.default) end
 				if setting._value then forms.settext(setting.input, setting._value) end
+				if setting.password then forms.setproperty(setting.input, "UseSystemPasswordChar", true) end
 				local label = forms.label(win, setting.label, x+155, y+3, 150, 20)
 
 				table.insert(plugin._ui, setting.input)
