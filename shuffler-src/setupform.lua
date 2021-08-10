@@ -75,7 +75,7 @@ function module.make_plugin_window(plugins, main_plugin_label)
 				setting.input = forms.textbox(win, "", 150, 20, nil, x, y)
 				if setting.default then forms.settext(setting.input, setting.default) end
 				if setting._value then forms.settext(setting.input, setting._value) end
-				if setting.password then forms.setproperty(setting.input, "UseSystemPasswordChar", true) end
+				-- if setting.password then forms.setproperty(setting.input, "UseSystemPasswordChar", true) end
 				local label = forms.label(win, setting.label, x+155, y+3, 150, 20)
 
 				table.insert(plugin._ui, setting.input)
@@ -122,10 +122,15 @@ function module.make_plugin_window(plugins, main_plugin_label)
 			if plugin._enabled then
 				table.insert(enabled_list, plugin.name)
 				for _,setting in ipairs(plugin.settings) do
+					if setting.password then forms.setproperty(setting, "UseSystemPasswordChar", true) end
 					local meta = SETTINGS_TYPES[setting.type:lower()]
 					if meta ~= nil and setting.name ~= nil and meta.getData ~= nil then
 						setting._value = meta.getData(setting)
 					end
+				end
+			else
+				for _,setting in ipairs(plugin.settings) do
+					if setting.password then forms.setproperty(setting, "UseSystemPasswordChar", false) end
 				end
 			end
 		end
@@ -161,6 +166,9 @@ function module.make_plugin_window(plugins, main_plugin_label)
 				if bad_version then
 					forms.setproperty(plugin._ui._enabled, "Enabled", false)
 					forms.setproperty(plugin._ui._enabled, "Checked", false)
+					for _,setting in ipairs(plugin.settings) do
+						if setting.password then forms.setproperty(setting, "UseSystemPasswordChar", false) end
+					end
 					forms.settext(plugin_error_text,
 						string.format("This plugin is designed for Bizhawk version %s+\r\nYou are using Bizhawk version %s",
 							plugin.minversion or MIN_BIZHAWK_VERSION, client.getversion()))
@@ -177,6 +185,9 @@ function module.make_plugin_window(plugins, main_plugin_label)
 			for _,ui in ipairs(plugin._ui) do
 				forms.setproperty(ui, "Visible", plugin_selected and plugin_enabled)
 			end
+			for _,setting in ipairs(plugin.settings) do
+				if setting.password then forms.setproperty(setting, "UseSystemPasswordChar", plugin_selected and plugin_enabled) end
+			end
 		end
 
 		forms.settext(enabled_label, string.format("Enabled Plugins (%d): %s", enabled_count, enabled_list:sub(3)))
@@ -189,7 +200,16 @@ function module.make_plugin_window(plugins, main_plugin_label)
 
 			local target_state = forms.ischecked(prev_plugin._ui._enabled)
 			forms.setproperty(prev_plugin._ui._enabled, "Checked", not target_state)
+			
+			for _,setting in ipairs(prev_plugin.settings) do
+				if setting.password then forms.setproperty(setting, "UseSystemPasswordChar", not target_state) end
+			end
+			
 			forms.setproperty(curr_plugin._ui._enabled, "Checked", target_state)
+			
+			for _,setting in ipairs(curr_plugin.settings) do
+				if setting.password then forms.setproperty(setting, "UseSystemPasswordChar", target_state) end
+			end
 		end
 		update_plugins()
 	end
