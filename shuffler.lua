@@ -101,9 +101,9 @@ end
 function get_dir_contents(dir, tmp, force)
 	local TEMP_FILE = tmp or DEFAULT_CMD_OUTPUT
 	if force ~= false or not path_exists(TEMP_FILE) then
-		local cmd = string.format('ls "%s" > %s', dir, TEMP_FILE)
+		local cmd = string.format('ls "%s" -type f > %s', dir, TEMP_FILE)
 		if PLATFORM == 'WIN' then
-			cmd = string.format('dir "%s" /B > %s', dir, TEMP_FILE)
+			cmd = string.format('dir "%s" /B /A-D > %s', dir, TEMP_FILE)
 		end
 		os.execute(cmd)
 	end
@@ -153,7 +153,7 @@ function get_games_list(force)
 	end
 
 	table_subtract(games, toremove)
-	table_subtract(games, { LIST_FILE, '.savestates' })
+	table_subtract(games, { LIST_FILE })
 	table_subtract(games, config.completed_games)
 	return games
 end
@@ -403,7 +403,8 @@ function complete_setup()
 		local sep = '/'
 		if PLATFORM == 'WIN' then sep = '\\' end
 
-		print('No games found in the expected directory. Did you put them somewhere else?')
+		print('No games found in the expected directory. Were they put somewhere else? ' ..
+			'Are they nested inside folders? ROM files should be placed directly in the following directory:')
 		if cwd ~= nil then print(string.format("Expected: %s%s%s", cwd(), sep, GAMES_FOLDER)) end
 		return
 	end
