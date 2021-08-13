@@ -511,10 +511,8 @@ prev_input = input.get()
 frames_since_restart = 0
 while true do
 	if emu.getsystemid() ~= "NULL" and running then
-		if frames_since_restart == 1 then
-			-- wait for a frame to pass before turning sound back on
-			client.SetSoundOn(config.sound or true)
-		end
+		-- wait for a frame to pass before turning sound back on
+		if frames_since_restart == 1 and config.sound then client.SetSoundOn(true) end
 
 		local frame_count = (config.frame_count or 0) + 1
 		config.frame_count = frame_count
