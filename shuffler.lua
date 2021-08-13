@@ -55,14 +55,16 @@ function dump(o)
 		if type(o) == 'table' then
 			local s = ''
 			for k,v in pairs(o) do
-				if type(k) ~= 'number' then k = string.format('"%s"', k) end
-				s = s..a..string.format('[%s] = %s,', k, _dump(v, "", ""))..b
+				s = s..a..string.format('[%s] = %s,', _dump(k, "", ""), _dump(v, "", ""))..b
 			end
 			return '{'..b..s..'}'..b
-		elseif type(o) == 'string' then
-			return string.format('"%s"', o)
-		else
+		elseif type(o) == 'number' or type(o) == 'boolean' or o == nil then
 			return tostring(o)
+		elseif type(o) == 'string' then
+			-- %q encloses in double quotes and escapes according to lua rules
+			return string.format('%q', o)
+		else -- functions, native objects, coroutines
+			error(string.format('Unsupported value of type "%s" in config.', type(o)))
 		end
 	end
 
