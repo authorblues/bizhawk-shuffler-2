@@ -17,6 +17,7 @@ PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
 PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
+STATES_BACKUPS = 3
 DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
 MIN_BIZHAWK_VERSION = "2.6.1"
@@ -174,8 +175,20 @@ function get_savestate_file(game)
 end
 
 function save_current_game()
+	local function overwrite(a, b)
+		os.remove(b)
+		os.rename(a, b)
+	end
+
 	if config.current_game ~= nil then
-		savestate.save(get_savestate_file())
+		local statename = get_savestate_file()
+		-- safety backups
+		for i = STATES_BACKUPS, 2, -1 do
+			overwrite(string.format("%s.bk%d", statename, i-1),
+				string.format("%s.bk%d", statename, i))
+		end
+		overwrite(statename, statename .. '.bk1')
+		savestate.save(statename)
 	end
 end
 
