@@ -340,6 +340,14 @@ function checkversion(reqversion)
 	return true
 end
 
+local function check_lua_core()
+	if client.get_lua_engine() ~= RECOMMENDED_LUA_CORE then
+		print(string.format("\n[!] It is recommended to use the %s core (currently using %s)\n" ..
+			"Change the Lua core in the Config > Customize > Advanced menu and restart BizHawk",
+			RECOMMENDED_LUA_CORE, client.get_lua_engine()))
+	end
+end
+
 -- this is going to be an APPROXIMATION and is not a substitute for an actual
 -- timer. games do not run at a consistent or exact 60 fps, so this method is
 -- provided purely for entertainment purposes
@@ -442,6 +450,8 @@ function complete_setup()
 	else swap_game() end
 end
 
+check_lua_core()
+
 -- load primary configuration
 load_config('shuffler-src/config.lua')
 
@@ -501,11 +511,6 @@ else
 		print(string.format("Expected Bizhawk version %s+", MIN_BIZHAWK_VERSION))
 		print("-- Currently installed version: " .. client.getversion())
 		print("-- Please update your Bizhawk installation")
-	end
-
-	if client.get_lua_engine() ~= RECOMMENDED_LUA_CORE then
-		print(string.format("[!] It is recommended to use the %s core (currently using %s)",
-			RECOMMENDED_LUA_CORE, client.get_lua_engine()))
 	end
 end
 
