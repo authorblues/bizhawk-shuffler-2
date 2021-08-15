@@ -32,6 +32,7 @@ plugin.description =
 	- Rockman Battle & Fighters
 	- Mega Man Soccer
 	- Mega Man Battle & Chase
+	- Super Adventure Rockman PSX
 ]]
 
 local prevdata = {}
@@ -144,6 +145,15 @@ local function battle_and_chase_swap(gamemeta)
 		       (shuriken_changed and shuriken) or
 		       (lightning_changed and lightning),
 			   20
+	end
+end
+
+local function super_adventure_rockman_swap(gamemeta)
+	return function()
+		local scene_hp_changed, scene_hp, prev_scene_hp = update_prev('scene_hp', gamemeta.get_scene_hp())
+		local battle_hp_changed, battle_hp, prev_battle_hp = update_prev('battle_hp', gamemeta.get_battle_hp())
+		return (scene_hp_changed and scene_hp < prev_scene_hp and gamemeta.is_scene()) or
+		       (battle_hp_changed and battle_hp < prev_battle_hp and gamemeta.is_battle())
 	end
 end
 
@@ -399,6 +409,27 @@ local gamedata = {
 				return (hit_changed and hit)
 			end
 		end
+	},
+	['super-adventure-rockman-psx-disc1'] = {
+		get_scene_hp = function() return mainmemory.read_s16_le(0x1BBBBC) end,
+		get_battle_hp = function() return mainmemory.read_s16_le(0x0C8AE0) end,
+		is_battle = function() return mainmemory.read_u8(0x0C8B48) == 1 end,
+		is_scene = function() return mainmemory.read_u8(0x0C8C30) == 1 end,
+		func=super_adventure_rockman_swap,
+	},
+	['super-adventure-rockman-psx-disc2'] = {
+		get_scene_hp = function() return mainmemory.read_s16_le(0x1D0DF0) end,
+		get_battle_hp = function() return mainmemory.read_s16_le(0x0DCEA4) end,
+		is_battle = function() return mainmemory.read_u8(0x0DCF0C) == 1 end,
+		is_scene = function() return mainmemory.read_u8(0x0DCFF4) == 1 end,
+		func=super_adventure_rockman_swap,
+	},
+	['super-adventure-rockman-psx-disc3'] = {
+		get_scene_hp = function() return mainmemory.read_s16_le(0x1C287C) end,
+		get_battle_hp = function() return mainmemory.read_s16_le(0x0CCA6C) end,
+		is_scene = function() return mainmemory.read_u8(0x0CCBBC) == 1 end,
+		is_battle = function() return mainmemory.read_u8(0x0CCAD4) == 1 end,
+		func=super_adventure_rockman_swap,
 	},
 }
 
