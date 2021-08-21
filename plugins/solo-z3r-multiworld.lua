@@ -168,8 +168,6 @@ function plugin.on_frame(data, settings)
 			table.insert(meta.queuedsend[this_player_id],
 				{item=item_id, src=this_player_id, target=player_id})
 			meta.cleardelay[this_player_id] = CLEAR_DELAY_FRAMES
-			data.prev_player = 0
-			mainmemory.write_s8(OUTGOING_PLAYER_ADDR, 0)
 		end
 
 		local queue_len = #meta.itemqueues[this_player_id]
@@ -197,6 +195,7 @@ function plugin.on_frame(data, settings)
 		if meta.cleardelay[this_player_id] == 0 then
 			mainmemory.write_u8(OUTGOING_PLAYER_ADDR, 0)
 			mainmemory.write_u8(OUTGOING_ITEM_ADDR, 0)
+			data.prev_player = 0
 		else
 			meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] - 1
 		end
