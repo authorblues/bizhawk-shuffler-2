@@ -25,7 +25,7 @@ local this_player_id = -1
 local this_seed = -1
 
 local ROM_NAME_ADDR = 0x7FC0 -- 15 bytes
-local ROM_NAME_PATTERN = { 0x45, 0x52, nil, nil, nil, 0x5F, nil, 0x5F, nil, 0x5F }
+local ROM_NAME_PATTERN = { nil, nil, nil, nil, nil, 0x5F, nil, 0x5F, nil, 0x5F }
 
 local OUTGOING_ITEM_ADDR = 0x02D8
 local OUTGOING_PLAYER_ADDR = 0xC098
