@@ -5,6 +5,7 @@ plugin.author = "authorblues"
 
 plugin.settings =
 {
+	{ name='progressive', type='boolean', label='Progressive equipment enabled?', default=true },
 	{ name='swapbutton', type='boolean', label='Force Game Swap on P2 L Button?' },
 }
 
@@ -15,6 +16,8 @@ plugin.description =
 	https://github.com/aerinon/ALttPDoorRandomizer
 
 	Create a multiworld randomizer seed and generate roms for all players. Put them all in the games/ folder, and the plugin will shuffle like normal, sending items between seeds when necessary.
+
+	IMPORTANT NOTE: This plugin only works with progressive equipment (sword, shield, mail, gloves) fully-enabled or fully-disabled. Any seed generated with a mix of equipment types will produce unexpected behavior.
 
 	Special thanks to Aerinon for providing significant help to get this working. Thanks also to Ankou for helping me sort out weird SNES+Bizhawk issues, and CodeGorilla for extensive testing.
 
@@ -107,6 +110,36 @@ local function add_item_if_unique(list, item)
 	return true
 end
 
+local function adjust_progressive(item)
+	local PROGRESSIVES = {
+		[0x5E] = 0x5E, -- progressive sword
+		[0x49] = 0x5E, -- fighter sword
+		[0x50] = 0x5E, -- master sword
+		[0x02] = 0x5E, -- tempered sword
+		[0x03] = 0x5E, -- gold sword
+
+		[0x5F] = 0x5F, -- progressive sheild
+		[0x04] = 0x5F, -- blue sheild
+		[0x05] = 0x5F, -- red sheild
+		[0x06] = 0x5F, -- mirror sheild
+
+		[0x60] = 0x60, -- progressive mail
+		[0x22] = 0x60, -- blue mail
+		[0x23] = 0x60, -- red mail
+
+		[0x61] = 0x61, -- progressive glove
+		[0x1B] = 0x61, -- power glove
+		[0x1C] = 0x61, -- titan's mitts
+
+		[0x64] = 0x64, -- progressive bow
+		[0x65] = 0x65, -- progressive bow (alt)
+		[0x0B] = 0x64, -- bow
+		[0x58] = 0x64, -- silver arrows
+	}
+
+	return PROGRESSIVES[item] or item
+end
+
 function plugin.on_setup(data, settings)
 	data.meta = data.meta or {}
 end
@@ -179,7 +212,13 @@ function plugin.on_frame(data, settings)
 
 		if recv_count < queue_len and mainmemory.read_u8(INCOMING_ITEM_ADDR) == 0 then
 			local obj = meta.itemqueues[this_player_id][recv_count+1]
-			mainmemory.write_u8(INCOMING_ITEM_ADDR, obj.item)
+			local item = obj.item
+
+			if settings.progressive then
+				item = adjust_progressive(obj.item)
+			end
+
+			mainmemory.write_u8(INCOMING_ITEM_ADDR, item)
 			mainmemory.write_u8(INCOMING_PLAYER_ADDR, obj.src)
 			mainmemory.write_u16_le(RECV_COUNT_ADDR, recv_count+1)
 		end
