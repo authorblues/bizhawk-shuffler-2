@@ -17,9 +17,9 @@ plugin.description =
 
 	Create a multiworld randomizer seed and generate roms for all players. Put them all in the games/ folder, and the plugin will shuffle like normal, sending items between seeds when necessary.
 
-	IMPORTANT NOTE: This plugin only works with progressive equipment (sword, shield, mail, gloves) fully-enabled or fully-disabled. Any seed generated with a mix of equipment types will produce unexpected behavior.
+	IMPORTANT NOTE: This plugin only works with progressive equipment (sword, shield, mail, gloves, and bow) fully-enabled or fully-disabled. Any seed generated with a mix of equipment types will produce unexpected behavior.
 
-	Special thanks to Aerinon for providing significant help to get this working. Thanks also to Ankou for helping me sort out weird SNES+Bizhawk issues, and CodeGorilla for extensive testing.
+	Special thanks to Aerinon for providing significant help to get this working. Thanks also to Ankou for helping me sort out weird SNES+Bizhawk issues, and CodeGorilla and Andy for extensive testing.
 
 	TIP: Generate seeds with unique sprites and name the players according to the sprites, so that send/recv messages will be meaningful and easily understood.
 ]]
