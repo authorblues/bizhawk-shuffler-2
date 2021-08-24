@@ -298,7 +298,8 @@ function module.initial_setup(callback)
 		-- internal information for output
 		config.frame_count = 0
 		config.total_swaps = 0
-		config.game_frame_count = {}
+		config.total_time = 0
+		config.game_second_count = {}
 		config.game_swaps = {}
 	end
 
