@@ -6,7 +6,7 @@
 --]]
 
 config = {}
-next_swap_time = 0
+total_time_limit = 0
 running = true
 plugins = {}
 
@@ -23,6 +23,8 @@ DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 MIN_BIZHAWK_VERSION = "2.6.1"
 RECOMMENDED_LUA_CORE = "LuaInterface"
 MAX_INTEGER = 99999999
+
+local gettime = require("socket.core").gettime
 
 -- check if folder exists
 function path_exists(p)
@@ -247,6 +249,9 @@ end
 function swap_game(next_game)
 	-- if a swap has already happened, don't call again
 	if not running then return false end
+	
+	-- set the time for the next game to swap
+	update_next_swap_time()
 
 	-- if no game provided, call get_next_game()
 	next_game = next_game or get_next_game()
@@ -255,7 +260,6 @@ function swap_game(next_game)
 	-- (you might think we should just disable the timer at this point, but this
 	-- allows new games to be added mid-run without the timer being disabled)
 	if next_game == config.current_game then
-		update_next_swap_time()
 		return false
 	end
 
@@ -295,14 +299,15 @@ function swap_game(next_game)
 	return load_game(config.current_game)
 end
 
-function swap_game_delay(f)
-	next_swap_time = config.frame_count + f
+function swap_game_delay(seconds)
+	config.total_time_limit = config.total_time_limit + seconds
 end
 
 function update_next_swap_time()
-	next_swap_time = math.huge -- infinity
 	if config.auto_shuffle then
-		swap_game_delay(math.random(config.min_swap * 60, config.max_swap * 60))
+		swap_game_delay(math.random(config.min_swap * 100, config.max_swap * 100) / 100)
+	else
+		config.total_time_limit = math.huge -- infinity
 	end
 end
 
@@ -348,11 +353,7 @@ local function check_lua_core()
 	end
 end
 
--- this is going to be an APPROXIMATION and is not a substitute for an actual
--- timer. games do not run at a consistent or exact 60 fps, so this method is
--- provided purely for entertainment purposes
-function frames_to_time(f)
-	local sec = math.floor(f   / 60)
+function seconds_to_time(sec)
 	local min = math.floor(sec / 60)
 	local hrs = math.floor(min / 60)
 	return string.format('%02d:%02d:%02d', hrs, min%60, sec%60)
@@ -432,6 +433,9 @@ function complete_setup()
 		return
 	end
 
+	config.total_time_limit = 0
+	config.initial_time = gettime()
+
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config.nseed or config.seed)
 
@@ -493,7 +497,6 @@ if emu.getsystemid() ~= "NULL" then
 	end
 
 	math.randomseed(config.nseed or config.seed)
-	update_next_swap_time()
 
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_game_load ~= nil then
@@ -516,6 +519,7 @@ end
 
 prev_input = input.get()
 frames_since_restart = 0
+last_time = gettime()
 while true do
 	if emu.getsystemid() ~= "NULL" and running then
 		-- wait for a frame to pass before turning sound back on
@@ -525,13 +529,21 @@ while true do
 		config.frame_count = frame_count
 		frames_since_restart = frames_since_restart + 1
 
+		local time = gettime()
+		local time_difference = time - last_time
+		last_time = time
+
+		local total_time_since_start = time - config.initial_time
+		local total_time = config.total_time + time_difference
+		config.total_time = total_time
+
 		-- update the frame count specifically for the active game as well
-		local cgf = (config.game_frame_count[config.current_game] or 0) + 1
-		config.game_frame_count[config.current_game] = cgf
+		local current_game_seconds = (config.game_second_count[config.current_game] or 0) + time_difference
+		config.game_second_count[config.current_game] = current_game_seconds
 
 		-- save time info to files for OBS display
-		write_data('output-info/total-time.txt', frames_to_time(frame_count))
-		write_data('output-info/current-time.txt', frames_to_time(cgf))
+		write_data('output-info/total-time.txt', seconds_to_time(total_time))
+		write_data('output-info/current-time.txt', seconds_to_time(current_game_seconds))
 
 		-- let plugins do operations each frame
 		for _,plugin in ipairs(plugins) do
@@ -552,7 +564,7 @@ while true do
 		if input_rise[config.hk_complete] and frames_since_restart > math.min(3, config.min_swap/2) * 60 then mark_complete() end
 
 		-- time to swap!
-	    if frame_count >= next_swap_time then swap_game() end
+	    if total_time_since_start >= config.total_time_limit then swap_game() end
 	end
 
 	emu.frameadvance()
