@@ -43,6 +43,7 @@ local save_context = 0x11A5D0
 local internal_count_addr = save_context + 0x90
 
 local SCRIPT_PROTOCOL_VERSION = 2
+local SENT_VIA_NETWORK = 0xFF05FF
 
 -- first 4 bytes are written big-endian
 -- second 4 bytes are written little-endian :^)
@@ -79,6 +80,14 @@ local NAME_FUNCTIONS = {
 		return 0xC1D3D6D0, b * 256 + 0xC8 -- World 255
 	end,
 }
+
+local function clone_list(inp)
+	local out = {}
+	for _,elem in pairs(inp) do
+		table.insert(out, elem)
+	end
+	return out
+end
 
 local get_name = nil
 
@@ -119,7 +128,7 @@ local function try_setup(data)
 
 	-- get player num and setup your itemqueue
 	player_num = mainmemory.read_u8(coop_context + 4)
-	data.itemqueues[player_num] = data.itemqueues[player_num] or {}
+	data.itemqueues[player_num] = data.itemqueues[player_num] or clone_list(data.basequeue)
 
     return true
 end
@@ -133,6 +142,7 @@ local function is_normal_gameplay()
 end
 
 function plugin.on_setup(data, settings)
+	data.basequeue = {} -- used for items that need to be sent to all players
 	data.itemqueues = data.itemqueues or {}
 	for i = 1,3 do print(EXPANSION_WARNING) end
 end
@@ -162,8 +172,16 @@ function plugin.on_frame(data, settings)
 			item = mainmemory.read_u16_be(outgoing_item_addr)
 			player = mainmemory.read_u16_be(outgoing_player_addr)
 
-			data.itemqueues[player] = data.itemqueues[player] or {}
-			table.insert(data.itemqueues[player], item)
+			if player ~= player_num then
+				data.itemqueues[player] = data.itemqueues[player] or clone_list(data.basequeue)
+				table.insert(data.itemqueues[player], item)
+			elseif item == 0xCA and key ~= SENT_VIA_NETWORK then -- triforce hunt
+				table.insert(data.basequeue, item)
+				for pid,queue in pairs(data.itemqueues) do
+					-- send triforce piece to every player other than the one who collected it
+					if pid ~= player_num then table.insert(queue, item) end
+				end
+			end
 
 			mainmemory.write_u32_be(outgoing_key_addr, 0)
 			mainmemory.write_u16_be(outgoing_item_addr, 0)
