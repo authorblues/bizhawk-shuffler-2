@@ -135,6 +135,8 @@ local function adjust_progressive(item)
 		[0x65] = 0x65, -- progressive bow (alt)
 		[0x0B] = 0x64, -- bow
 		[0x58] = 0x64, -- silver arrows
+
+		[0x4F] = 0x4E, -- don't send 1/4 magic
 	}
 
 	return PROGRESSIVES[item] or item
