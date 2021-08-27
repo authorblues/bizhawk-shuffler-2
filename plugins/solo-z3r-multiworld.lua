@@ -40,6 +40,12 @@ local SRAM_DATA_START = 0xF000
 local SRAM_DATA_SIZE = 0x41F
 
 local CLEAR_DELAY_FRAMES = 1
+local DUNGEON_PRIZES = {
+	[0x20] = true, -- Crystal
+	[0x37] = true, -- Pendant 1
+	[0x38] = true, -- Pendant 2
+	[0x39] = true, -- Pendant 3
+}
 
 local prev_sram_data = nil
 
@@ -200,9 +206,11 @@ function plugin.on_frame(data, settings)
 		data.prev_player = player_id
 
 		if player_id ~= 0 and prev_player == 0 then
-			table.insert(meta.queuedsend[this_player_id],
-				{item=item_id, src=this_player_id, target=player_id})
-			meta.cleardelay[this_player_id] = CLEAR_DELAY_FRAMES
+			if not DUNGEON_PRIZES[item_id] then -- don't send pendant/crystals
+				table.insert(meta.queuedsend[this_player_id],
+					{item=item_id, src=this_player_id, target=player_id})
+				meta.cleardelay[this_player_id] = CLEAR_DELAY_FRAMES
+			end
 		end
 
 		local queue_len = #meta.itemqueues[this_player_id]
