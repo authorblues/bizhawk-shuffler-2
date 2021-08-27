@@ -203,6 +203,7 @@ function plugin.on_frame(data, settings)
 				data.itemqueues[player] = data.itemqueues[player] or clone_list(data.basequeue)
 				add_item_if_unique(data.itemqueues[player], entry)
 			elseif item == 0xCA and key ~= SENT_VIA_NETWORK then -- triforce hunt
+				entry.target = player_num -- corrects the issue with repeated triforce fanfare
 				add_item_if_unique(data.basequeue, entry)
 				for pid,queue in pairs(data.itemqueues) do
 					-- send triforce piece to every player other than the one who collected it
