@@ -89,6 +89,32 @@ local function clone_list(inp)
 	return out
 end
 
+-- this assumes no values are anything other than primitive and
+-- are guaranteed to have the same keys (this is not a general purpose function)
+local function table_equal(t1, t2)
+	for k,v1 in pairs(t1) do
+		local v2 = t2[k]
+		-- if there isn't a matching value or types differ
+		if v2 == nil or type(v1) ~= type(v2) then
+			return false
+		end
+		-- if the primitive values don't match
+		if v1 ~= v2 then return false end
+	end
+	return true
+end
+
+local function add_item_if_unique(list, item)
+	for _,v in ipairs(list) do
+		if table_equal(v, item) then
+			return false
+		end
+	end
+
+	table.insert(list, item)
+	return true
+end
+
 local get_name = nil
 
 local function fill_name(id)
@@ -172,14 +198,15 @@ function plugin.on_frame(data, settings)
 			item = mainmemory.read_u16_be(outgoing_item_addr)
 			player = mainmemory.read_u16_be(outgoing_player_addr)
 
+			local entry = {item=item, src=player_num, target=player, meta=key}
 			if player ~= player_num then
 				data.itemqueues[player] = data.itemqueues[player] or clone_list(data.basequeue)
-				table.insert(data.itemqueues[player], item)
+				add_item_if_unique(data.itemqueues[player], entry)
 			elseif item == 0xCA and key ~= SENT_VIA_NETWORK then -- triforce hunt
-				table.insert(data.basequeue, item)
+				add_item_if_unique(data.basequeue, entry)
 				for pid,queue in pairs(data.itemqueues) do
 					-- send triforce piece to every player other than the one who collected it
-					if pid ~= player_num then table.insert(queue, item) end
+					if pid ~= player_num then add_item_if_unique(queue, entry) end
 				end
 			end
 
@@ -193,18 +220,18 @@ function plugin.on_frame(data, settings)
 		item = mainmemory.read_u16_be(incoming_item_addr)
 		if item == 0 and #data.itemqueues[player_num] > count then
 			item = data.itemqueues[player_num][count+1]
-			if item == 0 then
+			if item == nil then
 				mainmemory.write_u16_be(internal_count_addr, count+1)
 			else
-				mainmemory.write_u16_be(incoming_item_addr, item)
-				mainmemory.write_u16_be(incoming_player_addr, player_num)
+				mainmemory.write_u16_be(incoming_item_addr, item.item)
+				mainmemory.write_u16_be(incoming_player_addr, item.target)
 			end
 		end
 
 		-- if the internal count suggests items are missing, add filler
 		while #data.itemqueues[player_num] < count do
 			print('internal count too high? adding a filler item')
-			table.insert(data.itemqueues[player_num], 0)
+			table.insert(data.itemqueues[player_num], nil)
 		end
 	end
 
