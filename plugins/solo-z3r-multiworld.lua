@@ -1,5 +1,7 @@
 local plugin = {}
 
+plugin.memory = {}
+
 plugin.name = "Solo Z3R Multiworld"
 plugin.author = "authorblues"
 
@@ -50,7 +52,7 @@ local DUNGEON_PRIZES = {
 local prev_sram_data = nil
 
 local function get_game_mode()
-	return mainmemory.read_u8(0x0010)
+	return plugin.memory.read_u8(0x0010)
 end
 
 local function is_normal_gameplay()
@@ -63,7 +65,7 @@ end
 local function read_BCD_to_delimiter(addr, stop)
 	local result = 0
 	for i = 1,20 do
-		local value = memory.read_u8(addr, "CARTROM")
+		local value = plugin.memory.read_u8(addr, "CARTROM")
 		if value == stop then break end
 		result = (result * 10) + (value - 0x30)
 		addr = addr + 1
@@ -73,7 +75,7 @@ local function read_BCD_to_delimiter(addr, stop)
 end
 
 local function get_sram_data()
-	return mainmemory.readbyterange(SRAM_DATA_START, SRAM_DATA_SIZE)
+	return plugin.memory.readbyterange(SRAM_DATA_START, SRAM_DATA_SIZE)
 end
 
 -- returns sram changes as a consistent, serialized string
@@ -155,17 +157,17 @@ end
 function plugin.on_game_load(data, settings)
 	-- a handful of checks to make sure this is a SNES game first
 	local has_cartrom = false
-	for i,domain in ipairs(memory.getmemorydomainlist()) do
+	for i,domain in ipairs(plugin.memory.getmemorydomainlist()) do
 		if domain == "CARTROM" then has_cartrom = true end
 	end
 
 	-- if the cartrom isn't present, or it is too small, bail
 	if not has_cartrom then return end
-	if memory.getmemorydomainsize("CARTROM") < 0x200000 then return end
+	if plugin.memory.getmemorydomainsize("CARTROM") < 0x200000 then return end
 
 	-- if the rom name does not seem to be from a valid Z3R rom, ignore it
 	for i,val in ipairs(ROM_NAME_PATTERN) do
-		local mem = memory.read_u8(ROM_NAME_ADDR + i - 1, "CARTROM")
+		local mem = plugin.memory.read_u8(ROM_NAME_ADDR + i - 1, "CARTROM")
 		if val ~= nil and mem ~= val then return end
 	end
 
@@ -199,8 +201,8 @@ function plugin.on_frame(data, settings)
 	local sram_data = get_sram_data()
 
 	if is_normal_gameplay() then
-		player_id = mainmemory.read_u8(OUTGOING_PLAYER_ADDR)
-		item_id = mainmemory.read_u8(OUTGOING_ITEM_ADDR)
+		player_id = plugin.memory.read_u8(OUTGOING_PLAYER_ADDR)
+		item_id = plugin.memory.read_u8(OUTGOING_ITEM_ADDR)
 
 		local prev_player = data.prev_player or 0
 		data.prev_player = player_id
@@ -214,13 +216,13 @@ function plugin.on_frame(data, settings)
 		end
 
 		local queue_len = #meta.itemqueues[this_player_id]
-		local recv_count = mainmemory.read_u16_le(RECV_COUNT_ADDR)
+		local recv_count = plugin.memory.read_u16_le(RECV_COUNT_ADDR)
 		if recv_count > queue_len then
-			mainmemory.write_u16_le(RECV_COUNT_ADDR, 0)
+			plugin.memory.write_u16_le(RECV_COUNT_ADDR, 0)
 			recv_count = 0
 		end
 
-		if recv_count < queue_len and mainmemory.read_u8(INCOMING_ITEM_ADDR) == 0 then
+		if recv_count < queue_len and plugin.memory.read_u8(INCOMING_ITEM_ADDR) == 0 then
 			local obj = meta.itemqueues[this_player_id][recv_count+1]
 			local item = obj.item
 
@@ -228,9 +230,9 @@ function plugin.on_frame(data, settings)
 				item = adjust_progressive(obj.item)
 			end
 
-			mainmemory.write_u8(INCOMING_ITEM_ADDR, item)
-			mainmemory.write_u8(INCOMING_PLAYER_ADDR, obj.src)
-			mainmemory.write_u16_le(RECV_COUNT_ADDR, recv_count+1)
+			plugin.memory.write_u8(INCOMING_ITEM_ADDR, item)
+			plugin.memory.write_u8(INCOMING_PLAYER_ADDR, obj.src)
+			plugin.memory.write_u16_le(RECV_COUNT_ADDR, recv_count+1)
 		end
 	elseif get_game_mode() == 0x00 then
 		-- if we somehow got to the title screen (reset?) with items queued to
@@ -242,8 +244,8 @@ function plugin.on_frame(data, settings)
 	-- clear the outgoing items addresses no matter the gamemode
 	if (meta.cleardelay[this_player_id] or 0) > 0 then
 		if meta.cleardelay[this_player_id] == 0 then
-			mainmemory.write_u8(OUTGOING_PLAYER_ADDR, 0)
-			mainmemory.write_u8(OUTGOING_ITEM_ADDR, 0)
+			plugin.memory.write_u8(OUTGOING_PLAYER_ADDR, 0)
+			plugin.memory.write_u8(OUTGOING_ITEM_ADDR, 0)
 			data.prev_player = 0
 		else
 			meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] - 1

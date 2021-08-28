@@ -407,6 +407,7 @@ function complete_setup()
 	if config.plugins ~= nil then
 		for pmodpath,pdata in pairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
+			pmodule.memory = memory
 			if checkversion(pmodule.minversion) then
 				print('Plugin loaded: ' .. pmodule.name)
 			else
@@ -467,6 +468,7 @@ if emu.getsystemid() ~= "NULL" then
 		for pmodpath,pdata in pairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
 			pmodule._module = pmodpath
+			pmodule.memory = memory
 			if pmodule ~= nil then table.insert(plugins, pmodule) end
 		end
 	end
