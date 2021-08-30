@@ -16,13 +16,15 @@ Steps to reproduce the behavior:
 2. Detailed Step 2
 3. See Error
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
 **Environment (please complete the following information):**
  - OS: [e.g. Windows 10]
  - Bizhawk Version: [e.g. 2.6.2]
- - Games loaded:
 
 **Additional context**
 Add any other context about the problem here.
+
+**Logs**
+Please attach `message.log` and `shuffler-src/config.lua`.
+
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
