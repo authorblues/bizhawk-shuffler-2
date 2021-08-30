@@ -444,6 +444,13 @@ function complete_setup()
 		return
 	end
 
+	-- these messages will only appear in the message log
+	log_message('Platform: ' .. PLATFORM, true)
+	log_message('Bizhawk version: ' .. client.getversion(), true)
+	for _,game in ipairs(games) do
+		log_message('GAME FOUND: ' .. game, true)
+	end
+
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config.nseed or config.seed)
 
