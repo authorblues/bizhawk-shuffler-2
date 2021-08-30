@@ -24,6 +24,16 @@ MIN_BIZHAWK_VERSION = "2.6.1"
 RECOMMENDED_LUA_CORE = "LuaInterface"
 MAX_INTEGER = 99999999
 
+function log_message(msg, quiet)
+	if not quiet then print(msg) end
+
+	local handle, err = io.open('message.log', 'a')
+	if handle == nil then return end
+	handle:write(tostring(msg))
+	handle:write('\n')
+	handle:close()
+end
+
 -- check if folder exists
 function path_exists(p)
 	local ok, err, code = os.rename(p, p)
@@ -80,8 +90,8 @@ end
 function write_data(filename, data, mode)
 	local handle, err = io.open(filename, mode or 'w')
 	if handle == nil then
-		print(string.format("Couldn't write to file: %s", filename))
-		print(err)
+		log_message(string.format("Couldn't write to file: %s", filename))
+		log_message(err)
 		return
 	end
 	handle:write(data)
@@ -342,7 +352,7 @@ end
 
 local function check_lua_core()
 	if client.get_lua_engine() ~= RECOMMENDED_LUA_CORE then
-		print(string.format("\n[!] It is recommended to use the %s core (currently using %s)\n" ..
+		log_message(string.format("\n[!] It is recommended to use the %s core (currently using %s)\n" ..
 			"Change the Lua core in the Config > Customize > Advanced menu and restart BizHawk",
 			RECOMMENDED_LUA_CORE, client.get_lua_engine()))
 	end
@@ -369,7 +379,7 @@ end
 function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
 	table.insert(config.completed_games, config.current_game)
-	print(config.current_game .. ' marked complete')
+	log_message(config.current_game .. ' marked complete')
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_complete ~= nil then
 			local pdata = config.plugins[plugin._module]
@@ -384,7 +394,7 @@ function mark_complete()
 		-- the shuffler is complete!
 		running = false
 		save_config(config, 'shuffler-src/config.lua')
-		print('Shuffler complete!')
+		log_message('Shuffler complete!')
 	else
 		swap_game()
 	end
@@ -404,15 +414,17 @@ function cwd()
 end
 
 function complete_setup()
+	os.remove('message.log')
+
 	if config.plugins ~= nil then
 		for pmodpath,pdata in pairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
 			if checkversion(pmodule.minversion) then
-				print('Plugin loaded: ' .. pmodule.name)
+				log_message('Plugin loaded: ' .. pmodule.name)
 			else
-				print(string.format('%s requires Bizhawk version %s+', pmodule.name, pmodule.minversion))
-				print("-- Currently installed version: " .. client.getversion())
-				print("-- Please update your Bizhawk installation to use this plugin")
+				log_message(string.format('%s requires Bizhawk version %s+', pmodule.name, pmodule.minversion))
+				log_message("-- Currently installed version: " .. client.getversion())
+				log_message("-- Please update your Bizhawk installation to use this plugin")
 				config.plugins[pmodpath] = nil
 			end
 			if pmodule ~= nil and pmodule.on_setup ~= nil then
@@ -426,9 +438,9 @@ function complete_setup()
 		local sep = '/'
 		if PLATFORM == 'WIN' then sep = '\\' end
 
-		print('No games found in the expected directory. Were they put somewhere else? ' ..
+		log_message('No games found in the expected directory. Were they put somewhere else? ' ..
 			'Are they nested inside folders? ROM files should be placed directly in the following directory:')
-		if cwd ~= nil then print(string.format("Expected: %s%s%s", cwd(), sep, GAMES_FOLDER)) end
+		if cwd ~= nil then log_message(string.format("Expected: %s%s%s", cwd(), sep, GAMES_FOLDER)) end
 		return
 	end
 
@@ -436,7 +448,7 @@ function complete_setup()
 	math.randomseed(config.nseed or config.seed)
 
 	if config.frame_count == 0 then
-		print('deleting savestates!')
+		log_message('deleting savestates!')
 		delete_savestates()
 	end
 
@@ -508,9 +520,9 @@ else
 		local setup = require('shuffler-src.setupform')
 		setup.initial_setup(complete_setup)
 	else
-		print(string.format("Expected Bizhawk version %s+", MIN_BIZHAWK_VERSION))
-		print("-- Currently installed version: " .. client.getversion())
-		print("-- Please update your Bizhawk installation")
+		log_message(string.format("Expected Bizhawk version %s+", MIN_BIZHAWK_VERSION))
+		log_message("-- Currently installed version: " .. client.getversion())
+		log_message("-- Please update your Bizhawk installation")
 	end
 end
 

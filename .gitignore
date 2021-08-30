@@ -1,6 +1,7 @@
 games/*
 shuffler-src/config.lua
 shuffler-src/.cmd-output.txt
+message.log
 
 # Compiled Lua sources
 luac.out
