@@ -210,7 +210,7 @@ function plugin.on_frame(data, settings)
 				table.insert(meta.queuedsend[this_player_id],
 					{item=item_id, src=this_player_id, target=player_id})
 				meta.cleardelay[this_player_id] = CLEAR_DELAY_FRAMES
-				log_message(string.format("[SZ3RM] find %x for p%d (found by p%d)",
+				log_message(string.format("[SZ3RM] find x%02X for p%d (found by p%d)",
 					item_id, player_id, this_player_id), true)
 			end
 		end
@@ -233,7 +233,7 @@ function plugin.on_frame(data, settings)
 			mainmemory.write_u8(INCOMING_ITEM_ADDR, item)
 			mainmemory.write_u8(INCOMING_PLAYER_ADDR, obj.src)
 			mainmemory.write_u16_le(RECV_COUNT_ADDR, recv_count+1)
-			log_message(string.format("[SZ3RM] recv %x for p%d (sent by p%d) - %s (%d)",
+			log_message(string.format("[SZ3RM] recv x%02X for p%d (sent by p%d) - %s (%d)",
 				item, obj.target, obj.src, obj.meta, recv_count+1), true)
 		end
 	elseif get_game_mode() == 0x00 then
@@ -264,7 +264,7 @@ function plugin.on_frame(data, settings)
 			item.meta = changes -- add the sram changes to the object to identify repeats
 			meta.itemqueues[item.target] = meta.itemqueues[item.target] or {}
 			add_item_if_unique(meta.itemqueues[item.target], item)
-			log_message(string.format("[SZ3RM] send %x for p%d (found by p%d) - %s",
+			log_message(string.format("[SZ3RM] send x%02X for p%d (found by p%d) - %s",
 				item.item, item.target, item.src, item.meta), true)
 		end
 	end
