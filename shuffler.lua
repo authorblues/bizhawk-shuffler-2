@@ -156,6 +156,18 @@ function get_games_list(force)
 			local primary = filename:sub(1, #filename-4)
 			table.insert(toremove, primary .. '.img')
 			table.insert(toremove, primary .. '.sub')
+		elseif ends_with(filename, '.xml') then
+			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
+			local xml = fp:read("*all")
+			fp:close()
+
+			-- bizhawk multidisk bundle
+			if xml:find('BizHawk--XMLGame') then -- double hyphen to escape literal hyphen
+				for asset in xml:gfind('<Asset.-FileName="(.-)".-/>') do
+					if asset:find('\.\\') == 1 then asset = asset:sub(3) end
+					table.insert(toremove, asset)
+				end
+			end
 		end
 
 		for _,ext in ipairs(IGNORED_FILE_EXTS) do
