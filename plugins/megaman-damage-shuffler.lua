@@ -472,12 +472,12 @@ function plugin.on_game_load(data, settings)
 	-- first time through with a bad match, tag will be nil
 	-- can use this to print a debug message only the first time
 	if tag ~= nil and tag ~= NO_MATCH then
-		print('current game: ' .. tag)
+		log_message('game match: ' .. tag)
 		local gamemeta = gamedata[tag]
 		local func = gamemeta.func or generic_swap
 		shouldSwap = func(gamemeta)
 	elseif tag == nil then
-		print(string.format('unrecognized? %s (%s)',
+		log_message(string.format('unrecognized? %s (%s)',
 			gameinfo.getromname(), gameinfo.getromhash()))
 	end
 end
