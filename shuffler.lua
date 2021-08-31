@@ -558,6 +558,9 @@ end
 
 prev_input = input.get()
 frames_since_restart = 0
+
+local ptime_total = nil
+local ptime_game = nil
 while true do
 	if emu.getsystemid() ~= "NULL" and running then
 		-- wait for a frame to pass before turning sound back on
@@ -572,8 +575,17 @@ while true do
 		config.game_frame_count[config.current_game] = cgf
 
 		-- save time info to files for OBS display
-		write_data('output-info/total-time.txt', frames_to_time(frame_count))
-		write_data('output-info/current-time.txt', frames_to_time(cgf))
+		local time_total = frames_to_time(frame_count)
+		if time_total ~= ptime_total then
+			write_data('output-info/total-time.txt', time_total)
+			ptime_total = time_total
+		end
+
+		local time_game = frames_to_time(cgf)
+		if time_game ~= ptime_game then
+			write_data('output-info/current-time.txt', time_game)
+			ptime_game = time_game
+		end
 
 		-- let plugins do operations each frame
 		for _,plugin in ipairs(plugins) do
