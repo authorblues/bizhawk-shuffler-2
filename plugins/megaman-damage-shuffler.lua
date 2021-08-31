@@ -433,23 +433,12 @@ local gamedata = {
 	},
 }
 
-local function get_tag_from_hash(target)
-	local resp = nil
-	local fp = io.open('plugins/megaman-hashes.dat', 'r')
-	for x in fp:lines() do
-		local hash, tag = x:match("^([0-9A-Fa-f]+)%s+(%S+)")
-		if hash == target then resp = tag; break end
-	end
-	fp:close()
-	return resp
-end
-
 local backupchecks = {
 }
 
 local function get_game_tag()
 	-- try to just match the rom hash first
-	local tag = get_tag_from_hash(gameinfo.getromhash())
+	local tag = get_tag_from_hash_db(gameinfo.getromhash(), 'plugins/megaman-hashes.dat')
 	if tag ~= nil and gamedata[tag] ~= nil then return tag end
 
 	-- check to see if any of the rom name samples match

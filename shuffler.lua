@@ -481,6 +481,17 @@ function complete_setup()
 	else swap_game() end
 end
 
+function get_tag_from_hash_db(target, database)
+	local resp = nil
+	local fp = io.open(database, 'r')
+	for x in fp:lines() do
+		local hash, tag = x:match("^([0-9A-Fa-f]+)%s+(%S+)")
+		if hash == target then resp = tag; break end
+	end
+	fp:close()
+	return resp
+end
+
 check_lua_core()
 
 -- load primary configuration
