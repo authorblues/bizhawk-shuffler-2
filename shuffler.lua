@@ -575,16 +575,18 @@ while true do
 		config.game_frame_count[config.current_game] = cgf
 
 		-- save time info to files for OBS display
-		local time_total = frames_to_time(frame_count)
-		if time_total ~= ptime_total then
-			write_data('output-info/total-time.txt', time_total)
-			ptime_total = time_total
-		end
+		if config.output_timers then
+			local time_total = frames_to_time(frame_count)
+			if time_total ~= ptime_total then
+				write_data('output-info/total-time.txt', time_total)
+				ptime_total = time_total
+			end
 
-		local time_game = frames_to_time(cgf)
-		if time_game ~= ptime_game then
-			write_data('output-info/current-time.txt', time_game)
-			ptime_game = time_game
+			local time_game = frames_to_time(cgf)
+			if time_game ~= ptime_game then
+				write_data('output-info/current-time.txt', time_game)
+				ptime_game = time_game
+			end
 		end
 
 		-- let plugins do operations each frame
