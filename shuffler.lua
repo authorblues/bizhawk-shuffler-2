@@ -29,6 +29,7 @@ function log_message(msg, quiet)
 
 	local handle, err = io.open('message.log', 'a')
 	if handle == nil then return end
+	handle:write(os.date("[%X] "))
 	handle:write(tostring(msg))
 	handle:write('\n')
 	handle:close()
