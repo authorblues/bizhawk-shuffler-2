@@ -112,6 +112,14 @@ local function mmlegends(gamemeta)
 	end
 end
 
+local function mmx6_swap(gamemeta)
+	return function()
+		-- check the damage counter used for the stats screen. not incremented by acid rain damage
+		_, damage, prev_damage = update_prev('damage', gamemeta.getdamage())
+		return prev_damage ~= nil and damage > prev_damage
+	end
+end
+
 local function battle_and_chase_swap(gamemeta)
 	local player_addr = gamemeta.player_addr
 	local hit_states = {
@@ -248,15 +256,17 @@ local gamedata = {
 		getlc=function() return mainmemory.read_u8(0x0D1C45) end,
 		maxhp=function() return mainmemory.read_u8(0x0D1C47) end,
 	},
+	['mmx6psx-eu']={ -- Mega Man X6 PSX PAL
+		getdamage=function() return mainmemory.read_u32_le(0x0CCFB0) end,
+		func=mmx6_swap,
+	},
 	['mmx6psx-us']={ -- Mega Man X6 PSX NTSC-U
-		gethp=function() return bit.band(mainmemory.read_u8(0x0970FC), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x0CCF09) end,
-		maxhp=function() return mainmemory.read_u8(0x0CCF2B) end,
+		getdamage=function() return mainmemory.read_u32_le(0x0CCF68) end,
+		func=mmx6_swap,
 	},
 	['mmx6psx-jp']={ -- Mega Man X6 PSX NTSC-J
-		gethp=function() return bit.band(mainmemory.read_u8(0x0987BC), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x0CE5C9) end,
-		maxhp=function() return mainmemory.read_u8(0x0CE5EB) end,
+		getdamage=function() return mainmemory.read_u32_le(0x0CE628) end,
+		func=mmx6_swap,
 	},
 	['mm1gb']={ -- Mega Man I GB
 		gethp=function() return mainmemory.read_u8(0x1FA3) end,
