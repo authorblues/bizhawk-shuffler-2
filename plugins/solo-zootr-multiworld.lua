@@ -140,9 +140,9 @@ local function try_setup(data)
     -- check protocol version
     local rom_protocol_version = mainmemory.read_u32_be(coop_context)
     if rom_protocol_version ~= SCRIPT_PROTOCOL_VERSION then
-        print('This ROM is incompatible with this version of the plugin.')
-        print('Expected protocol version: '..tostring(SCRIPT_PROTOCOL_VERSION))
-        print('ROM protocol version: '..tostring(rom_protocol_version))
+        log_message('This ROM is incompatible with this version of the plugin.')
+        log_message('Expected protocol version: '..tostring(SCRIPT_PROTOCOL_VERSION))
+        log_message('ROM protocol version: '..tostring(rom_protocol_version))
     end
 
 	incoming_player_addr  = coop_context + 6
@@ -231,7 +231,7 @@ function plugin.on_frame(data, settings)
 
 		-- if the internal count suggests items are missing, add filler
 		while #data.itemqueues[player_num] < count do
-			print('internal count too high? adding a filler item')
+			log_message('internal count too high? adding a filler item')
 			table.insert(data.itemqueues[player_num], nil)
 		end
 	end
