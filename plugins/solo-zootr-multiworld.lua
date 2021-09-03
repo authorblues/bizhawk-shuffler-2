@@ -221,7 +221,7 @@ function plugin.on_frame(data, settings)
 		item = mainmemory.read_u16_be(incoming_item_addr)
 		if item == 0 and #data.itemqueues[player_num] > count then
 			item = data.itemqueues[player_num][count+1]
-			if item == nil then
+			if item.filler then
 				mainmemory.write_u16_be(internal_count_addr, count+1)
 			else
 				mainmemory.write_u16_be(incoming_item_addr, item.item)
@@ -232,7 +232,7 @@ function plugin.on_frame(data, settings)
 		-- if the internal count suggests items are missing, add filler
 		while #data.itemqueues[player_num] < count do
 			log_message('internal count too high? adding a filler item')
-			table.insert(data.itemqueues[player_num], nil)
+			table.insert(data.itemqueues[player_num], { filler=true })
 		end
 	end
 
