@@ -315,7 +315,7 @@ function swap_game(next_game)
 	end
 
 	-- save an updated randomizer seed
-	config.nseed = math.random(MAX_INTEGER) + config.frame_count
+	config.nseed = math.random(MAX_INTEGER)
 	save_config(config, 'shuffler-src/config.lua')
 
 	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
