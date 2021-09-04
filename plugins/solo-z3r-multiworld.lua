@@ -148,6 +148,10 @@ local function adjust_progressive(item)
 	return PROGRESSIVES[item] or item
 end
 
+function make_player_object()
+	return { items={}, sends={}, delay=0, prev=0 }
+end
+
 function plugin.on_setup(data, settings)
 	data.meta = data.meta or {}
 end
@@ -179,12 +183,10 @@ function plugin.on_game_load(data, settings)
 	this_seed = read_BCD_to_delimiter(addr, 0x00)
 
 	prev_sram_data = get_sram_data()
-	data.meta[this_seed] = data.meta[this_seed] or {itemqueues={}, queuedsend={}, cleardelay={}}
+	data.meta[this_seed] = data.meta[this_seed] or {}
 
 	local meta = data.meta[this_seed]
-	meta.itemqueues[this_player_id] = meta.itemqueues[this_player_id] or {}
-	meta.queuedsend[this_player_id] = meta.queuedsend[this_player_id] or {}
-	meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] or 0
+	meta[this_player_id] = meta[this_player_id] or make_player_object()
 
 	-- this should forcibly debounce the L press
 	data.prevL = true
@@ -195,6 +197,9 @@ function plugin.on_frame(data, settings)
 	if this_player_id == -1 then return end
 
 	local meta = data.meta[this_seed]
+	meta[this_player_id] = meta[this_player_id] or make_player_object()
+	local this_player = meta[this_player_id]
+
 	local player_id, item_id
 	local sram_data = get_sram_data()
 
@@ -202,20 +207,19 @@ function plugin.on_frame(data, settings)
 		player_id = mainmemory.read_u8(OUTGOING_PLAYER_ADDR)
 		item_id = mainmemory.read_u8(OUTGOING_ITEM_ADDR)
 
-		local prev_player = data.prev_player or 0
-		data.prev_player = player_id
+		local prev_player = this_player.prev or 0
+		this_player.prev = player_id
 
 		if player_id ~= 0 and prev_player == 0 then
 			if not DUNGEON_PRIZES[item_id] then -- don't send pendant/crystals
-				table.insert(meta.queuedsend[this_player_id],
-					{item=item_id, src=this_player_id, target=player_id})
-				meta.cleardelay[this_player_id] = CLEAR_DELAY_FRAMES
+				table.insert(this_player.sends, {item=item_id, src=this_player_id, target=player_id})
+				this_player.delay = CLEAR_DELAY_FRAMES
 				log_message(string.format("[SZ3RM] find x%02X for p%d (found by p%d)",
 					item_id, player_id, this_player_id), true)
 			end
 		end
 
-		local queue_len = #meta.itemqueues[this_player_id]
+		local queue_len = #this_player.items
 		local recv_count = mainmemory.read_u16_le(RECV_COUNT_ADDR)
 		if recv_count > queue_len then
 			mainmemory.write_u16_le(RECV_COUNT_ADDR, 0)
@@ -223,7 +227,7 @@ function plugin.on_frame(data, settings)
 		end
 
 		if recv_count < queue_len and mainmemory.read_u8(INCOMING_ITEM_ADDR) == 0 then
-			local obj = meta.itemqueues[this_player_id][recv_count+1]
+			local obj = this_player.items[recv_count+1]
 			local item = obj.item
 
 			if settings.progressive then
@@ -240,30 +244,30 @@ function plugin.on_frame(data, settings)
 		-- if we somehow got to the title screen (reset?) with items queued to
 		-- be sent, but we never saw the sram changes, the player was very
 		-- naughty and tried to create a race condition. very naughty! bad player!
-		meta.queuedsend[this_player_id] = {}
+		this_player.sends = {}
 	end
 
 	-- clear the outgoing items addresses no matter the gamemode
-	if (meta.cleardelay[this_player_id] or 0) > 0 then
-		if meta.cleardelay[this_player_id] == 0 then
+	if (this_player.delay or 0) > 0 then
+		if this_player.delay == 0 then
 			mainmemory.write_u8(OUTGOING_PLAYER_ADDR, 0)
 			mainmemory.write_u8(OUTGOING_ITEM_ADDR, 0)
-			data.prev_player = 0
+			this_player.prev = 0
 		else
-			meta.cleardelay[this_player_id] = meta.cleardelay[this_player_id] - 1
+			this_player.delay = this_player.delay - 1
 		end
 	end
 
 	-- when SRAM changes arrive and there are items queued to be sent, match them up
-	if #meta.queuedsend[this_player_id] > 0 then
+	if #this_player.sends > 0 then
 		-- calculate the changes only when there are items queued
 		-- this operation is expensive!
 		local changes = get_changes(prev_sram_data, sram_data)
 		if #changes > 0 then
-			local item = table.remove(meta.queuedsend[this_player_id], 1)
+			local item = table.remove(this_player.sends, 1)
 			item.meta = changes -- add the sram changes to the object to identify repeats
-			meta.itemqueues[item.target] = meta.itemqueues[item.target] or {}
-			add_item_if_unique(meta.itemqueues[item.target], item)
+			meta[item.target] = meta[item.target] or make_player_object()
+			add_item_if_unique(meta[item.target].items, item)
 			log_message(string.format("[SZ3RM] send x%02X for p%d (found by p%d) - %s",
 				item.item, item.target, item.src, item.meta), true)
 		end
