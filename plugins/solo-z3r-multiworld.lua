@@ -139,6 +139,8 @@ local function adjust_progressive(item)
 
 		[0x64] = 0x64, -- progressive bow
 		[0x65] = 0x65, -- progressive bow (alt)
+		[0x3A] = 0x64, -- bow and arrows
+		[0x3B] = 0x64, -- bow and silver arrows
 		[0x0B] = 0x64, -- bow
 		[0x58] = 0x64, -- silver arrows
 
