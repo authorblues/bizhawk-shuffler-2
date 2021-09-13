@@ -236,6 +236,16 @@ local gamedata = {
 		getlc=function() return mainmemory.read_u8(0x1FB4) end,
 		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
 	},
+	['mmx3snes-zp-4.4']={ -- Mega Man X3 SNES + Zero Project 4.4
+		func=function()
+			return function()
+				local action_changed, action = update_prev('action', mainmemory.read_u8(0x09DA))
+				local ride_armor_iframes_changed, ride_armor_iframes = update_prev('ride_armor_iframes', mainmemory.read_s8(0x0CEE) > 0)
+				return (action_changed and (action == 12 or action == 14)) or -- hit or death
+				       (ride_armor_iframes_changed and ride_armor_iframes)
+			end
+		end,
+	},
 	['mmx3psx-eu']={ -- Mega Man X3 PSX PAL
 		gethp=function() return bit.band(mainmemory.read_u8(0x0D9091), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x0D8743) end,
