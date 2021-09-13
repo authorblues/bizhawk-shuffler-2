@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
+    <Reference Include="BizHawk.Client.Common">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BizHawk.Common">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BizHawk.Emulation.Common">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BizHawk.WinForms.Controls">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="EmuHawk">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.DirectoryServices" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\..\..\BizHawk/EmuHawk.exe')">
+    <BizHawkDir>$(MSBuildProjectDirectory)\..\..\BizHawk\</BizHawkDir>
+    <AssemblySearchPaths>$(AssemblySearchPaths);$(BizHawkDir);$(BizHawkDir)dll\;</AssemblySearchPaths>
+  </PropertyGroup>
+  <Target Name="CopyToExternalTools" AfterTargets="PostBuildEvent" Condition="Exists('$(BizHawkDir)')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BizHawkDir)ExternalTools" />
+  </Target>
+  <PropertyGroup>
+    <StartProgram>$(BizHawkDir)EmuHawk.exe</StartProgram>
+    <StartWorkingDirectory>$(BizHawkDir)</StartWorkingDirectory>
+    <StartArguments>--open-ext-tool-dll=$(MSBuildProjectName)</StartArguments>
+    <StartAction>Program</StartAction>
+  </PropertyGroup>
+</Project>
