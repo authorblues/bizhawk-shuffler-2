@@ -35,9 +35,9 @@ plugin.description =
 	- Super Adventure Rockman PSX
 
 	Bootlegs:
-	- Zook Hero Z (aka Rockman DX6)
-	- Zook Hero 2 (aka Rockman X3)
-	- Zook Man ZX4 (aka Rockman & Crystal)
+	- Zook Hero Z (aka Rockman DX6) GBC
+	- Zook Hero 2 (aka Rockman X3) GBC
+	- Zook Man ZX4 (aka Rockman & Crystal) GBA
 	- Thunder Blast Man (aka Rocman X) GBC
 	- Rockman 8 GB / Rockman X4 GBC
 ]]
