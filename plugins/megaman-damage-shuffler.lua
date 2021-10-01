@@ -33,6 +33,13 @@ plugin.description =
 	- Mega Man Soccer
 	- Mega Man Battle & Chase
 	- Super Adventure Rockman PSX
+
+	Bootlegs:
+	- Zook Hero Z (aka Rockman DX6) GBC
+	- Zook Hero 2 (aka Rockman X3) GBC
+	- Zook Man ZX4 (aka Rockman & Crystal) GBA
+	- Thunder Blast Man (aka Rocman X) GBC
+	- Rockman 8 GB / Rockman X4 GBC
 ]]
 
 local prevdata = {}
@@ -450,6 +457,31 @@ local gamedata = {
 		is_scene = function() return mainmemory.read_u8(0x0CCBBC) == 1 end,
 		is_battle = function() return mainmemory.read_u8(0x0CCAD4) == 1 end,
 		func=super_adventure_rockman_swap,
+	},
+	['zook-hero'] = {
+		gethp=function() return memory.read_u8(0x52, "HRAM") end,
+		getlc=function() return memory.read_u8(0x60, "HRAM") end,
+		maxhp=function() return 20 end,
+	},
+	['zook-man-zx4'] = {
+		gethp=function() return memory.read_u8(0x1638, "IWRAM") end,
+		getlc=function() return memory.read_u8(0x1634, "IWRAM") end,
+		maxhp=function() return 11 end,
+	},
+	['rockman-and-crystal'] = {
+		gethp=function() return memory.read_u8(0x163C, "IWRAM") end,
+		getlc=function() return memory.read_u8(0x1638, "IWRAM") end,
+		maxhp=function() return 11 end,
+	},
+	['rocman-x-gb'] = {
+		gethp=function() return memory.read_u8(0x025B, "WRAM") end,
+		getlc=function() return memory.read_u8(0x5F, "HRAM") end,
+		maxhp=function() return 8 end,
+	},
+	['rockman-8-gb'] = {
+		gethp=function() return memory.read_u8(0x027C, "WRAM") end,
+		getlc=function() return memory.read_u8(0x025E, "WRAM") end,
+		maxhp=function() return 8 end,
 	},
 }
 
