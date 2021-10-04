@@ -354,6 +354,25 @@ local gamedata = {
 		minhp=-40,
 		shield=function() return mainmemory.read_u8(0x0BBD85) end,
 	},
+	['mmzero1']={
+		gethp=function() return memory.read_u8(0x02B62C, 'EWRAM') end,
+		getlc=function() return 0 end,
+		maxhp=function() return memory.read_u8(0x02B723, 'EWRAM') end,
+		minhp=-1, -- allow swapping when hp is 0 without getlc
+	},
+	['mmzero3']={
+		get_iframes=function() memory.read_u8(0x038034, 'EWRAM') end,
+		get_state=function() memory.read_u8(0x037FAD, 'EWRAM') end,
+		hit_states={[4]=true},
+		func=function(gamemeta)
+			return function()
+				local iframes_changed, iframes = update_prev('iframes', gamemeta.get_iframes() > 0)
+				local state_changed, state = update_prev('state', gamemeta.get_state())
+				return (iframes_changed and iframes) or
+				       (state_changed and gamemeta.hit_states[state])
+			end
+		end
+	},
 	['rm&fws']={ -- Rockman & Forte: Mirai Kara no Chousensha (WonderSwan)
 		func=function()
 			return function() -- hp and life counter change in very inconvenient ways, generic_swap doesn't work well here
