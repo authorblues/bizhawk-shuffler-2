@@ -131,7 +131,6 @@ local function mmzero_swap(gamemeta)
 	return function()
 		local iframes_changed, iframes = update_prev('iframes', gamemeta.get_iframes() > 0)
 		local state_changed, state = update_prev('state', gamemeta.get_state())
-		if gamemeta.hit_states[state] == nil then gui.addmessage('state=' .. state) end
 		return (iframes_changed and iframes) or
 			   (state_changed and gamemeta.hit_states[state])
 	end
@@ -368,88 +367,31 @@ local gamedata = {
 		func=mmzero_swap,
 		get_iframes=function() return memory.read_u8(0x02B634, 'EWRAM') end,
 		get_state=function() return memory.read_u8(0x02B5AD, 'EWRAM') end,
-		hit_states={
-			[0]=false,
-			[1]=false, -- jump
-			[2]=false, -- wall slide
-			[3]=false, -- ladder
-			[5]=false, -- webbed/frozen/grabbed
-			[6]=true,
-			[7]=false, -- flying (pit saver)
-			[8]=false, -- side door
-			[9]=false, -- background door
-			[10]=false, -- dialogue
-			[11]=false, -- transporter
-		},
+		hit_states={[6]=true,},
 	},
 	['mmzero2']={
 		func=mmzero_swap,
 		get_iframes=function() return memory.read_u8(0x037D84, 'EWRAM') end,
 		get_state=function() return memory.read_u8(0x037CFD, 'EWRAM') end,
-		hit_states={
-			[0]=false,
-			[1]=false, -- jump
-			[2]=false, -- wall slide
-			[3]=false, -- ladder
-			[4]=false, -- chain rod swinging
-			[5]=false, -- grabbed
-			[6]=false, -- thrown after grab
-			[7]=true,
-			[9]=false, -- side door
-			[10]=false, -- background door
-			[11]=false, -- dialogue
-			[12]=false, -- entering mission
-		},
+		hit_states={[7]=true,},
 	},
 	['mmzero3']={
 		func=mmzero_swap,
 		get_iframes=function() return memory.read_u8(0x038034, 'EWRAM') end,
 		get_state=function() return memory.read_u8(0x037FAD, 'EWRAM') end,
-		hit_states={
-			[0]=false,
-			[1]=false, -- jump
-			[2]=false, -- wall slide
-			[3]=false, -- ladder
-			[4]=true,
-			[5]=false, -- crossing boss door
-			[6]=false, -- crossing background door
-			[9]=false, -- dialogue
-			[10]=false, -- teleporting
-			[11]=false, -- enter cyberspace
-		},
+		hit_states={[4]=true,},
 	},
 	['mmzero3-jp']={
 		func=mmzero_swap,
 		get_iframes=function() return memory.read_u8(0x037CF4, 'EWRAM') end,
 		get_state=function() return memory.read_u8(0x037C6D, 'EWRAM') end,
-		hit_states={
-			[0]=false,
-			[1]=false, -- jump
-			[2]=false, -- wall slide
-			[3]=false, -- ladder
-			[4]=true,
-			[5]=false, -- crossing boss door
-			[6]=false, -- crossing background door
-			[9]=false, -- dialogue
-			[10]=false, -- teleporting
-			[11]=false, -- enter cyberspace
-		},
+		hit_states={[4]=true,},
 	},
 	['mmzero4']={
 		func=mmzero_swap,
 		get_iframes=function() return memory.read_u8(0x036694, 'EWRAM') end,
 		get_state=function() return memory.read_u8(0x03660D, 'EWRAM') end,
-		hit_states={
-			[0]=false,
-			[1]=false, -- jump
-			[2]=false, -- wall slide
-			[4]=true,
-			[5]=false, -- grabbed
-			[7]=false, -- side door
-			[8]=false, -- background door
-			[9]=false, -- dialogue
-			[10]=false, -- teleporting
-		},
+		hit_states={[4]=true,},
 	},
 	['rm&fws']={ -- Rockman & Forte: Mirai Kara no Chousensha (WonderSwan)
 		func=function()
