@@ -27,6 +27,7 @@ plugin.description =
 	- Mega Man Wily Wars GEN
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
+	- Mega Man Zero 1-4 GBA
 	- Rockman & Forte WonderSwan
 	- Rockman EXE WS
 	- Rockman Battle & Fighters
@@ -124,6 +125,15 @@ local function mmx6_swap(gamemeta)
 		-- check the damage counter used for the stats screen. not incremented by acid rain damage
 		_, damage, prev_damage = update_prev('damage', gamemeta.getdamage())
 		return prev_damage ~= nil and damage > prev_damage
+	end
+end
+
+local function mmzero_swap(gamemeta)
+	return function()
+		local iframes_changed, iframes = update_prev('iframes', gamemeta.get_iframes() > 0)
+		local state_changed, state = update_prev('state', gamemeta.get_state())
+		return (iframes_changed and iframes) or
+			   (state_changed and gamemeta.hit_states[state])
 	end
 end
 
@@ -353,6 +363,36 @@ local gamedata = {
 		maxhp=function() return mainmemory.read_s16_be(0x0B5260) end,
 		minhp=-40,
 		shield=function() return mainmemory.read_u8(0x0BBD85) end,
+	},
+	['mmzero1']={
+		func=mmzero_swap,
+		get_iframes=function() return memory.read_u8(0x02B634, 'EWRAM') end,
+		get_state=function() return memory.read_u8(0x02B5AD, 'EWRAM') end,
+		hit_states={[6]=true,},
+	},
+	['mmzero2']={
+		func=mmzero_swap,
+		get_iframes=function() return memory.read_u8(0x037D84, 'EWRAM') end,
+		get_state=function() return memory.read_u8(0x037CFD, 'EWRAM') end,
+		hit_states={[7]=true,},
+	},
+	['mmzero3']={
+		func=mmzero_swap,
+		get_iframes=function() return memory.read_u8(0x038034, 'EWRAM') end,
+		get_state=function() return memory.read_u8(0x037FAD, 'EWRAM') end,
+		hit_states={[4]=true,},
+	},
+	['mmzero3-jp']={
+		func=mmzero_swap,
+		get_iframes=function() return memory.read_u8(0x037CF4, 'EWRAM') end,
+		get_state=function() return memory.read_u8(0x037C6D, 'EWRAM') end,
+		hit_states={[4]=true,},
+	},
+	['mmzero4']={
+		func=mmzero_swap,
+		get_iframes=function() return memory.read_u8(0x036694, 'EWRAM') end,
+		get_state=function() return memory.read_u8(0x03660D, 'EWRAM') end,
+		hit_states={[4]=true,},
 	},
 	['rm&fws']={ -- Rockman & Forte: Mirai Kara no Chousensha (WonderSwan)
 		func=function()
