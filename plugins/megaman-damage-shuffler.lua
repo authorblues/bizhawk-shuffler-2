@@ -27,6 +27,7 @@ plugin.description =
 	- Mega Man Wily Wars GEN
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
+	- Mega Man Zero 1-4 GBA
 	- Rockman & Forte WonderSwan
 	- Rockman EXE WS
 	- Rockman Battle & Fighters
