@@ -21,6 +21,7 @@ STATES_BACKUPS = 3
 DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
 MIN_BIZHAWK_VERSION = "2.6.1"
+INCOMPATIBLE_BIZHAWK_VERSION = "2.6.3"
 RECOMMENDED_LUA_CORE = "LuaInterface"
 MAX_INTEGER = 99999999
 
@@ -547,7 +548,12 @@ if emu.getsystemid() ~= "NULL" then
 else
 	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
 	client.displaymessages(false)
-	if checkversion(MIN_BIZHAWK_VERSION) then
+	if checkversion(INCOMPATIBLE_BIZHAWK_VERSION) then
+		log_message(string.format("BizHawk versions %s+ are currently not supported", INCOMPATIBLE_BIZHAWK_VERSION))
+		log_message("-- Currently installed version: " .. client.getversion())
+		log_message("-- Please use BizHawk 2.6.2 for now")
+		log_message("   https://github.com/TASVideos/BizHawk/releases/tag/2.6.2")
+	elseif checkversion(MIN_BIZHAWK_VERSION) then
 		local setup = require('shuffler-src.setupform')
 		setup.initial_setup(complete_setup)
 	else
