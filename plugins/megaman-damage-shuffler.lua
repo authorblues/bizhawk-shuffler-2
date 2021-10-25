@@ -282,6 +282,7 @@ local gamedata = {
 		gethp=function() return bit.band(mainmemory.read_u8(0x09A0FC), 0x7F) end,
 		getlc=function() return mainmemory.read_u8(0x0D1C45) end,
 		maxhp=function() return mainmemory.read_u8(0x0D1C47) end,
+		gmode=function() return mainmemory.read_u8(0x09A0FC) ~= 0 or mainmemory.read_u8(0x0942BE) ~= 0 end,
 	},
 	['mmx6psx-eu']={ -- Mega Man X6 PSX PAL
 		getdamage=function() return mainmemory.read_u32_le(0x0CCFB0) end,
