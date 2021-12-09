@@ -357,8 +357,8 @@ function checkversion(reqversion)
 	while #curr < #reqd do table.insert(curr, 0) end
 
 	for i=1,#reqd do
-		if curr[i]<reqd[i] then
-			return false
+		if curr[i] ~= reqd[i] then
+			return curr[i]>reqd[i]
 		end
 	end
 	return true
