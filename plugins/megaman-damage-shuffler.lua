@@ -409,8 +409,8 @@ local gamedata = {
 	},
 	['mmzx-eu']={ -- Mega Man ZX PAL
 		gethp=function() return bit.band(mainmemory.read_u8(0x151DBA), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x151DBC) end,
-		maxhp=function() return mainmemory.read_u8(0x151E74) end,
+		getlc=function() return mainmemory.read_u8(0x151E74) end,
+		maxhp=function() return mainmemory.read_u8(0x151DBC) end,
 	},
 	['mmzxadv']={ -- Mega Man ZX - Advent NSTC & NSTC-J
 		gethp=function() return bit.band(mainmemory.read_u8(0x169D1A), 0x7F) end,
@@ -419,8 +419,8 @@ local gamedata = {
 	},
 	['mmzxadv-eu']={ -- Mega Man ZX - Advent PAL
 		gethp=function() return bit.band(mainmemory.read_u8(0x155D66), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x155D68) end,
-		maxhp=function() return mainmemory.read_u8(0x155E30) end,
+		getlc=function() return mainmemory.read_u8(0x155E30) end,
+		maxhp=function() return mainmemory.read_u8(0x155D68) end,
 	},
 	['rm&fws']={ -- Rockman & Forte: Mirai Kara no Chousensha (WonderSwan)
 		func=function()
