@@ -12,7 +12,7 @@ plugin.description =
 [[
 	Automatically swaps games any time Megaman takes damage. Checks hashes of different rom versions, so if you use a version of the rom that isn't recognized, nothing special will happen in that game (no swap on hit).
 
-	Thanks to kalimag for adding support for all the weird games. Thanks to Smight and ZandraVandra for the initial ideas.
+	Thanks to kalimag for adding support for all the weird games. Extreme0 for adding Megaman ZX & ZX Advent. Thanks to Smight and ZandraVandra for the initial ideas.
 
 	Supports:
 	- Mega Man 1-6 NES
@@ -28,6 +28,8 @@ plugin.description =
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
 	- Mega Man Zero 1-4 GBA
+	- Mega Man ZX (USA/PAL/JP)
+	- Mega Man ZX Advent (USA/PAL/JP)
 	- Rockman & Forte WonderSwan
 	- Rockman EXE WS
 	- Rockman Battle & Fighters
@@ -394,6 +396,31 @@ local gamedata = {
 		get_iframes=function() return memory.read_u8(0x036694, 'EWRAM') end,
 		get_state=function() return memory.read_u8(0x03660D, 'EWRAM') end,
 		hit_states={[4]=true,},
+	},
+	['mmzx']={ -- Mega Man ZX
+		gethp=function() return bit.band(mainmemory.read_u8(0x14FBB2), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x14FC6C) end,
+		maxhp=function() return mainmemory.read_u8(0x14FBB4) end,
+	},
+	['mmzx-jp']={ -- Mega Man ZX NSTC-J
+		gethp=function() return bit.band(mainmemory.read_u8(0x14F7B2), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x14F86C) end,
+		maxhp=function() return mainmemory.read_u8(0x14F7B4) end,
+	},
+	['mmzx-eu']={ -- Mega Man ZX PAL
+		gethp=function() return bit.band(mainmemory.read_u8(0x151DBA), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x151DBC) end,
+		maxhp=function() return mainmemory.read_u8(0x151E74) end,
+	},
+	['mmzxadv']={ -- Mega Man ZX - Advent NSTC & NSTC-J
+		gethp=function() return bit.band(mainmemory.read_u8(0x169D1A), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x169DE4) end,
+		maxhp=function() return mainmemory.read_u8(0x169D1C) end,
+	},
+	['mmzxadv-eu']={ -- Mega Man ZX - Advent PAL
+		gethp=function() return bit.band(mainmemory.read_u8(0x155D66), 0x7F) end,
+		getlc=function() return mainmemory.read_u8(0x155D68) end,
+		maxhp=function() return mainmemory.read_u8(0x155E30) end,
 	},
 	['rm&fws']={ -- Rockman & Forte: Mirai Kara no Chousensha (WonderSwan)
 		func=function()
