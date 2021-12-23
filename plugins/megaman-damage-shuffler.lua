@@ -337,7 +337,7 @@ local gamedata = {
 		gethp=function() return memory.read_u16_le(0x0066D0, "EWRAM") end,
 		getlc=function() return 0 end,
 		maxhp=function() return memory.read_u16_le(0x00022C, "EWRAM") end,
-		gmode=function() return memory.read_u8(0x0033A5, "EWRAM") ~= 0x00 end
+		gmode=function() return memory.read_u8(0x004CDC, "EWRAM") ~= 0x00 end
 	},
 	['mmbn2']={ -- Mega Man Battle Network 2 GBA
 		gethp=function() return memory.read_u16_be(0x008A94, "EWRAM") end,
