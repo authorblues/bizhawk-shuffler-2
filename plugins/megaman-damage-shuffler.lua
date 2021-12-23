@@ -334,21 +334,21 @@ local gamedata = {
 		maxhp=function() return mainmemory.read_u8(0x0084) end,
 	},
 	['mmbn1']={ -- Mega Man Battle Network GBA
-		gethp=function() return memory.read_u16_be(0x0066D0, "EWRAM") end,
+		gethp=function() return memory.read_u16_le(0x0066D0, "EWRAM") end,
 		getlc=function() return 0 end,
-		maxhp=function() return memory.read_u16_be(0x00022C, "EWRAM") end,
-		gmode=function() return memory.read_u8(0x0033A5, "EWRAM") ~= 0x00 end
+		maxhp=function() return memory.read_u16_le(0x00022C, "EWRAM") end,
+		gmode=function() return memory.read_u8(0x004CDC, "EWRAM") ~= 0x00 end
 	},
 	['mmbn2']={ -- Mega Man Battle Network 2 GBA
-		gethp=function() return memory.read_u16_be(0x008A94, "EWRAM") end,
+		gethp=function() return memory.read_u16_le(0x008A94, "EWRAM") end,
 		getlc=function() return 0 end,
-		maxhp=function() return memory.read_u16_be(0x000DE2, "EWRAM") end, -- unsure
+		maxhp=function() return memory.read_u16_le(0x000DE2, "EWRAM") end, -- unsure
 		gmode=function() return memory.read_u8(0x00C220, "EWRAM") ~= 0x00 end
 	},
 	['mmbn3-us']={ -- Mega Man Battle Network 3 GBA (Blue & White)
-		gethp=function() return memory.read_u16_be(0x037294, "EWRAM") end,
+		gethp=function() return memory.read_u16_le(0x037294, "EWRAM") end,
 		getlc=function() return 0 end,
-		maxhp=function() return memory.read_u16_be(0x0018A2, "EWRAM") end,
+		maxhp=function() return memory.read_u16_le(0x0018A2, "EWRAM") end,
 		gmode=function() return memory.read_u8(0x019006, "EWRAM") ~= 0x01 end
 	},
 	['mmlegends-n64']={ -- Mega Man 64
