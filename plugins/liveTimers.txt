@@ -1,0 +1,2 @@
+config.min_swap=1
+config.max_swap=3
