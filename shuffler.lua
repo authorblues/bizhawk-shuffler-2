@@ -21,8 +21,8 @@ STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 STATES_BACKUPS = 3
 DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
-MIN_BIZHAWK_VERSION = "2.6.1"
-INCOMPATIBLE_BIZHAWK_VERSION = "2.6.3"
+MIN_BIZHAWK_VERSION = "2.6.3"
+MAX_BIZHAWK_VERSION = nil
 RECOMMENDED_LUA_CORE = "LuaInterface"
 MAX_INTEGER = 99999999
 
@@ -352,33 +352,60 @@ function strip_ext(filename)
 	return filename:sub(1, ndx-1)
 end
 
-function checkversion(reqversion)
-	-- nil string means no requirements, so of course true
-	if reqversion == nil then return true end
+-- returns positive number if curversion > reqversion,
+-- negative number if curversion < reqversion, 0 if equal
+function compare_version(reqversion, curversion)
+	curversion = curversion or client.getversion()
 
 	local curr, reqd = {}, {}
-	for x in string.gmatch(client.getversion(), "%d+") do
+	for x in string.gmatch(curversion, "%d+") do
 		table.insert(curr, tonumber(x))
 	end
 	for x in string.gmatch(reqversion, "%d+") do
 		table.insert(reqd, tonumber(x))
 	end
 	while #curr < #reqd do table.insert(curr, 0) end
+	while #reqd < #curr do table.insert(reqd, 0) end
 
 	for i=1,#reqd do
 		if curr[i] ~= reqd[i] then
-			return curr[i]>reqd[i]
+			return curr[i] - reqd[i]
 		end
 	end
-	return true
+	return 0
 end
 
-local function check_lua_core()
+function checkversion(reqversion, curversion)
+	-- nil string means no requirements, so of course true
+	if reqversion == nil then return true end
+	return compare_version(reqversion, curversion) >= 0
+end
+
+local function check_compatibility()
 	if client.get_lua_engine() ~= RECOMMENDED_LUA_CORE then
 		log_message(string.format("\n[!] It is recommended to use the %s core (currently using %s)\n" ..
 			"Change the Lua core in the Config > Customize > Advanced menu and restart BizHawk",
 			RECOMMENDED_LUA_CORE, client.get_lua_engine()))
+		return false
 	end
+
+	if MAX_BIZHAWK_VERSION and compare_version(MAX_BIZHAWK_VERSION) > 0 then
+		log_message(string.format("BizHawk versions after %s are currently not supported", MAX_BIZHAWK_VERSION))
+		log_message("-- Currently installed version: " .. client.getversion())
+		log_message("-- Please use BizHawk %s for now", MAX_BIZHAWK_VERSION)
+		log_message("   https://github.com/TASVideos/BizHawk/releases/")
+		return false
+	end
+
+	if MIN_BIZHAWK_VERSION and compare_version(MIN_BIZHAWK_VERSION) < 0 then
+		log_message(string.format("Expected Bizhawk version %s+", MIN_BIZHAWK_VERSION))
+		log_message("-- Currently installed version: " .. client.getversion())
+		log_message("-- Please update your Bizhawk installation")
+		log_message("   https://github.com/TASVideos/BizHawk/releases/")
+		return false
+	end
+
+	return true
 end
 
 -- this is going to be an APPROXIMATION and is not a substitute for an actual
@@ -503,7 +530,9 @@ function get_tag_from_hash_db(target, database)
 	return resp
 end
 
-check_lua_core()
+if not check_compatibility() then
+	return
+end
 
 -- load primary configuration
 load_config('shuffler-src/config.lua')
@@ -557,19 +586,8 @@ if emu.getsystemid() ~= "NULL" then
 else
 	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
 	client.displaymessages(false)
-	if checkversion(INCOMPATIBLE_BIZHAWK_VERSION) then
-		log_message(string.format("BizHawk versions %s+ are currently not supported", INCOMPATIBLE_BIZHAWK_VERSION))
-		log_message("-- Currently installed version: " .. client.getversion())
-		log_message("-- Please use BizHawk 2.6.2 for now")
-		log_message("   https://github.com/TASVideos/BizHawk/releases/tag/2.6.2")
-	elseif checkversion(MIN_BIZHAWK_VERSION) then
-		local setup = require('shuffler-src.setupform')
-		setup.initial_setup(complete_setup)
-	else
-		log_message(string.format("Expected Bizhawk version %s+", MIN_BIZHAWK_VERSION))
-		log_message("-- Currently installed version: " .. client.getversion())
-		log_message("-- Please update your Bizhawk installation")
-	end
+	local setup = require('shuffler-src.setupform')
+	setup.initial_setup(complete_setup)
 end
 
 prev_input = input.get()
