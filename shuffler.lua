@@ -14,6 +14,9 @@ plugins = {}
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
 PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
 
+-- set in Lua console for verbose debug messages
+--SHUFFLER_DEBUG = true
+
 PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
 PREMADE_STATES = 'start-states'
@@ -35,6 +38,40 @@ function log_message(msg, quiet)
 	handle:write(tostring(msg))
 	handle:write('\n')
 	handle:close()
+end
+
+local function safe_log_format(format, ...)
+	local count = select('#', ...)
+	if count == 0 then return format end
+
+	local arguments = {...}
+	-- deal with nil and boolean values which %s can't handle
+	for i = 1, count do
+		if (type(arguments[i]) ~= 'number') then
+			arguments[i] = tostring(arguments[i])
+		end
+	end
+
+	local success, result = pcall(string.format, format, unpack(arguments))
+	if success then
+		return result
+	else
+		return string.format('Log error at "%s": %s', tostring(format), tostring(result))
+	end
+end
+
+function log_console(format, ...)
+	log_message(safe_log_format(format, ...), false)
+end
+
+function log_quiet(format, ...)
+	log_message(safe_log_format(format, ...), true)
+end
+
+function log_debug(format, ...)
+	if SHUFFLER_DEBUG then
+		log_message(safe_log_format(format, ...), true)
+	end
 end
 
 -- check if folder exists
