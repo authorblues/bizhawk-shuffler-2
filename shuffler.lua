@@ -5,17 +5,17 @@
 	released under MIT License
 --]]
 
+-- set in Lua console for verbose debug messages
+--SHUFFLER_DEBUG = true
+
 config = {}
 next_swap_time = 0
-running = true
+running = false
 plugins = {}
 
 -- determine operating system for the purpose of commands
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
 PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
-
--- set in Lua console for verbose debug messages
---SHUFFLER_DEBUG = true
 
 PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
@@ -260,6 +260,7 @@ function save_current_game()
 				string.format("%s.bk%d", statename, i))
 		end
 		overwrite(statename, statename .. '.bk1')
+		log_debug('save_current_game: save "%s"', statename)
 		savestate.save(statename)
 	end
 end
@@ -271,16 +272,67 @@ function file_exists(f)
 	return true
 end
 
--- we don't load the savestate here because (for some unbelievably f***ed up reason),
--- client.openrom() causes the whole script to reload, forcing us to use a convoluted
--- method to determine if this is the initial execution of the script, or a reload
--- caused by openrom(). in any case, loading the savestate here seems to run into
--- a race condition, so we load the savestate at the beginning of the reloaded script
+function is_rom_loaded()
+	return emu.getsystemid() ~= 'NULL'
+end
+
+-- called after rom is loaded
+local function on_game_load()
+	log_debug('on_game_load() current_game="%s"', config.current_game)
+
+	frames_since_restart = 0
+	running = true
+
+	local state = get_savestate_file()
+	if file_exists(state) then
+		log_debug('on_game_load: load state "%s"', state)
+		savestate.load(state)
+	end
+
+	-- update swap counter for this game
+	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
+	config.game_swaps[config.current_game] = new_swaps
+	write_data('output-info/current-swaps.txt', new_swaps)
+
+	-- update total swap counter
+	config.total_swaps = (config.total_swaps or 0) + 1
+	write_data('output-info/total-swaps.txt', config.total_swaps)
+
+	-- update game name
+	write_data('output-info/current-game.txt', strip_ext(config.current_game))
+
+	-- this code just outright crashes on Bizhawk 2.6.1, go figure
+	if checkversion("2.6.2") then
+		gui.use_surface('client')
+		gui.clearGraphics()
+	end
+
+	update_next_swap_time()
+
+	for _,plugin in ipairs(plugins) do
+		if plugin.on_game_load ~= nil then
+			local pdata = config.plugins[plugin._module]
+			plugin.on_game_load(pdata.state, pdata.settings)
+		end
+	end
+
+	save_config(config, 'shuffler-src/config.lua')
+end
+
 function load_game(g)
+	log_debug('load_game(%s)', g)
 	local filename = GAMES_FOLDER .. '/' .. g
 	if not file_exists(filename) then return false end
+
 	client.openrom(filename)
-	return true
+
+	if is_rom_loaded() then
+		on_game_load()
+		return true
+	else
+		log_console('Failed to open ROM "%s"', g)
+		return false
+	end
 end
 
 function get_next_game()
@@ -315,6 +367,7 @@ end
 
 -- save current game's savestate, backup config, and load new game
 function swap_game(next_game)
+	log_debug('swap_game(%s): running=%s', next_game, running)
 	-- if a swap has already happened, don't call again
 	if not running then return false end
 
@@ -349,7 +402,7 @@ function swap_game(next_game)
 	client.SetSoundOn(false)
 
 	-- force another frame to pass to get the mute to take effect
-	if emu.getsystemid() ~= "NULL" then emu.frameadvance() end
+	if is_rom_loaded() then emu.frameadvance() end
 
 	-- unique game count, for debug purposes
 	config.game_count = 0
@@ -361,7 +414,6 @@ function swap_game(next_game)
 	config.nseed = math.random(MAX_INTEGER) + config.frame_count
 	save_config(config, 'shuffler-src/config.lua')
 
-	-- load the new game WHICH IS JUST GOING TO RESTART THE WHOLE SCRIPT f***
 	return load_game(config.current_game)
 end
 
@@ -553,7 +605,10 @@ function complete_setup()
 	-- otherwise, call swap_game() to setup for the first game load
 	if config.current_game ~= nil then
 		load_game(config.current_game)
-	else swap_game() end
+	else
+		running = true
+		swap_game()
+	end
 end
 
 function get_tag_from_hash_db(target, database)
@@ -574,58 +629,8 @@ end
 -- load primary configuration
 load_config('shuffler-src/config.lua')
 
-if emu.getsystemid() ~= "NULL" then
-	-- THIS CODE RUNS EVERY TIME THE SCRIPT RESTARTS
-	-- which is specifically after a call to client.openrom()
-
-	-- I will try to limit the number of comments I write solely to complain about
-	-- this design decision, but I make no promises.
-
-	-- load plugin configuration
-	if config.plugins ~= nil then
-		for pmodpath,pdata in pairs(config.plugins) do
-			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
-			pmodule._module = pmodpath
-			if pmodule ~= nil then table.insert(plugins, pmodule) end
-		end
-	end
-
-	local state = get_savestate_file()
-	if file_exists(state) then savestate.load(state) end
-
-	-- update swap counter for this game
-	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
-	config.game_swaps[config.current_game] = new_swaps
-	write_data('output-info/current-swaps.txt', new_swaps)
-
-	-- update total swap counter
-	config.total_swaps = (config.total_swaps or 0) + 1
-	write_data('output-info/total-swaps.txt', config.total_swaps)
-
-	-- update game name
-	write_data('output-info/current-game.txt', strip_ext(config.current_game))
-
-	-- this code just outright crashes on Bizhawk 2.6.1, go figure
-	if checkversion("2.6.2") then
-		gui.use_surface('client')
-		gui.clearGraphics()
-	end
-
-	math.randomseed(config.nseed or config.seed)
-	update_next_swap_time()
-
-	for _,plugin in ipairs(plugins) do
-		if plugin.on_game_load ~= nil then
-			local pdata = config.plugins[plugin._module]
-			plugin.on_game_load(pdata.state, pdata.settings)
-		end
-	end
-else
-	-- THIS CODE RUNS ONLY ON THE INITIAL SCRIPT SETUP
-	client.displaymessages(false)
-	local setup = require('shuffler-src.setupform')
-	setup.initial_setup(complete_setup)
-end
+local setup = require('shuffler-src.setupform')
+setup.initial_setup(complete_setup)
 
 prev_input = input.get()
 frames_since_restart = 0
@@ -633,7 +638,7 @@ frames_since_restart = 0
 local ptime_total = nil
 local ptime_game = nil
 while true do
-	if emu.getsystemid() ~= "NULL" and running then
+	if running and is_rom_loaded() then
 		-- wait for a frame to pass before turning sound back on
 		if frames_since_restart == 1 and config.sound then client.SetSoundOn(true) end
 
