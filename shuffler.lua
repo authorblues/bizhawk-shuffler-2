@@ -597,6 +597,7 @@ function complete_setup()
 		log_message('deleting savestates!')
 		delete_savestates()
 	end
+	make_dir(STATES_FOLDER)
 
 	-- whatever the current state is, update the output file
 	output_completed()
