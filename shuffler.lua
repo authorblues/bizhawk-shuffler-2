@@ -1,7 +1,7 @@
 --[[
 	Bizhawk Shuffler 2 by authorblues
 	inspired by Brossentia's Bizhawk Shuffler, based on slowbeef's original project
-	tested on Bizhawk v2.6.2 - http://tasvideos.org/BizHawk/ReleaseHistory.html
+	tested on Bizhawk v2.8 - http://tasvideos.org/BizHawk/ReleaseHistory.html
 	released under MIT License
 --]]
 
