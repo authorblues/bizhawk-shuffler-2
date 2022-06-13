@@ -560,14 +560,15 @@ function complete_setup()
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
 			if checkversion(pmodule.minversion) then
 				log_message('Plugin loaded: ' .. pmodule.name)
+				table.insert(plugins, pmodule)
+				if pmodule.on_setup ~= nil then
+					pmodule.on_setup(pdata.state, pdata.settings)
+				end
 			else
 				log_message(string.format('%s requires Bizhawk version %s+', pmodule.name, pmodule.minversion))
 				log_message("-- Currently installed version: " .. client.getversion())
 				log_message("-- Please update your Bizhawk installation to use this plugin")
 				config.plugins[pmodpath] = nil
-			end
-			if pmodule ~= nil and pmodule.on_setup ~= nil then
-				pmodule.on_setup(pdata.state, pdata.settings)
 			end
 		end
 	end
