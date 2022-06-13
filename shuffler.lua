@@ -603,6 +603,8 @@ function complete_setup()
 	-- whatever the current state is, update the output file
 	output_completed()
 
+	client.displaymessages(false)
+
 	-- if there is already a listed current game, this is a resumed session
 	-- otherwise, call swap_game() to setup for the first game load
 	if config.current_game ~= nil then
