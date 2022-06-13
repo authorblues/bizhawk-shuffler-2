@@ -366,7 +366,7 @@ function get_next_game()
 end
 
 -- save current game's savestate, backup config, and load new game
-function swap_game(next_game)
+function swap_game(next_game, is_gui_callback)
 	log_debug('swap_game(%s): running=%s', next_game, running)
 	-- if a swap has already happened, don't call again
 	if not running then return false end
@@ -402,7 +402,7 @@ function swap_game(next_game)
 	client.SetSoundOn(false)
 
 	-- force another frame to pass to get the mute to take effect
-	if is_rom_loaded() then emu.frameadvance() end
+	if not is_gui_callback and is_rom_loaded() then emu.frameadvance() end
 
 	-- unique game count, for debug purposes
 	config.game_count = 0
@@ -609,7 +609,7 @@ function complete_setup()
 		load_game(config.current_game)
 	else
 		running = true
-		swap_game()
+		swap_game(nil, true)
 	end
 end
 
