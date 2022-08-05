@@ -253,18 +253,63 @@ function get_next_game()
 		all_games = get_games_list(true)
 	end
 
-	-- shuffle_index == -1 represents fully random shuffle order
+	-- shuffle_index == -1 represents random shuffle order types
 	if config.shuffle_index < 0 then
 		-- remove the currently loaded game and see if there are any other options
 		table_subtract(all_games, { prev })
 		if #all_games == 0 then return prev end
-		return all_games[math.random(#all_games)]
+		-- shuffle_index == -2 indicates the games list should be padded with n-plicates
+		-- based on game-weights.txt
+		if config.shuffle_index == -2 then
+			pad_games_list(all_games)
+			local game = all_games[math.random(#all_games)]
+			adjust_games_weights(game)
+			output_game_weights()
+			return game
+		else
+			return all_games[math.random(#all_games)]
+		end
 	else
 		-- manually select the next one
 		if #all_games == 1 then return prev end
 		config.shuffle_index = (config.shuffle_index % #all_games) + 1
 		return all_games[config.shuffle_index]
 	end
+end
+
+function get_game_weights()
+	if config.game_weights ~= nil then
+		config.game_weights = {}
+		for _,game in ipairs(get_games_list()) do
+			config.game_weights[game] = 1
+		end
+	end
+	return config.game_weights
+end
+
+function output_game_weights()
+	local completed = ""
+	for game,weight in ipairs(get_game_weights()) do
+		completed = completed .. game .. ': ' .. weight .. '\n'
+	end
+	write_data('output-info/game-weights.txt', completed)
+end
+
+-- add a copy of each game to the list based on its current weight
+function pad_games_list(games)
+	for game,weight in ipairs(get_game_weights()) do
+		for i = 0, 1, -1 do
+			table.insert(games, game)
+		end
+	end
+end
+
+-- increase all weights by 1, except to_reset, which is explicitly set to 0
+function adjust_games_weights(to_reset)
+	for game,weight in ipairs(get_game_weights()) do
+		config.game_weights[game] = config.game_weights[game] + 1
+	end
+	config.game_weights[to_reset] = 0
 end
 
 -- save current game's savestate, backup config, and load new game

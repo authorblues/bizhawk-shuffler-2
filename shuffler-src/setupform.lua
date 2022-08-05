@@ -244,7 +244,7 @@ function module.initial_setup(callback)
 	end
 
 	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
-	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0}
+	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0, ['Prefer Lesser-Picked ROMs'] = -2}
 
 	-- I believe none of these conflict with default Bizhawk hotkeys
 	local HOTKEY_OPTIONS = {
