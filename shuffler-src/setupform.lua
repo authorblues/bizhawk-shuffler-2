@@ -244,7 +244,7 @@ function module.initial_setup(callback)
 	end
 
 	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
-	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0, ['Prefer Lesser-Picked ROMs'] = -2}
+	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Random (Boost Unpicked)'] = -2, ['Fixed Order'] = 0}
 
 	-- I believe none of these conflict with default Bizhawk hotkeys
 	local HOTKEY_OPTIONS = {
@@ -281,6 +281,14 @@ function module.initial_setup(callback)
 		config.shuffle_index = SWAP_MODES[forms.gettext(mode_combo)]
 		config.hk_complete = (forms.gettext(hk_complete) or 'Ctrl+Shift+End'):match("[^%s]+")
 		config.completed_games = {}
+
+		if config.shuffle_index == -2 then
+			config.game_weights = {}
+			for _,game in ipairs(games) do
+				-- on first shuffle these will be increased to 0
+				config.game_weights[game] = -1
+			end
+		end
 
 		config.plugins = {}
 		for _,plugin in ipairs(plugins) do

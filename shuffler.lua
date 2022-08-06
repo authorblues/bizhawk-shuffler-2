@@ -258,17 +258,10 @@ function get_next_game()
 		-- remove the currently loaded game and see if there are any other options
 		table_subtract(all_games, { prev })
 		if #all_games == 0 then return prev end
-		-- shuffle_index == -2 indicates the games list should be padded with n-plicates
-		-- based on game-weights.txt
-		if config.shuffle_index == -2 then
-			pad_games_list(all_games)
-			local game = all_games[math.random(#all_games)]
-			adjust_games_weights(game)
-			output_game_weights()
-			return game
-		else
-			return all_games[math.random(#all_games)]
-		end
+		-- shuffle_index == -2 indicates games should be given multiple entries based on
+		-- their weight in config.game_weights
+		if config.shuffle_index == -2 then pad_games_list(all_games, prev) end
+		return all_games[math.random(#all_games)]
 	else
 		-- manually select the next one
 		if #all_games == 1 then return prev end
@@ -277,39 +270,18 @@ function get_next_game()
 	end
 end
 
-function get_game_weights()
-	if config.game_weights ~= nil then
-		config.game_weights = {}
-		for _,game in ipairs(get_games_list()) do
-			config.game_weights[game] = 1
-		end
-	end
-	return config.game_weights
-end
-
-function output_game_weights()
-	local completed = ""
-	for game,weight in ipairs(get_game_weights()) do
-		completed = completed .. game .. ': ' .. weight .. '\n'
-	end
-	write_data('output-info/game-weights.txt', completed)
-end
-
--- add a copy of each game to the list based on its current weight
-function pad_games_list(games)
-	for game,weight in ipairs(get_game_weights()) do
-		for i = 0, 1, -1 do
+function pad_games_list(games, to_reset)
+	-- increase all weights by 1, except to_reset, which is explicitly set to -1 to
+	-- prevent re-entry
+	config.game_weights[to_reset] = -1
+	for game,weight in ipairs(config.game_weights) do
+		config.game_weights[game] = config.game_weights[game] + 1
+		-- pad the games list with (weight) copies of the game
+		for i = 0, weight, -1 do
 			table.insert(games, game)
 		end
+		output = output .. game .. ': ' .. weight .. '\n'
 	end
-end
-
--- increase all weights by 1, except to_reset, which is explicitly set to 0
-function adjust_games_weights(to_reset)
-	for game,weight in ipairs(get_game_weights()) do
-		config.game_weights[game] = config.game_weights[game] + 1
-	end
-	config.game_weights[to_reset] = 0
 end
 
 -- save current game's savestate, backup config, and load new game
