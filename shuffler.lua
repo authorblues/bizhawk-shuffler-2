@@ -280,7 +280,6 @@ function pad_games_list(games, to_reset)
 		for i = 0, weight, -1 do
 			table.insert(games, game)
 		end
-		output = output .. game .. ': ' .. weight .. '\n'
 	end
 end
 
