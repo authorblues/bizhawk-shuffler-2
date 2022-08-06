@@ -275,11 +275,11 @@ function pad_games_list(games, to_reset)
 	-- prevent re-entry
 	config.game_weights[to_reset] = -1
 	for game,weight in ipairs(config.game_weights) do
-		config.game_weights[game] = config.game_weights[game] + 1
 		-- pad the games list with (weight) copies of the game
 		for i = 0, weight, -1 do
 			table.insert(games, game)
 		end
+		config.game_weights[game] = config.game_weights[game] + 1
 	end
 end
 
