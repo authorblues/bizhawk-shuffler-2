@@ -271,9 +271,8 @@ function get_next_game()
 end
 
 function pad_games_list(games, to_reset)
-	-- increase all weights by 1, except to_reset, which is explicitly set to -1 to
-	-- prevent re-entry
-	config.game_weights[to_reset] = -1
+	-- to_reset is explicitly set to 0 to prevent re-entry
+	config.game_weights[to_reset] = 0
 	for game,weight in ipairs(config.game_weights) do
 		-- pad the games list with (weight) copies of the game
 		for i = 0, weight, -1 do
