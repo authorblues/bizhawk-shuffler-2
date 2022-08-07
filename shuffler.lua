@@ -260,7 +260,10 @@ function get_next_game()
 		if #all_games == 0 then return prev end
 		-- shuffle_index == -2 indicates games should be given multiple entries based on
 		-- their weight in config.game_weights
-		if config.shuffle_index == -2 then pad_games_list(all_games, prev) end
+		if config.shuffle_index == -2 then
+			config.game_weights[prev] = 0
+			pad_games_list(all_games)
+		end
 		return all_games[math.random(#all_games)]
 	else
 		-- manually select the next one
@@ -270,12 +273,12 @@ function get_next_game()
 	end
 end
 
-function pad_games_list(games, to_reset)
-	-- to_reset is explicitly set to 0 to prevent re-entry
-	config.game_weights[to_reset] = 0
-	for game,weight in ipairs(config.game_weights) do
+function pad_games_list(games)
+	for _,game in ipairs(games) do
+		-- accounting for new games
+		if config.game_weights[game] ~= nil then config.game_weights[game] = 0 end
 		-- pad the games list with (weight) copies of the game
-		for i = 0, weight, -1 do
+		for i = 0, config.game_weights[game] do
 			table.insert(games, game)
 		end
 		config.game_weights[game] = config.game_weights[game] + 1
@@ -408,6 +411,10 @@ end
 function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
 	table.insert(config.completed_games, config.current_game)
+	-- purge it from game_weights if necessary
+	if config.game_weights ~= nil then
+		table.remove(config.game_weights, config.current_game)
+	end
 	log_message(config.current_game .. ' marked complete')
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_complete ~= nil then
