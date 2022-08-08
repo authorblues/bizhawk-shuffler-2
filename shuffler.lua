@@ -253,7 +253,7 @@ function get_next_game()
 		all_games = get_games_list(true)
 	end
 
-	-- shuffle_index == -1 represents random shuffle order types
+	-- shuffle_index < 0 represents random shuffle order types
 	if config.shuffle_index < 0 then
 		-- remove the currently loaded game and see if there are any other options
 		table_subtract(all_games, { prev })
