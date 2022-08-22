@@ -261,7 +261,7 @@ function get_next_game()
 		-- shuffle_index == -2 indicates games should be given multiple entries based on
 		-- their weight in config.game_weights
 		if config.shuffle_index == -2 then
-			config.game_weights[prev] = 0
+			if prev ~= nil then config.game_weights[prev] = 0 end
 			pad_games_list(all_games)
 		end
 		return all_games[math.random(#all_games)]
@@ -274,12 +274,21 @@ function get_next_game()
 end
 
 function pad_games_list(games)
-	for _,game in ipairs(games) do
+	-- copy the games list so we're not iterating over an ever-expanding list
+	local initial_games = {}
+	for _,game in pairs(games) do
+		table.insert(initial_games, game)
+	end
+	-- actual padding
+	for _,game in pairs(initial_games) do
 		-- accounting for new games
-		if config.game_weights[game] ~= nil then config.game_weights[game] = 0 end
-		-- pad the games list with (weight) copies of the game
-		for i = 0, config.game_weights[game] do
-			table.insert(games, game)
+		if config.game_weights[game] ~= nil then
+			-- pad the games list with (weight) copies of the game
+			for i = 0, config.game_weights[game] do
+				table.insert(games, game)
+			end
+		else
+			config.game_weights[game] = 0
 		end
 		config.game_weights[game] = config.game_weights[game] + 1
 	end
