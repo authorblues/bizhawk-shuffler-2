@@ -284,7 +284,7 @@ function module.initial_setup(callback)
 
 		if config.shuffle_index == -2 then
 			config.game_weights = {}
-			for _,game in ipairs(get_games_list(true)) do
+			for _,game in pairs(get_games_list()) do
 				config.game_weights[game] = 0
 			end
 		end
