@@ -16,6 +16,7 @@ PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
 
 PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
+PREMADE_STATES = 'start-states'
 STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 STATES_BACKUPS = 3
 DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
@@ -192,6 +193,14 @@ function delete_savestates()
 		cmd = string.format('rmdir "%s" /S /Q', STATES_FOLDER)
 	end
 	os.execute(cmd)
+
+	if path_exists(PREMADE_STATES .. '/') then
+		cmd = string.format('cp -r "%s" "%s"', PREMADE_STATES, STATES_FOLDER)
+		if PLATFORM == 'WIN' then
+			cmd = string.format('xcopy "%s" "%s\\" /E /H', PREMADE_STATES, STATES_FOLDER)
+		end
+		os.execute(cmd)
+	end
 end
 
 function get_savestate_file(game)
