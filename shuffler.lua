@@ -27,6 +27,7 @@ DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 MIN_BIZHAWK_VERSION = "2.6.3"
 MAX_BIZHAWK_VERSION = nil
 RECOMMENDED_LUA_CORE = "LuaInterface"
+UNSUPPORTED_LUA_CORE = "NLua"
 MAX_INTEGER = 99999999
 
 function log_message(msg, quiet)
@@ -472,7 +473,7 @@ function checkversion(reqversion, curversion)
 end
 
 local function check_compatibility()
-	if client.get_lua_engine() ~= RECOMMENDED_LUA_CORE then
+	if client.get_lua_engine() == UNSUPPORTED_LUA_CORE then
 		log_message(string.format("\n[!] It is recommended to use the %s core (currently using %s)\n" ..
 			"Change the Lua core in the Config > Customize > Advanced menu and restart BizHawk",
 			RECOMMENDED_LUA_CORE, client.get_lua_engine()))
