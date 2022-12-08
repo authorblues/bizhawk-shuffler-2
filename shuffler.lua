@@ -202,9 +202,9 @@ function get_games_list(force)
 			fp:close()
 
 			-- bizhawk multidisk bundle
-			if xml:find('BizHawk--XMLGame') then -- double hyphen to escape literal hyphen
+			if xml:find('BizHawk%-XMLGame') then
 				for asset in xml:gfind('<Asset.-FileName="(.-)".-/>') do
-					if asset:find('\.\\') == 1 then asset = asset:sub(3) end
+					asset = asset:gsub('^%.[\\/]', '')
 					table.insert(toremove, asset)
 				end
 			end
@@ -437,8 +437,9 @@ function ends_with(a, b)
 end
 
 function strip_ext(filename)
-	local ndx = filename:find("\.[^\.]*$")
-	return filename:sub(1, ndx-1)
+	-- only return first ret value from gsub!
+	local name = filename:gsub('%.[^.]*$', '')
+	return name
 end
 
 -- returns positive number if curversion > reqversion,
