@@ -41,6 +41,9 @@ function log_message(msg, quiet)
 	handle:close()
 end
 
+-- for Lua 5.1 and 5.4 compatibility
+local unpack = table.unpack or unpack
+
 local function safe_log_format(format, ...)
 	local count = select('#', ...)
 	if count == 0 then return format end
