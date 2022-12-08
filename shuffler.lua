@@ -15,7 +15,7 @@ plugins = {}
 
 -- determine operating system for the purpose of commands
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
-PLATFORM = _PLATFORMS[package.cpath:match("%p[\\|/]?%p(%a+)")]
+PLATFORM = _PLATFORMS[(package.cpath..';'):match('%.(%a+);')]
 
 PLUGINS_FOLDER = 'plugins'
 GAMES_FOLDER = 'games'
