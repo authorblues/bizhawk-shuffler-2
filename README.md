@@ -1,7 +1,6 @@
 # Bizhawk Shuffler 2
 * written by authorblues, inspired by [Brossentia's Bizhawk Shuffler](https://github.com/brossentia/BizHawk-Shuffler), based on slowbeef's original project
-* [tested on Bizhawk v2.6.2](https://github.com/TASVideos/BizHawk/releases/tag/2.6.2)  
-  **Important:** BizHawk v2.6.3 is currently not supported
+* [tested on Bizhawk v2.6.3-v2.8](https://github.com/TASVideos/BizHawk/releases/)  
 * [click here to download the latest version](https://github.com/authorblues/bizhawk-shuffler-2/archive/refs/heads/main.zip)
 
 ## Additional Resources

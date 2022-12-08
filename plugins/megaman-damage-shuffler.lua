@@ -45,12 +45,11 @@ plugin.description =
 	- Rockman 8 GB / Rockman X4 GBC
 ]]
 
-local prevdata = {}
 local NO_MATCH = 'NONE'
 
-local swap_scheduled = false
-
-local shouldSwap = function() return false end
+local prevdata
+local swap_scheduled
+local shouldSwap
 
 -- update value in prevdata and return whether the value has changed, new value, and old value
 -- value is only considered changed if it wasn't nil before
@@ -575,6 +574,10 @@ function plugin.on_setup(data, settings)
 end
 
 function plugin.on_game_load(data, settings)
+	prevdata = {}
+	swap_scheduled = false
+	shouldSwap = function() return false end
+
 	local tag = data.tags[gameinfo.getromhash()] or get_game_tag()
 	data.tags[gameinfo.getromhash()] = tag or NO_MATCH
 
