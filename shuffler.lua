@@ -557,6 +557,17 @@ function cwd()
 	return resp:match( "^%s*(.+)%s*$" )
 end
 
+local function on_exit()
+	log_quiet('shuffler exiting')
+	if running then
+		save_config(config, 'shuffler-src/config.lua')
+		if is_rom_loaded() then
+			log_quiet('saving state on exit')
+			save_current_game()
+		end
+	end
+end
+
 function complete_setup()
 	os.remove('message.log')
 
@@ -640,6 +651,9 @@ load_config('shuffler-src/config.lua')
 
 local setup = require('shuffler-src.setupform')
 setup.initial_setup(complete_setup)
+
+event.onexit(on_exit)
+event.onconsoleclose(on_exit)
 
 prev_input = input.get()
 frames_since_restart = 0
