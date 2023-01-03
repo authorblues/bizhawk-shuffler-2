@@ -353,7 +353,7 @@ function module.initial_setup(callback)
 	y = y + 30
 
 	resume = forms.checkbox(setup_window, "Resuming a session?", 10, y)
-	forms.setproperty(resume, "Width", 150)
+	forms.setproperty(resume, "AutoSize", true)
 	start_btn = forms.button(setup_window, "Start New Session", start_handler, 160, y, 150, 20)
 	y = y + 30
 
