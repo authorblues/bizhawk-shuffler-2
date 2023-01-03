@@ -364,6 +364,10 @@ function module.initial_setup(callback)
 			forms.settext(start_btn, "Start New Session")
 		end
 	end)
+
+	event.onexit(function()
+		forms.destroy(setup_window)
+	end)
 end
 
 return module
