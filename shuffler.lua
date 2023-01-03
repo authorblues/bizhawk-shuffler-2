@@ -627,9 +627,7 @@ function complete_setup()
 
 	-- if there is already a listed current game, this is a resumed session
 	-- otherwise, call swap_game() to setup for the first game load
-	if config.current_game ~= nil then
-		load_game(config.current_game)
-	else
+	if not config.current_game or not load_game(config.current_game) then
 		running = true
 		swap_game(nil, true)
 	end
