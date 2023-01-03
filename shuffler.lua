@@ -326,11 +326,15 @@ end
 function load_game(g)
 	log_debug('load_game(%s)', g)
 	local filename = GAMES_FOLDER .. '/' .. g
-	if not file_exists(filename) then return false end
+	if not file_exists(filename) then
+		log_console('ROM "%s" not found', g)
+		return false
+	end
 
 	client.openrom(filename)
 
 	if is_rom_loaded() then
+		log_debug('ROM loaded: %s "%s" (%s)', emu.getsystemid(), gameinfo.getromname(), gameinfo.getromhash())
 		on_game_load()
 		return true
 	else
