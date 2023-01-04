@@ -116,11 +116,9 @@ function module.make_plugin_window(plugins, main_plugin_label)
 	forms.setproperty(plugin_error_text, "Visible", false)
 
 	function save_plugin_settings()
-		local enabled_list = {}
 		for _,plugin in ipairs(plugins) do
 			plugin._enabled = forms.ischecked(plugin._ui._enabled)
 			if plugin._enabled then
-				table.insert(enabled_list, plugin.name)
 				for _,setting in ipairs(plugin.settings) do
 					local meta = SETTINGS_TYPES[setting.type:lower()]
 					if meta ~= nil and setting.name ~= nil and meta.getData ~= nil then
@@ -130,12 +128,7 @@ function module.make_plugin_window(plugins, main_plugin_label)
 			end
 		end
 
-		local enabled_count_str = tostring(#enabled_list)
-		if #enabled_list == 0 then enabled_count_str = "No" end
-
-		local output = string.format("%s Plugins Loaded", enabled_count_str)
-		if #enabled_list == 1 then output = enabled_list[1] end
-		forms.settext(main_plugin_label, output)
+		module.update_plugin_label()
 
 		-- close plugin window if open
 		forms.destroy(plugin_window)
@@ -239,6 +232,14 @@ function module.initial_setup(callback)
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pname)
 			pmodule._enabled = false
 			pmodule._module = pname
+			-- restore plugin data from existing config
+			local plugin_data = config.plugins and config.plugins[pname]
+			if plugin_data then
+				pmodule._enabled = true
+				for _,setting in ipairs(pmodule.settings) do
+					setting._value = plugin_data.settings[setting.name]
+				end
+			end
 			table.insert(plugins, pmodule)
 		end
 	end
@@ -311,6 +312,21 @@ function module.initial_setup(callback)
 		return math.random(MAX_INTEGER)
 	end
 
+	function module.update_plugin_label()
+		local plugin_name
+		local count = 0
+		for _, plugin in pairs(plugins) do
+			if plugin._enabled then
+				count = count + 1
+				plugin_name = plugin.name
+			end
+		end
+		local text = 'No Plugins Loaded'
+		if count == 1 then text = plugin_name end
+		if count > 1 then text = count .. ' Plugins Loaded' end
+		forms.settext(plugin_label, text)
+	end
+
 	local y = 10
 	setup_window = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup", main_cleanup)
 
@@ -349,7 +365,8 @@ function module.initial_setup(callback)
 		forms.destroy(plugin_window)
 		plugin_window = module.make_plugin_window(plugins, plugin_label)
 	end, 10, y, 150, 20)
-	plugin_label = forms.label(setup_window, "No Plugins Loaded", 165, y+3, 150, 20)
+	plugin_label = forms.label(setup_window, "", 165, y+3, 150, 20)
+	module.update_plugin_label()
 	y = y + 30
 
 	resume = forms.checkbox(setup_window, "Resuming a session?", 10, y)
