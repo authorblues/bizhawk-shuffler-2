@@ -51,6 +51,13 @@ local prevdata
 local swap_scheduled
 local shouldSwap
 
+-- optionally load BizHawk 2.9 compat helper to get rid of bit operator warnings
+local bit = bit
+if compare_version("2.9") >= 0 then
+	local success, migration_helpers = pcall(require, "migration_helpers")
+	bit = success and migration_helpers.EmuHawk_pre_2_9_bit and migration_helpers.EmuHawk_pre_2_9_bit() or bit
+end
+
 -- update value in prevdata and return whether the value has changed, new value, and old value
 -- value is only considered changed if it wasn't nil before
 local function update_prev(key, value)
