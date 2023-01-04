@@ -357,6 +357,11 @@ function module.initial_setup(callback)
 	start_btn = forms.button(setup_window, "Start New Session", start_handler, 160, y, 150, 20)
 	y = y + 30
 
+	if config.current_game ~= nil and #get_games_list(true) > 0 then
+		forms.setproperty(resume, "Checked", true)
+		forms.settext(start_btn, "Resume Previous Session")
+	end
+
 	forms.addclick(resume, function()
 		if forms.ischecked(resume) then
 			forms.settext(start_btn, "Resume Previous Session")
