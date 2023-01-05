@@ -161,16 +161,16 @@ local function battle_and_chase_swap(gamemeta)
 		[10] = true, -- blown up/launched into air
 	}
 	return function()
-		local state_changed, state = update_prev('state', mainmemory.read_u8(player_addr + 0x2))
+		local state_changed, state = update_prev('state', memory.read_u8(player_addr + 0x2, "MainRAM"))
 		local is_hit_state = hit_states[state]
 		if is_hit_state == nil then return false end -- not actively racing or garbage data
 
-		local dizzy_changed, dizzy = update_prev('dizzy', mainmemory.read_u8(player_addr + 0xD4) > 0)
-		local frozen_changed, frozen = update_prev('frozen', mainmemory.read_s16_le(player_addr + 0xFC) > 0)
-		local shuriken_changed, shuriken = update_prev('shuriken', mainmemory.read_s16_le(player_addr + 0xFE) > 0)
-		local flags = mainmemory.read_u8(player_addr + 0xC7)
+		local dizzy_changed, dizzy = update_prev('dizzy', memory.read_u8(player_addr + 0xD4, "MainRAM") > 0)
+		local frozen_changed, frozen = update_prev('frozen', memory.read_s16_le(player_addr + 0xFC, "MainRAM") > 0)
+		local shuriken_changed, shuriken = update_prev('shuriken', memory.read_s16_le(player_addr + 0xFE, "MainRAM") > 0)
+		local flags = memory.read_u8(player_addr + 0xC7, "MainRAM")
 		local lightning_changed, lightning = update_prev('lightning', bit.check(flags, 5))
-		--local wheel_damage_changed, wheel_damage = update_prev('wheel_damage',  mainmemory.read_s16_le(player_addr + 0x106) ~= 0) -- Blade Tires, not used by CPUs?
+		--local wheel_damage_changed, wheel_damage = update_prev('wheel_damage',  memory.read_s16_le(player_addr + 0x106, "MainRAM") ~= 0) -- Blade Tires, not used by CPUs?
 
 		return (state_changed and is_hit_state) or
 		       (dizzy_changed and dizzy) or
@@ -192,152 +192,152 @@ end
 
 local gamedata = {
 	['mm1nes']={ -- Mega Man NES
-		gethp=function() return mainmemory.read_u8(0x006A) end,
-		getlc=function() return mainmemory.read_u8(0x00A6) end,
+		gethp=function() return memory.read_u8(0x006A, "RAM") end,
+		getlc=function() return memory.read_u8(0x00A6, "RAM") end,
 		maxhp=function() return 28 end,
 	},
 	['mm2nes']={ -- Mega Man 2 NES
-		gethp=function() return mainmemory.read_u8(0x06C0) end,
-		getlc=function() return mainmemory.read_u8(0x00A8) end,
+		gethp=function() return memory.read_u8(0x06C0, "RAM") end,
+		getlc=function() return memory.read_u8(0x00A8, "RAM") end,
 		maxhp=function() return 28 end,
 	},
 	['mm3nes']={ -- Mega Man 3 NES
-		gethp=function() return bit.band(mainmemory.read_u8(0x00A2), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x00AE) end,
+		gethp=function() return bit.band(memory.read_u8(0x00A2, "RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x00AE, "RAM") end,
 		maxhp=function() return 28 end,
 	},
 	['mm4nes']={ -- Mega Man 4 NES
-		gethp=function() return bit.band(mainmemory.read_u8(0x00B0), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x00A1) end,
+		gethp=function() return bit.band(memory.read_u8(0x00B0, "RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x00A1, "RAM") end,
 		maxhp=function() return 28 end,
 	},
 	['mm5nes']={ -- Mega Man 5 NES
-		gethp=function() return bit.band(mainmemory.read_u8(0x00B0), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x00BF) end,
+		gethp=function() return bit.band(memory.read_u8(0x00B0, "RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x00BF, "RAM") end,
 		maxhp=function() return 28 end,
 	},
 	['mm6nes']={ -- Mega Man 6 NES
-		gethp=function() return mainmemory.read_u8(0x03E5) end,
-		getlc=function() return mainmemory.read_u8(0x00A9) end,
+		gethp=function() return memory.read_u8(0x03E5, "RAM") end,
+		getlc=function() return memory.read_u8(0x00A9, "RAM") end,
 		maxhp=function() return 27 end,
 	},
 	['mm7snes']={ -- Mega Man 7 SNES
-		gethp=function() return mainmemory.read_u8(0x0C2E) end,
-		getlc=function() return mainmemory.read_s8(0x0B81) end,
+		gethp=function() return memory.read_u8(0x0C2E, "WRAM") end,
+		getlc=function() return memory.read_s8(0x0B81, "WRAM") end,
 		maxhp=function() return 28 end,
 	},
 	['mm8psx']={ -- Mega Man 8 PSX
-		gethp=function() return mainmemory.read_u8(0x15E283) end,
-		getlc=function() return mainmemory.read_u8(0x1C3370) end,
+		gethp=function() return memory.read_u8(0x15E283, "MainRAM") end,
+		getlc=function() return memory.read_u8(0x1C3370, "MainRAM") end,
 		maxhp=function() return 40 end,
 	},
 	['mmwwgen']={ -- Mega Man Wily Wars GEN
-		gethp=function() return mainmemory.read_u8(0xA3FE) end,
-		getlc=function() return mainmemory.read_u8(0xCB39) end,
+		gethp=function() return memory.read_u8(0xA3FE, "68K RAM") end,
+		getlc=function() return memory.read_u8(0xCB39, "68K RAM") end,
 		maxhp=function() return 28 end,
 	},
 	['rm&f']={ -- Rockman & Forte SNES
-		gethp=function() return mainmemory.read_u8(0x0C2F) end,
-		getlc=function() return mainmemory.read_s8(0x0B7E) end,
+		gethp=function() return memory.read_u8(0x0C2F, "WRAM") end,
+		getlc=function() return memory.read_s8(0x0B7E, "WRAM") end,
 		maxhp=function() return 28 end,
 	},
 	['mmx1']={ -- Mega Man X SNES
-		gethp=function() return bit.band(mainmemory.read_u8(0x0BCF), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x1F80) end,
-		maxhp=function() return mainmemory.read_u8(0x1F9A) end,
+		gethp=function() return bit.band(memory.read_u8(0x0BCF, "WRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x1F80, "WRAM") end,
+		maxhp=function() return memory.read_u8(0x1F9A, "WRAM") end,
 	},
 	['mmx2']={ -- Mega Man X2 SNES
-		gethp=function() return bit.band(mainmemory.read_u8(0x09FF), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x1FB3) end,
-		maxhp=function() return mainmemory.read_u8(0x1FD1) end,
+		gethp=function() return bit.band(memory.read_u8(0x09FF, "WRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x1FB3, "WRAM") end,
+		maxhp=function() return memory.read_u8(0x1FD1, "WRAM") end,
 	},
 	['mmx3snes-us']={ -- Mega Man X3 SNES
-		gethp=function() return bit.band(mainmemory.read_u8(0x09FF), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x1FB4) end,
-		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
+		gethp=function() return bit.band(memory.read_u8(0x09FF, "WRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x1FB4, "WRAM") end,
+		maxhp=function() return memory.read_u8(0x1FD2, "WRAM") end,
 	},
 	['mmx3snes-eu']={ -- Mega Man X3 SNES
-		gethp=function() return bit.band(mainmemory.read_u8(0x09FF), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x1FB4) end,
-		maxhp=function() return mainmemory.read_u8(0x1FD2) end,
+		gethp=function() return bit.band(memory.read_u8(0x09FF, "WRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x1FB4, "WRAM") end,
+		maxhp=function() return memory.read_u8(0x1FD2, "WRAM") end,
 	},
 	['mmx3snes-zp-4.4']={ -- Mega Man X3 SNES + Zero Project 4.4
 		func=function()
 			return function()
-				local action_changed, action = update_prev('action', mainmemory.read_u8(0x09DA))
-				local ride_armor_iframes_changed, ride_armor_iframes = update_prev('ride_armor_iframes', mainmemory.read_s8(0x0CEE) > 0)
+				local action_changed, action = update_prev('action', memory.read_u8(0x09DA, "WRAM"))
+				local ride_armor_iframes_changed, ride_armor_iframes = update_prev('ride_armor_iframes', memory.read_s8(0x0CEE, "WRAM") > 0)
 				return (action_changed and (action == 12 or action == 14)) or -- hit or death
 				       (ride_armor_iframes_changed and ride_armor_iframes)
 			end
 		end,
 	},
 	['mmx3psx-eu']={ -- Mega Man X3 PSX PAL
-		gethp=function() return bit.band(mainmemory.read_u8(0x0D9091), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x0D8743) end,
-		maxhp=function() return mainmemory.read_u8(0x0D8761) end,
+		gethp=function() return bit.band(memory.read_u8(0x0D9091, "MainRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x0D8743, "MainRAM") end,
+		maxhp=function() return memory.read_u8(0x0D8761, "MainRAM") end,
 	},
 	['mmx3psx-jp']={ -- Mega Man X3 PSX NTSC-J
-		gethp=function() return bit.band(mainmemory.read_u8(0x0D8A45), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x0D80F7) end,
-		maxhp=function() return mainmemory.read_u8(0x0D8115) end,
+		gethp=function() return bit.band(memory.read_u8(0x0D8A45, "MainRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x0D80F7, "MainRAM") end,
+		maxhp=function() return memory.read_u8(0x0D8115, "MainRAM") end,
 	},
 	['mmx4psx-us']={ -- Mega Man X4 PSX
-		gethp=function() return bit.band(mainmemory.read_u8(0x141924), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x172204) end,
-		maxhp=function() return mainmemory.read_u8(0x172206) end,
+		gethp=function() return bit.band(memory.read_u8(0x141924, "MainRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x172204, "MainRAM") end,
+		maxhp=function() return memory.read_u8(0x172206, "MainRAM") end,
 	},
 	['mmx5psx-us']={ -- Mega Man X5 PSX
-		gethp=function() return bit.band(mainmemory.read_u8(0x09A0FC), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x0D1C45) end,
-		maxhp=function() return mainmemory.read_u8(0x0D1C47) end,
-		gmode=function() return mainmemory.read_u8(0x09A0FC) ~= 0 or mainmemory.read_u8(0x0942BE) ~= 0 end,
+		gethp=function() return bit.band(memory.read_u8(0x09A0FC, "MainRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x0D1C45, "MainRAM") end,
+		maxhp=function() return memory.read_u8(0x0D1C47, "MainRAM") end,
+		gmode=function() return memory.read_u8(0x09A0FC, "MainRAM") ~= 0 or memory.read_u8(0x0942BE, "MainRAM") ~= 0 end,
 	},
 	['mmx6psx-eu']={ -- Mega Man X6 PSX PAL
-		getdamage=function() return mainmemory.read_u32_le(0x0CCFB0) end,
+		getdamage=function() return memory.read_u32_le(0x0CCFB0, "MainRAM") end,
 		func=mmx6_swap,
 	},
 	['mmx6psx-us']={ -- Mega Man X6 PSX NTSC-U
-		getdamage=function() return mainmemory.read_u32_le(0x0CCF68) end,
+		getdamage=function() return memory.read_u32_le(0x0CCF68, "MainRAM") end,
 		func=mmx6_swap,
 	},
 	['mmx6psx-jp']={ -- Mega Man X6 PSX NTSC-J
-		getdamage=function() return mainmemory.read_u32_le(0x0CE628) end,
+		getdamage=function() return memory.read_u32_le(0x0CE628, "MainRAM") end,
 		func=mmx6_swap,
 	},
 	['mm1gb']={ -- Mega Man I GB
-		gethp=function() return mainmemory.read_u8(0x1FA3) end,
-		getlc=function() return mainmemory.read_s8(0x0108) end,
+		gethp=function() return memory.read_u8(0x1FA3, "WRAM") end,
+		getlc=function() return memory.read_s8(0x0108, "WRAM") end,
 		maxhp=function() return 152 end,
 	},
 	['mm2gb']={ -- Mega Man II GB
-		gethp=function() return mainmemory.read_u8(0x0FD0) end,
-		getlc=function() return mainmemory.read_s8(0x0FE8) end,
+		gethp=function() return memory.read_u8(0x0FD0, "WRAM") end,
+		getlc=function() return memory.read_s8(0x0FE8, "WRAM") end,
 		maxhp=function() return 152 end,
 	},
 	['mm3gb']={ -- Mega Man III GB
-		gethp=function() return mainmemory.read_u8(0x1E9C) end,
-		getlc=function() return mainmemory.read_s8(0x1D08) end,
+		gethp=function() return memory.read_u8(0x1E9C, "WRAM") end,
+		getlc=function() return memory.read_s8(0x1D08, "WRAM") end,
 		maxhp=function() return 152 end,
 	},
 	['mm4gb']={ -- Mega Man IV GB
-		gethp=function() return mainmemory.read_u8(0x1EAE) end,
-		getlc=function() return mainmemory.read_s8(0x1F34) end,
+		gethp=function() return memory.read_u8(0x1EAE, "WRAM") end,
+		getlc=function() return memory.read_s8(0x1F34, "WRAM") end,
 		maxhp=function() return 152 end,
 	},
 	['mm5gb']={ -- Mega Man V GB
-		gethp=function() return mainmemory.read_u8(0x1E9E) end,
-		getlc=function() return mainmemory.read_s8(0x1F34) end,
+		gethp=function() return memory.read_u8(0x1E9E, "WRAM") end,
+		getlc=function() return memory.read_s8(0x1F34, "WRAM") end,
 		maxhp=function() return 152 end,
 	},
 	['mmx1gbc']={ -- Mega Man Xtreme GBC
-		gethp=function() return bit.band(mainmemory.read_u8(0x0ADC), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x1365) end,
-		maxhp=function() return mainmemory.read_u8(0x1384) end,
+		gethp=function() return bit.band(memory.read_u8(0x0ADC, "WRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x1365, "WRAM") end,
+		maxhp=function() return memory.read_u8(0x1384, "WRAM") end,
 	},
 	['mmx2gbc']={ -- Mega Man Xtreme 2 GBC
-		gethp=function() return bit.band(mainmemory.read_u8(0x0121), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x0065) end,
-		maxhp=function() return mainmemory.read_u8(0x0084) end,
+		gethp=function() return bit.band(memory.read_u8(0x0121, "WRAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x0065, "WRAM") end,
+		maxhp=function() return memory.read_u8(0x0084, "WRAM") end,
 	},
 	['mmbn1']={ -- Mega Man Battle Network GBA
 		gethp=function() return memory.read_u16_le(0x0066D0, "EWRAM") end,
@@ -359,19 +359,19 @@ local gamedata = {
 	},
 	['mmlegends-n64']={ -- Mega Man 64
 		func=mmlegends,
-		gethp=function() return mainmemory.read_s16_be(0x204A1E) end,
+		gethp=function() return memory.read_s16_be(0x204A1E, "RDRAM") end,
 		getlc=function() return 0 end,
-		maxhp=function() return mainmemory.read_s16_be(0x204A60) end,
+		maxhp=function() return memory.read_s16_be(0x204A60, "RDRAM") end,
 		minhp=-40,
-		shield=function() return mainmemory.read_u8(0x1BC66D) end,
+		shield=function() return memory.read_u8(0x1BC66D, "RDRAM") end,
 	},
 	['mmlegends-psx']={ -- Mega Man Legends PSX
 		func=mmlegends,
-		gethp=function() return mainmemory.read_s16_be(0x0B521E) end,
+		gethp=function() return memory.read_s16_be(0x0B521E, "MainRAM") end,
 		getlc=function() return 0 end,
-		maxhp=function() return mainmemory.read_s16_be(0x0B5260) end,
+		maxhp=function() return memory.read_s16_be(0x0B5260, "MainRAM") end,
 		minhp=-40,
-		shield=function() return mainmemory.read_u8(0x0BBD85) end,
+		shield=function() return memory.read_u8(0x0BBD85, "MainRAM") end,
 	},
 	['mmzero1']={
 		func=mmzero_swap,
@@ -404,35 +404,35 @@ local gamedata = {
 		hit_states={[4]=true,},
 	},
 	['mmzx']={ -- Mega Man ZX
-		gethp=function() return bit.band(mainmemory.read_u8(0x14FBB2), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x14FC6C) end,
-		maxhp=function() return mainmemory.read_u8(0x14FBB4) end,
+		gethp=function() return bit.band(memory.read_u8(0x14FBB2, "Main RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x14FC6C, "Main RAM") end,
+		maxhp=function() return memory.read_u8(0x14FBB4, "Main RAM") end,
 	},
 	['mmzx-jp']={ -- Mega Man ZX NSTC-J
-		gethp=function() return bit.band(mainmemory.read_u8(0x14F7B2), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x14F86C) end,
-		maxhp=function() return mainmemory.read_u8(0x14F7B4) end,
+		gethp=function() return bit.band(memory.read_u8(0x14F7B2, "Main RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x14F86C, "Main RAM") end,
+		maxhp=function() return memory.read_u8(0x14F7B4, "Main RAM") end,
 	},
 	['mmzx-eu']={ -- Mega Man ZX PAL
-		gethp=function() return bit.band(mainmemory.read_u8(0x151DBA), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x151E74) end,
-		maxhp=function() return mainmemory.read_u8(0x151DBC) end,
+		gethp=function() return bit.band(memory.read_u8(0x151DBA, "Main RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x151E74, "Main RAM") end,
+		maxhp=function() return memory.read_u8(0x151DBC, "Main RAM") end,
 	},
 	['mmzxadv']={ -- Mega Man ZX - Advent NSTC & NSTC-J
-		gethp=function() return bit.band(mainmemory.read_u8(0x169D1A), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x169DE4) end,
-		maxhp=function() return mainmemory.read_u8(0x169D1C) end,
+		gethp=function() return bit.band(memory.read_u8(0x169D1A, "Main RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x169DE4, "Main RAM") end,
+		maxhp=function() return memory.read_u8(0x169D1C, "Main RAM") end,
 	},
 	['mmzxadv-eu']={ -- Mega Man ZX - Advent PAL
-		gethp=function() return bit.band(mainmemory.read_u8(0x155D66), 0x7F) end,
-		getlc=function() return mainmemory.read_u8(0x155E30) end,
-		maxhp=function() return mainmemory.read_u8(0x155D68) end,
+		gethp=function() return bit.band(memory.read_u8(0x155D66, "Main RAM"), 0x7F) end,
+		getlc=function() return memory.read_u8(0x155E30, "Main RAM") end,
+		maxhp=function() return memory.read_u8(0x155D68, "Main RAM") end,
 	},
 	['rm&fws']={ -- Rockman & Forte: Mirai Kara no Chousensha (WonderSwan)
 		func=function()
 			return function() -- hp and life counter change in very inconvenient ways, generic_swap doesn't work well here
-				local hit_anim_changed, hit_anim = update_prev('hit_anim', mainmemory.read_u16_le(0x03CE) == 0x66F9)
-				local hp_changed, hp, prev_hp = update_prev('hp', mainmemory.read_u8(0x03B6))
+				local hit_anim_changed, hit_anim = update_prev('hit_anim', memory.read_u16_le(0x03CE, "RAM") == 0x66F9)
+				local hp_changed, hp, prev_hp = update_prev('hp', memory.read_u8(0x03B6, "RAM"))
 				return (hit_anim_changed and hit_anim) or --happens on pretty much everything including pits and spikes
 				       (hp_changed and hp < prev_hp and (hp > 0 or hit_anim)) -- slime damage and repeated hits while still in anim.
 			end
@@ -440,21 +440,21 @@ local gamedata = {
 	},
 	['mmsoccer']={ -- Megaman's Soccer SNES
 		func=function()
-			local function get_controlled_player() return mainmemory.read_u16_le(0x195A) end
+			local function get_controlled_player() return memory.read_u16_le(0x195A, "WRAM") end
 			local function is_player_valid(player_addr)
 				return player_addr >= 0x1000 and player_addr < 0x1800 and (player_addr % 0x80) == 0
 			end
 			local function get_player_state(player_addr)
-				return is_player_valid(player_addr) and mainmemory.read_u16_le(player_addr + 0x22) or nil
+				return is_player_valid(player_addr) and memory.read_u16_le(player_addr + 0x22, "WRAM") or nil
 			end
 			local function is_hit_state(state, only_special)
 				return (state == 0x7 and not only_special) or -- tackle knockdown
 				       (state ~= nil and state >= 0x48 and state <= 0x59) or state == 0x5C -- special shot effects
 			end
 			local function get_opponent_score(left_addr, right_addr)
-				local player_side_flags = mainmemory.read_u16_le(0x0088) -- game swaps team data in memory after half-time
-				if bit.check(player_side_flags, 0) then return mainmemory.read_u8(right_addr) end
-				if bit.check(player_side_flags, 4) then return mainmemory.read_u8(left_addr) end
+				local player_side_flags = memory.read_u16_le(0x0088, "WRAM") -- game swaps team data in memory after half-time
+				if bit.check(player_side_flags, 0) then return memory.read_u8(right_addr, "WRAM") end
+				if bit.check(player_side_flags, 4) then return memory.read_u8(left_addr, "WRAM") end
 			end
 
 			return function()
@@ -490,11 +490,11 @@ local gamedata = {
 	['rockman-battle-and-fighters'] = {
 		func=function()
 			return function(data)
-				if mainmemory.read_u8(0x0110) == 1 then -- Power Battle
-					local _, hp, prev_hp = update_prev('hp', mainmemory.read_u16_le(0x023A))
+				if memory.read_u8(0x0110, "RAM") == 1 then -- Power Battle
+					local _, hp, prev_hp = update_prev('hp', memory.read_u16_le(0x023A, "RAM"))
 					return prev_hp and hp < prev_hp
-				elseif mainmemory.read_u8(0x0107) == 1 then -- Power Fighters
-					local _, hp, prev_hp = update_prev('hp', mainmemory.read_u16_le(0x02C2))
+				elseif memory.read_u8(0x0107, "RAM") == 1 then -- Power Fighters
+					local _, hp, prev_hp = update_prev('hp', memory.read_u16_le(0x02C2, "RAM"))
 					return prev_hp and hp < prev_hp
 				else
 					data.hp = nil
@@ -506,30 +506,30 @@ local gamedata = {
 	['rockman-exe-ws'] = {
 		func=function()
 			return function()
-				local hit_changed, hit = update_prev('hit', bit.check(mainmemory.read_u8(0x0BDF), 4))
+				local hit_changed, hit = update_prev('hit', bit.check(memory.read_u8(0x0BDF, "RAM"), 4))
 				return (hit_changed and hit)
 			end
 		end
 	},
 	['super-adventure-rockman-psx-disc1'] = {
-		get_scene_hp = function() return mainmemory.read_s16_le(0x1BBBBC) end,
-		get_battle_hp = function() return mainmemory.read_s16_le(0x0C8AE0) end,
-		is_battle = function() return mainmemory.read_u8(0x0C8B48) == 1 end,
-		is_scene = function() return mainmemory.read_u8(0x0C8C30) == 1 end,
+		get_scene_hp = function() return memory.read_s16_le(0x1BBBBC, "MainRAM") end,
+		get_battle_hp = function() return memory.read_s16_le(0x0C8AE0, "MainRAM") end,
+		is_battle = function() return memory.read_u8(0x0C8B48, "MainRAM") == 1 end,
+		is_scene = function() return memory.read_u8(0x0C8C30, "MainRAM") == 1 end,
 		func=super_adventure_rockman_swap,
 	},
 	['super-adventure-rockman-psx-disc2'] = {
-		get_scene_hp = function() return mainmemory.read_s16_le(0x1D0DF0) end,
-		get_battle_hp = function() return mainmemory.read_s16_le(0x0DCEA4) end,
-		is_battle = function() return mainmemory.read_u8(0x0DCF0C) == 1 end,
-		is_scene = function() return mainmemory.read_u8(0x0DCFF4) == 1 end,
+		get_scene_hp = function() return memory.read_s16_le(0x1D0DF0, "MainRAM") end,
+		get_battle_hp = function() return memory.read_s16_le(0x0DCEA4, "MainRAM") end,
+		is_battle = function() return memory.read_u8(0x0DCF0C, "MainRAM") == 1 end,
+		is_scene = function() return memory.read_u8(0x0DCFF4, "MainRAM") == 1 end,
 		func=super_adventure_rockman_swap,
 	},
 	['super-adventure-rockman-psx-disc3'] = {
-		get_scene_hp = function() return mainmemory.read_s16_le(0x1C287C) end,
-		get_battle_hp = function() return mainmemory.read_s16_le(0x0CCA6C) end,
-		is_scene = function() return mainmemory.read_u8(0x0CCBBC) == 1 end,
-		is_battle = function() return mainmemory.read_u8(0x0CCAD4) == 1 end,
+		get_scene_hp = function() return memory.read_s16_le(0x1C287C, "MainRAM") end,
+		get_battle_hp = function() return memory.read_s16_le(0x0CCA6C, "MainRAM") end,
+		is_scene = function() return memory.read_u8(0x0CCBBC, "MainRAM") == 1 end,
+		is_battle = function() return memory.read_u8(0x0CCAD4, "MainRAM") == 1 end,
 		func=super_adventure_rockman_swap,
 	},
 	['zook-hero'] = {
