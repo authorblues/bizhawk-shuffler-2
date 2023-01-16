@@ -158,7 +158,7 @@ end
 function get_dir_contents(dir, tmp, force)
 	local TEMP_FILE = tmp or DEFAULT_CMD_OUTPUT
 	if force ~= false or not path_exists(TEMP_FILE) then
-		local cmd = string.format('ls "%s" -type f > %s', dir, TEMP_FILE)
+		local cmd = string.format('ls "%s" -p | grep -v / > %s', dir, TEMP_FILE)
 		if PLATFORM == 'WIN' then
 			cmd = string.format('dir "%s" /B /A-D > %s', dir, TEMP_FILE)
 		end
