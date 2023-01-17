@@ -25,6 +25,7 @@ plugin.description =
 	- Rockman & Forte SNES
 	- Mega Man I-V GB
 	- Mega Man Wily Wars GEN
+	- Mega Man Game Gear
 	- Mega Man Battle Network 1-3 GBA
 	- Mega Man Legends/64
 	- Mega Man Zero 1-4 GBA
@@ -338,6 +339,11 @@ local gamedata = {
 		gethp=function() return bit.band(memory.read_u8(0x0121, "WRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x0065, "WRAM") end,
 		maxhp=function() return memory.read_u8(0x0084, "WRAM") end,
+	},
+	['mmgg']={ -- Mega Man Game Gear
+		gethp=function() return memory.read_u8(0x0268, "Main RAM") end,
+		getlc=function() return memory.read_u8(0x026A, "Main RAM") end,
+		maxhp=function() return 252 end,
 	},
 	['mmbn1']={ -- Mega Man Battle Network GBA
 		gethp=function() return memory.read_u16_le(0x0066D0, "EWRAM") end,
