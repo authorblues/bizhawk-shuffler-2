@@ -43,6 +43,7 @@ plugin.description =
 	- Zook Hero 2 (aka Rockman X3) GBC
 	- Zook Man ZX4 (aka Rockman & Crystal) GBA
 	- Thunder Blast Man (aka Rocman X) GBC
+	- Rocman X NES (NesHawk only)
 	- Rockman 8 GB / Rockman X4 GBC
 ]]
 
