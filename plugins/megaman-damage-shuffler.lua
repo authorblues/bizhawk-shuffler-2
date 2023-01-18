@@ -558,6 +558,21 @@ local gamedata = {
 		getlc=function() return memory.read_u8(0x5F, "HRAM") end,
 		maxhp=function() return 8 end,
 	},
+	['rocman-x-nes'] = {
+		func=function()
+			local hit_states = {
+				[8] = true, -- hit
+				[9] = true, -- ko
+				[14] = true, -- continue prompt
+			}
+			return function()
+				local hit_changed, hit = update_prev("hit_changed", hit_states[memory.read_u8(0x56, "RAM")] or false)
+				local game_over_changed, game_over = update_prev("game_over", memory.read_u16_le(0x5C0, "RAM") == 0xD6D4)
+				return (hit_changed and hit) or
+				       (game_over_changed and game_over and not hit)
+			end
+		end
+	},
 	['rockman-8-gb'] = {
 		gethp=function() return memory.read_u8(0x027C, "WRAM") end,
 		getlc=function() return memory.read_u8(0x025E, "WRAM") end,
