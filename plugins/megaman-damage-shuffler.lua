@@ -37,6 +37,7 @@ plugin.description =
 	- Mega Man Soccer
 	- Mega Man Battle & Chase
 	- Super Adventure Rockman PSX
+	- Mega Man: The Power Battle & The Power Fighters (Arcade)
 
 	Bootlegs:
 	- Zook Hero Z (aka Rockman DX6) GBC
@@ -494,7 +495,7 @@ local gamedata = {
 		func=battle_and_chase_swap,
 		player_addr=0x13A310,
 	},
-	['rockman-battle-and-fighters'] = {
+	['rockman-battle-and-fighters'] = { -- Rockman Battle & Fighters (Neo Geo Pocket)
 		func=function()
 			return function(data)
 				if memory.read_u8(0x0110, "RAM") == 1 then -- Power Battle
@@ -515,6 +516,15 @@ local gamedata = {
 			return function()
 				local hit_changed, hit = update_prev('hit', bit.check(memory.read_u8(0x0BDF, "RAM"), 4))
 				return (hit_changed and hit)
+			end
+		end
+	},
+	['mm-power-battle-fighters'] = { -- Mega Man: The Power Battle / Mega Man 2: The Power Fighters (Arcade)
+		func=function()
+			return function()
+				local hp_changed, hp, prev_hp = update_prev('hp', memory.read_u16_be(0xFF8350, "m68000 : System Bus"))
+				local timer = memory.read_u16_be(0xFF8118, "m68000 : System Bus")
+				return (timer ~= 0 and hp_changed and hp < prev_hp)
 			end
 		end
 	},
