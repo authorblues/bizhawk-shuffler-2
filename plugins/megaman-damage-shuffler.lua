@@ -623,13 +623,13 @@ function plugin.on_game_load(data, settings)
 	-- first time through with a bad match, tag will be nil
 	-- can use this to print a debug message only the first time
 	if tag ~= nil and tag ~= NO_MATCH then
-		log_message('game match: ' .. tag)
+		log_console('Megaman Damage Shuffler: recognized as %s', tag)
 		local gamemeta = gamedata[tag]
 		local func = gamemeta.func or generic_swap
 		shouldSwap = func(gamemeta)
 	elseif tag == nil then
-		log_message(string.format('unrecognized? %s (%s)',
-			gameinfo.getromname(), gameinfo.getromhash()))
+		log_console('Megaman Damage Shuffler: unrecognized ROM "%s" (%s)',
+			gameinfo.getromname(), gameinfo.getromhash())
 	end
 end
 
