@@ -50,6 +50,7 @@ plugin.description =
 
 local NO_MATCH = 'NONE'
 
+local tags = {}
 local prevdata
 local swap_scheduled
 local shouldSwap
@@ -609,17 +610,13 @@ local function get_game_tag()
 	return nil
 end
 
-function plugin.on_setup(data, settings)
-	data.tags = data.tags or {}
-end
-
 function plugin.on_game_load(data, settings)
 	prevdata = {}
 	swap_scheduled = false
 	shouldSwap = function() return false end
 
-	local tag = data.tags[gameinfo.getromhash()] or get_game_tag()
-	data.tags[gameinfo.getromhash()] = tag or NO_MATCH
+	local tag = tags[gameinfo.getromhash()] or get_game_tag()
+	tags[gameinfo.getromhash()] = tag or NO_MATCH
 
 	-- first time through with a bad match, tag will be nil
 	-- can use this to print a debug message only the first time
