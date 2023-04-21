@@ -207,7 +207,7 @@ function get_games_list(force)
 
 			-- bizhawk multidisk bundle
 			if xml:find('BizHawk%-XMLGame') then
-				for asset in xml:gfind('<Asset.-FileName="(.-)".-/>') do
+				for asset in xml:gmatch('<Asset.-FileName="(.-)".-/>') do
 					asset = asset:gsub('^%.[\\/]', '')
 					table.insert(toremove, asset)
 				end
