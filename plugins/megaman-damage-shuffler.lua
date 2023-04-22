@@ -579,7 +579,8 @@ local gamedata = {
 			return function()
 				local hit_changed, hit = update_prev("hit_changed", hit_states[memory.read_u8(0x56, "RAM")] or false)
 				local game_over_changed, game_over = update_prev("game_over", memory.read_u16_le(0x5C0, "RAM") == 0xD6D4)
-				return (hit_changed and hit) or
+				local in_shop = memory.read_u16_le(0x10, "RAM") == 0xD
+				return (hit_changed and hit and not in_shop) or
 				       (game_over_changed and game_over and not hit)
 			end
 		end
