@@ -409,8 +409,8 @@ function swap_game(next_game, is_gui_callback)
 
 	local _swap_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
 	                                     _current_total_frame_count,
-										 _current_game_frame_count, _current_game_swaps,
-										 _current_game, next_game)
+	                                     _current_game_frame_count, _current_game_swaps,
+	                                     _current_game, next_game)
 
 	log_message(_swap_message, true, 'swap_log')
 
@@ -581,9 +581,9 @@ function mark_complete()
 
 	local _completed_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
 	                                          _current_total_frame_count,
-											  _current_game_frame_count,
-											  _current_game, _current_game_total_swaps,
-											  'COMPLETED')
+	                                          _current_game_frame_count,
+	                                          _current_game, _current_game_total_swaps,
+	                                          'COMPLETED')
 	
 	log_message(_completed_message, true, 'completed_log')
 
