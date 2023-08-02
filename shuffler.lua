@@ -1,5 +1,6 @@
 --[[
 	Bizhawk Shuffler 2 by authorblues
+	Edited by Laxaria
 	inspired by Brossentia's Bizhawk Shuffler, based on slowbeef's original project
 	tested on Bizhawk v2.8 - http://tasvideos.org/BizHawk/ReleaseHistory.html
 	released under MIT License
@@ -13,6 +14,7 @@ next_swap_time = 0
 running = false
 plugins = {}
 
+
 -- determine operating system for the purpose of commands
 _PLATFORMS = {['dll'] = 'WIN', ['so'] = 'LINUX', ['dylib'] = 'MAC'}
 PLATFORM = _PLATFORMS[(package.cpath..';'):match('%.(%a+);')]
@@ -24,11 +26,13 @@ STATES_FOLDER = GAMES_FOLDER .. '/.savestates'
 STATES_BACKUPS = 3
 DEFAULT_CMD_OUTPUT = 'shuffler-src/.cmd-output.txt'
 
-MIN_BIZHAWK_VERSION = "2.6.3_laxaria"
+MIN_BIZHAWK_VERSION = "2.6.3"
 MAX_BIZHAWK_VERSION = nil
 RECOMMENDED_LUA_CORE = "LuaInterface"
 UNSUPPORTED_LUA_CORE = "NLua"
 MAX_INTEGER = 99999999
+
+SHUFFLER_VERSION = "1.0.0_laxaria"
 
 function compose_string(...)
 	return table.concat(arg, '\t')
@@ -307,13 +311,10 @@ local function on_game_load()
 		savestate.load(state)
 	end
 
-	-- update swap counter for this game
-	-- local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
-	-- config.game_swaps[config.current_game] = new_swaps
+	-- write swap counter for this game
 	write_data('output-info/current-swaps.txt', config.game_swaps[config.current_game])
 
-	-- update total swap counter
-	-- config.total_swaps = (config.total_swaps or 0) + 1
+	-- write total swap counter for shuffler
 	write_data('output-info/total-swaps.txt', config.total_swaps)
 
 	-- update game name
@@ -404,14 +405,14 @@ function swap_game(next_game, is_gui_callback)
 	local _total_swaps = config.total_swaps or 1
 	local _current_game = config.current_game or 'Nothing'
 	local _current_total_frame_count = config.frame_count or 0
-	local _current_game_swaps = config.game_swaps[config.current_game] or 0
+	local _current_game_swaps = config.game_swaps[config.current_game] or 1
 
 	local _swap_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
 	                                     _current_total_frame_count, 
 										 _current_game_frame_count, _current_game_swaps, 
 										 _current_game, next_game)
 
-	log_message(_swap_message, false, 'swap_log')
+	log_message(_swap_message, true, 'swap_log')
 
 	-- if the game isn't changing, stop here and just update the timer
 	-- (you might think we should just disable the timer at this point, but this
@@ -570,19 +571,21 @@ function mark_complete()
 	-- log that we are marking a game as completed
 	-- structure is [Total Swaps, Epoch, Current Total Frame, 
 	--               Current Game Frame, Current Game Name,
-	--               Completed]
+	--               Current Game Total Swaps, Completed]
 
 	local _current_game_frame_count = config.game_frame_count[config.current_game] or 0
-	local _total_swaps = config.total_swaps
+	local _total_swaps = config.total_swaps or 1
 	local _current_game = config.current_game or 'Nothing'
-	local _current_total_frame_count = config.frame_count
+	local _current_total_frame_count = config.frame_count or 0
+	local _current_game_total_swaps = config.game_swaps[config.current_game] or 1
 
 	local _completed_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
 	                                          _current_total_frame_count, 
 						        		      _current_game_frame_count,
-									          _current_game, 'COMPLETED')
+									          _current_game, _current_game_total_swaps, 
+											  'COMPLETED')
 	
-	log_message(_completed_message, false, 'completed_log')
+	log_message(_completed_message, true, 'completed_log')
 
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_complete ~= nil then
@@ -661,11 +664,18 @@ function complete_setup()
 	end
 
 	-- these messages will only appear in the message log
-	log_message('Platform: ' .. PLATFORM, true)
-	log_message('Bizhawk version: ' .. client.getversion(), true)
+	log_message('Platform: ' .. PLATFORM, false)
+	log_message('Shuffler Version: ' .. SHUFFLER_VERSION, false)
+	log_message('Bizhawk version: ' .. client.getversion(), false)
+
+	local _total_game_count = 0
+
 	for _,game in ipairs(games) do
 		log_message('GAME FOUND: ' .. game, true)
+		_total_game_count = _total_game_count + 1
 	end
+
+	log_message('TOTAL GAMES: ' .. _total_game_count, false)
 
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config.nseed or config.seed)
