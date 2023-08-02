@@ -30,12 +30,26 @@ RECOMMENDED_LUA_CORE = "LuaInterface"
 UNSUPPORTED_LUA_CORE = "NLua"
 MAX_INTEGER = 99999999
 
-function log_message(msg, quiet)
+function compose_string(...)
+	return table.concat(arg, '\t')
+end
+
+function log_message(msg, quiet, target_file)
 	if not quiet then print(msg) end
 
-	local handle, err = io.open('message.log', 'a')
+	local handle, err
+
+	if target_file == 'swap_log' then
+		handle, err = io.open('swap_log.txt', 'a')
+	elseif target_file == 'completed_log' then
+		handle, err = io.open('completed_log.txt', 'a')
+	else
+		handle, err = io.open('message.log', 'a')
+		handle:write(os.date("[%c] \t"))
+	end
+	
 	if handle == nil then return end
-	handle:write(os.date("[%X] "))
+
 	handle:write(tostring(msg))
 	handle:write('\n')
 	handle:close()
@@ -382,6 +396,22 @@ function swap_game(next_game, is_gui_callback)
 	-- if no game provided, call get_next_game()
 	next_game = next_game or get_next_game()
 
+	-- log that we are swapping out
+	-- structure is [Total Swaps, Epoch, Current Total Frame, 
+	--               Current Game Frame, Current Game Name,
+	--               Next Game]
+	local _current_game_frame_count = config.game_frame_count[config.current_game] or 0
+	local _total_swaps = config.total_swaps
+	local _current_game = config.current_game or 'Nothing'
+	local _current_total_frame_count = config.frame_count
+
+	local _swap_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
+	                                     _current_total_frame_count, 
+										 _current_game_frame_count,
+										 _current_game, next_game)
+
+	log_message(_swap_message, false, 'swap_log')
+
 	-- if the game isn't changing, stop here and just update the timer
 	-- (you might think we should just disable the timer at this point, but this
 	-- allows new games to be added mid-run without the timer being disabled)
@@ -528,6 +558,24 @@ function mark_complete()
 	-- mark the game as complete in the config file rather than moving files around
 	table.insert(config.completed_games, config.current_game)
 	log_message(config.current_game .. ' marked complete')
+
+	-- log that we are marking a game as completed
+	-- structure is [Total Swaps, Epoch, Current Total Frame, 
+	--               Current Game Frame, Current Game Name,
+	--               Completed]
+
+	local _current_game_frame_count = config.game_frame_count[config.current_game] or 0
+	local _total_swaps = config.total_swaps
+	local _current_game = config.current_game or 'Nothing'
+	local _current_total_frame_count = config.frame_count
+
+	local _completed_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
+	                                          _current_total_frame_count, 
+						        		      _current_game_frame_count,
+									          _current_game, 'COMPLETED')
+	
+	log_message(_completed_message, false, 'completed_log')
+
 	for _,plugin in ipairs(plugins) do
 		if plugin.on_complete ~= nil then
 			local pdata = config.plugins[plugin._module]
