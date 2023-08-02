@@ -308,12 +308,12 @@ local function on_game_load()
 	end
 
 	-- update swap counter for this game
-	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
-	config.game_swaps[config.current_game] = new_swaps
-	write_data('output-info/current-swaps.txt', new_swaps)
+	-- local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
+	-- config.game_swaps[config.current_game] = new_swaps
+	write_data('output-info/current-swaps.txt', config.game_swaps[config.current_game])
 
 	-- update total swap counter
-	config.total_swaps = (config.total_swaps or 0) + 1
+	-- config.total_swaps = (config.total_swaps or 0) + 1
 	write_data('output-info/total-swaps.txt', config.total_swaps)
 
 	-- update game name
@@ -398,16 +398,17 @@ function swap_game(next_game, is_gui_callback)
 
 	-- log that we are swapping out
 	-- structure is [Total Swaps, Epoch, Current Total Frame, 
-	--               Current Game Frame, Current Game Name,
-	--               Next Game]
+	--               Current Game Frame, Current Game Swaps 
+	--               Current Game Name, Next Game]
 	local _current_game_frame_count = config.game_frame_count[config.current_game] or 0
-	local _total_swaps = config.total_swaps
+	local _total_swaps = config.total_swaps or 1
 	local _current_game = config.current_game or 'Nothing'
-	local _current_total_frame_count = config.frame_count
+	local _current_total_frame_count = config.frame_count or 0
+	local _current_game_swaps = config.game_swaps[config.current_game] or 0
 
 	local _swap_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
 	                                     _current_total_frame_count, 
-										 _current_game_frame_count,
+										 _current_game_frame_count, _current_game_swaps, 
 										 _current_game, next_game)
 
 	log_message(_swap_message, false, 'swap_log')
@@ -451,6 +452,13 @@ function swap_game(next_game, is_gui_callback)
 	-- save an updated randomizer seed
 	config.nseed = math.random(MAX_INTEGER) + config.frame_count
 	save_config(config, 'shuffler-src/config.lua')
+
+	-- advance total swap counter
+	config.total_swaps = (config.total_swaps or 1) + 1
+
+	-- advance game's swap counter
+	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
+	config.game_swaps[config.current_game] = new_swaps
 
 	return load_game(config.current_game)
 end
