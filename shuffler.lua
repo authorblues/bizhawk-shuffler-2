@@ -407,7 +407,7 @@ function swap_game(next_game, is_gui_callback)
 	local _current_total_frame_count = config.frame_count or 0
 	local _current_game_swaps = config.game_swaps[config.current_game] or 1
 
-	local _swap_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
+	local _swap_message = compose_string(_total_swaps, os.time(os.date("*t")), 
 	                                     _current_total_frame_count,
 	                                     _current_game_frame_count, _current_game_swaps,
 	                                     _current_game, next_game)
@@ -579,7 +579,7 @@ function mark_complete()
 	local _current_total_frame_count = config.frame_count or 0
 	local _current_game_total_swaps = config.game_swaps[config.current_game] or 1
 
-	local _completed_message = compose_string(_total_swaps, os.time(os.date('!*t')), 
+	local _completed_message = compose_string(_total_swaps, os.time(os.date("*t")), 
 	                                          _current_total_frame_count,
 	                                          _current_game_frame_count,
 	                                          _current_game, _current_game_total_swaps,
