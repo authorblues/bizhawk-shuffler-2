@@ -308,7 +308,7 @@ function module.initial_setup(callback)
 	end
 
 	function random_seed()
-		math.randomseed(os.time() + os.clock()*100000)
+		math.randomseed(os.time(), math.floor(os.clock()*100000))
 		return math.random(MAX_INTEGER)
 	end
 
