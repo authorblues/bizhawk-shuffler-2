@@ -296,14 +296,13 @@ local function on_game_load()
 	-- update swap counter for this game
 	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
 	config.game_swaps[config.current_game] = new_swaps
-	write_data('output-info/current-swaps.txt', new_swaps)
-
 	-- update total swap counter
 	config.total_swaps = (config.total_swaps or 0) + 1
-	write_data('output-info/total-swaps.txt', config.total_swaps)
-
-	-- update game name
-	write_data('output-info/current-game.txt', strip_ext(config.current_game))
+	if config.output_files >= 1 then
+		write_data('output-info/current-swaps.txt', new_swaps)
+		write_data('output-info/total-swaps.txt', config.total_swaps)
+		write_data('output-info/current-game.txt', strip_ext(config.current_game))
+	end
 
 	-- this code just outright crashes on Bizhawk 2.6.1, go figure
 	if checkversion("2.6.2") then
@@ -517,11 +516,13 @@ function frames_to_time(f)
 end
 
 function output_completed()
-	completed = ""
-	for i,game in ipairs(config.completed_games) do
-		completed = completed .. strip_ext(game) .. '\n'
+	if config.output_files >= 1 then 
+		completed = ""
+		for i,game in ipairs(config.completed_games) do
+			completed = completed .. strip_ext(game) .. '\n'
+		end
+		write_data('output-info/completed-games.txt', completed)
 	end
-	write_data('output-info/completed-games.txt', completed)
 end
 
 function mark_complete()
@@ -676,7 +677,7 @@ while true do
 		config.game_frame_count[config.current_game] = cgf
 
 		-- save time info to files for OBS display
-		if config.output_timers then
+		if config.output_files == 2 then
 			local time_total = frames_to_time(frame_count)
 			if time_total ~= ptime_total then
 				write_data('output-info/total-time.txt', time_total)

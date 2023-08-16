@@ -247,6 +247,13 @@ function module.initial_setup(callback)
 	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
 	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0}
 
+	local OUTPUT_FILE_MODES_DEFAULT = 0
+	local OUTPUT_FILE_MODES = {
+		[0] = 'None',
+		[1] = 'Games, Swaps',
+		[2] = 'Games, Swaps, Timers',
+	}
+
 	-- I believe none of these conflict with default Bizhawk hotkeys
 	local HOTKEY_OPTIONS = {
 		'Ctrl+Shift+End',
@@ -258,6 +265,12 @@ function module.initial_setup(callback)
 		'Backslash (above Enter)',
 		'RightCtrl',
 	}
+	local function invert_table(t)
+		local keys = {}
+		--for key, _ in pairs(t) do table.insert(keys, key) end
+		for key, value in pairs(t) do keys[value] = key end
+		return keys
+	end
 
 	function start_handler()
 		if not forms.ischecked(resume) then save_new_settings() end
@@ -273,7 +286,7 @@ function module.initial_setup(callback)
 		config.nseed = config.seed
 
 		config.auto_shuffle = true
-		config.output_timers = true
+		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
 		local a = tonumber(forms.gettext(min_text) or "15")
 		local b = tonumber(forms.gettext(max_text) or "45")
 		config.min_swap = math.min(a, b)
@@ -328,7 +341,7 @@ function module.initial_setup(callback)
 	end
 
 	local y = 10
-	setup_window = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup", main_cleanup)
+	setup_window = forms.newform(340, 260, "Bizhawk Shuffler v2 Setup", main_cleanup)
 
 	seed_text = forms.textbox(setup_window, 0, 100, 20, "UNSIGNED", 10, y)
 	forms.label(setup_window, "Seed", 115, y+3, 40, 20)
@@ -346,12 +359,7 @@ function module.initial_setup(callback)
 	forms.settext(max_text, config.max_swap or 45)
 	y = y + 30
 
-	local _SWAP_MODES = {}
-	for k,v in pairs(SWAP_MODES) do
-		table.insert(_SWAP_MODES, k)
-	end
-
-	mode_combo = forms.dropdown(setup_window, _SWAP_MODES, 10, y, 150, 20)
+	mode_combo = forms.dropdown(setup_window, invert_table(SWAP_MODES), 10, y, 150, 20)
 	forms.label(setup_window, "Shuffler Swap Order", 165, y+3, 150, 20)
 	forms.settext(mode_combo, SWAP_MODES_DEFAULT)
 	y = y + 30
@@ -359,6 +367,11 @@ function module.initial_setup(callback)
 	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
 	forms.label(setup_window, "Hotkey: Game Completed", 165, y+3, 150, 20)
 	forms.settext(hk_complete, config.hk_complete or 'Ctrl+Shift+End')
+	y = y + 30
+
+	output_files_combo = forms.dropdown(setup_window, OUTPUT_FILE_MODES, 10, y, 150, 20)
+	forms.label(setup_window, "Output info files for OBS", 165, y+3, 150, 20)
+	forms.settext(output_files_combo, OUTPUT_FILE_MODES[config.output_files] or OUTPUT_FILE_MODES[OUTPUT_FILE_MODES_DEFAULT])
 	y = y + 30
 
 	forms.button(setup_window, "Setup Plugins", function()
