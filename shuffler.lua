@@ -698,15 +698,13 @@ while true do
 			end
 		end
 
-		-- calculate input "rises" by subtracting the previously held inputs from the inputs on this frame
-		local input_rise = input.get()
-		for k,v in pairs(prev_input) do input_rise[k] = nil end
-		prev_input = input.get()
-
+		local current_input = input.get()
 		-- mark the game as complete if the hotkey is pressed (and some time buffer)
 		-- the time buffer should hopefully prevent somebody from attempting to
 		-- press the hotkey and the game swapping, marking the wrong game complete
-		if input_rise[config.hk_complete] and frames_since_restart > math.min(3, config.min_swap/2) * 60 then mark_complete() end
+		if current_input[config.hk_complete] and not prev_input[config.hk_complete] and
+			frames_since_restart > math.min(3, config.min_swap/2) * 60 then mark_complete() end
+		prev_input = current_input
 
 		-- time to swap!
 	    if frame_count >= next_swap_time then swap_game() end
