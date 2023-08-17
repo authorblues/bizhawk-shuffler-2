@@ -323,8 +323,8 @@ function module.initial_setup(callback)
 	function save_mutable_settings()
 		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
 
-		local a = tonumber(forms.gettext(min_text) or "15")
-		local b = tonumber(forms.gettext(max_text) or "45")
+		local a = tonumber(forms.gettext(min_text)) or 15
+		local b = tonumber(forms.gettext(max_text)) or 45
 		config.min_swap = math.min(a, b)
 		config.max_swap = math.max(a, b)
 
