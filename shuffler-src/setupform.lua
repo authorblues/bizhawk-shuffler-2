@@ -246,8 +246,10 @@ function module.initial_setup(callback)
 		end
 	end
 
-	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
-	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0}
+	local SWAP_MODES_RANDOM = 'Random Order (Default)'
+	local SWAP_MODES_FIXED = 'Fixed Order'
+	local SWAP_MODES_DEFAULT = SWAP_MODES_RANDOM
+	local SWAP_MODES = {[SWAP_MODES_RANDOM] = -1, [SWAP_MODES_FIXED] = 0}
 
 	local OUTPUT_FILE_MODES_DEFAULT = 2
 	local OUTPUT_FILE_MODES = {
@@ -296,7 +298,6 @@ function module.initial_setup(callback)
 
 		config.auto_shuffle = true
 
-		config.shuffle_index = SWAP_MODES[forms.gettext(mode_combo)]
 		config.completed_games = {}
 
 		config.plugins = {}
@@ -321,6 +322,13 @@ function module.initial_setup(callback)
 
 	-- settings that may be changed in a runnning session
 	function save_mutable_settings()
+		-- only set config.shuffle_index if mode has changed or was nil (new config)
+		local new_shuffle_mode = SWAP_MODES[forms.gettext(mode_combo)]
+		local cur_shuffle_mode = config.shuffle_index and (config.shuffle_index >= 0 and 0 or -1)
+		if cur_shuffle_mode ~= new_shuffle_mode then
+			config.shuffle_index = new_shuffle_mode
+		end
+
 		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
 
 		local a = tonumber(forms.gettext(min_text)) or 15
@@ -387,7 +395,8 @@ function module.initial_setup(callback)
 
 	mode_combo = forms.dropdown(setup_window, invert_table(SWAP_MODES), 10, y, 150, 20)
 	forms.label(setup_window, "Shuffler Swap Order", 165, y+3, 150, 20)
-	forms.settext(mode_combo, SWAP_MODES_DEFAULT)
+	local select_fixed_order = config.shuffle_index and config.shuffle_index > -1
+	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or SWAP_MODES_RANDOM)
 	y = y + 30
 
 	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
@@ -413,7 +422,7 @@ function module.initial_setup(callback)
 	start_btn = forms.button(setup_window, "Start New Session", start_handler, 160, y, 150, 20)
 	y = y + 30
 
-	immutable_inputs = { seed_text, seed_btn, mode_combo, plugin_btn }
+	immutable_inputs = { seed_text, seed_btn, plugin_btn }
 
 	if config.current_game ~= nil and #get_games_list(true) > 0 then
 		forms.setproperty(resume, "Checked", true)
