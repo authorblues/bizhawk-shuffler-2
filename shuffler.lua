@@ -28,6 +28,7 @@ MIN_BIZHAWK_VERSION = "2.6.3"
 MAX_BIZHAWK_VERSION = nil
 RECOMMENDED_LUA_CORE = "LuaInterface"
 UNSUPPORTED_LUA_CORE = "NLua"
+COMPRESSION_WARNING_THRESHOLD = 2
 MAX_INTEGER = 99999999
 
 function log_message(msg, quiet)
@@ -505,6 +506,14 @@ local function check_compatibility()
 	return true
 end
 
+local function check_savestate_config()
+	local compression = client.getconfig().Savestates.CompressionLevelNormal
+	if compression >= COMPRESSION_WARNING_THRESHOLD then
+		log_console("Savestate compression can noticably increase the time it takes to swap games on some systems. " ..
+			"Savestate compression can be configured in the Config > Rewind & States menu.")
+	end
+end
+
 -- this is going to be an APPROXIMATION and is not a substitute for an actual
 -- timer. games do not run at a consistent or exact 60 fps, so this method is
 -- provided purely for entertainment purposes
@@ -648,6 +657,8 @@ end
 if not check_compatibility() then
 	return
 end
+
+check_savestate_config()
 
 -- load primary configuration
 load_config('shuffler-src/config.lua')
