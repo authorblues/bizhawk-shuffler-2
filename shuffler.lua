@@ -367,7 +367,6 @@ function get_next_game()
 		return all_games[math.random(#all_games)]
 	else
 		-- manually select the next one
-		if #all_games == 1 then return prev end
 		config.shuffle_index = (config.shuffle_index % #all_games) + 1
 		return all_games[config.shuffle_index]
 	end
@@ -551,6 +550,10 @@ function mark_complete()
 		save_config(config, 'shuffler-src/config.lua')
 		log_message('Shuffler complete!')
 	else
+		-- hack-ish: decrement shuffle index so we don't skip the next game in fixed order
+		if config.shuffle_index >= 1 then
+			config.shuffle_index = config.shuffle_index - 1
+		end
 		swap_game()
 	end
 end
