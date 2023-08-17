@@ -249,7 +249,7 @@ function module.initial_setup(callback)
 	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
 	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0}
 
-	local OUTPUT_FILE_MODES_DEFAULT = 0
+	local OUTPUT_FILE_MODES_DEFAULT = 2
 	local OUTPUT_FILE_MODES = {
 		[0] = 'None',
 		[1] = 'Games, Swaps',
