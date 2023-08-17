@@ -222,6 +222,8 @@ function module.initial_setup(callback)
 	local setup_window, resume, start_btn
 	local seed_text, min_text, max_text
 	local mode_combo, hk_complete, plugin_label
+	local plugin_btn, seed_btn
+	local immutable_inputs
 	local plugin_window = -1
 
 	local plugins = {}
@@ -273,7 +275,11 @@ function module.initial_setup(callback)
 	end
 
 	function start_handler()
-		if not forms.ischecked(resume) then save_new_settings() end
+		if forms.ischecked(resume) then
+			save_mutable_settings()
+		else
+			save_new_settings()
+		end
 		get_games_list(true) -- force refresh of the games list
 
 		forms.destroy(setup_window)
@@ -282,18 +288,15 @@ function module.initial_setup(callback)
 
 	function save_new_settings()
 		config = {}
+
+		save_mutable_settings()
+
 		config.seed = tonumber(forms.gettext(seed_text) or "0")
 		config.nseed = config.seed
 
 		config.auto_shuffle = true
-		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
-		local a = tonumber(forms.gettext(min_text) or "15")
-		local b = tonumber(forms.gettext(max_text) or "45")
-		config.min_swap = math.min(a, b)
-		config.max_swap = math.max(a, b)
 
 		config.shuffle_index = SWAP_MODES[forms.gettext(mode_combo)]
-		config.hk_complete = (forms.gettext(hk_complete) or 'Ctrl+Shift+End'):match("[^%s]+")
 		config.completed_games = {}
 
 		config.plugins = {}
@@ -314,6 +317,18 @@ function module.initial_setup(callback)
 		config.total_swaps = 0
 		config.game_frame_count = {}
 		config.game_swaps = {}
+	end
+
+	-- settings that may be changed in a runnning session
+	function save_mutable_settings()
+		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
+
+		local a = tonumber(forms.gettext(min_text) or "15")
+		local b = tonumber(forms.gettext(max_text) or "45")
+		config.min_swap = math.min(a, b)
+		config.max_swap = math.max(a, b)
+
+		config.hk_complete = (forms.gettext(hk_complete) or 'Ctrl+Shift+End'):match("[^%s]+")
 	end
 
 	function main_cleanup()
@@ -340,6 +355,17 @@ function module.initial_setup(callback)
 		forms.settext(plugin_label, text)
 	end
 
+	local function update_resume_state()
+		local new_session = not forms.ischecked(resume)
+		forms.settext(start_btn, new_session and "Start New Session" or "Resume Previous Session")
+		for _, control in pairs(immutable_inputs) do
+			forms.setproperty(control, "Enabled", new_session)
+		end
+		if not new_session then
+			forms.destroy(plugin_window)
+		end
+	end
+
 	local y = 10
 	setup_window = forms.newform(340, 260, "Bizhawk Shuffler v2 Setup", main_cleanup)
 
@@ -347,7 +373,7 @@ function module.initial_setup(callback)
 	forms.label(setup_window, "Seed", 115, y+3, 40, 20)
 	forms.settext(seed_text, config.seed or random_seed())
 
-	forms.button(setup_window, "Randomize Seed", function()
+	seed_btn = forms.button(setup_window, "Randomize Seed", function()
 		forms.settext(seed_text, random_seed())
 	end, 160, y, 150, 20)
 	y = y + 30
@@ -374,7 +400,7 @@ function module.initial_setup(callback)
 	forms.settext(output_files_combo, OUTPUT_FILE_MODES[config.output_files] or OUTPUT_FILE_MODES[OUTPUT_FILE_MODES_DEFAULT])
 	y = y + 30
 
-	forms.button(setup_window, "Setup Plugins", function()
+	plugin_btn = forms.button(setup_window, "Setup Plugins", function()
 		forms.destroy(plugin_window)
 		plugin_window = module.make_plugin_window(plugins, plugin_label)
 	end, 10, y, 150, 20)
@@ -387,18 +413,14 @@ function module.initial_setup(callback)
 	start_btn = forms.button(setup_window, "Start New Session", start_handler, 160, y, 150, 20)
 	y = y + 30
 
+	immutable_inputs = { seed_text, seed_btn, mode_combo, plugin_btn }
+
 	if config.current_game ~= nil and #get_games_list(true) > 0 then
 		forms.setproperty(resume, "Checked", true)
-		forms.settext(start_btn, "Resume Previous Session")
+		update_resume_state()
 	end
 
-	forms.addclick(resume, function()
-		if forms.ischecked(resume) then
-			forms.settext(start_btn, "Resume Previous Session")
-		else
-			forms.settext(start_btn, "Start New Session")
-		end
-	end)
+	forms.addclick(resume, update_resume_state)
 
 	event.onexit(function()
 		forms.destroy(setup_window)
