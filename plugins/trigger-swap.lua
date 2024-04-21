@@ -4,7 +4,6 @@ plugin.name = "Trigger Swap"
 plugin.author = "authorblues"
 plugin.settings =
 {
-	-- enable this feature to have health and lives synchronized across games
 	{ name='triggerfile', type='file', label='Trigger File' },
 }
 
