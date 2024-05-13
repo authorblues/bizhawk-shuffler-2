@@ -3,6 +3,9 @@
 * [tested on Bizhawk v2.6.3-v2.9.1](https://github.com/TASVideos/BizHawk/releases/)  
 * [click here to download the latest version](https://github.com/authorblues/bizhawk-shuffler-2/archive/refs/heads/main.zip)
 
+## Hotkey for Manual Swap
+* This fork adds a manual swap on input as well as additional hotkey combinations
+
 ## Additional Resources
 * **[Setup Instructions](https://github.com/authorblues/bizhawk-shuffler-2/wiki/Setup-Instructions)**
 * [Frequently Asked Questions](https://github.com/authorblues/bizhawk-shuffler-2/wiki/Frequently-Asked-Questions) - important info!
