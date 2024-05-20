@@ -1,7 +1,7 @@
 # Bizhawk Shuffler 2
 * written by authorblues, inspired by [Brossentia's Bizhawk Shuffler](https://github.com/brossentia/BizHawk-Shuffler), based on slowbeef's original project
 * [tested on Bizhawk v2.6.3-v2.9.1](https://github.com/TASVideos/BizHawk/releases/)  
-* [click here to download the latest version](https://github.com/authorblues/bizhawk-shuffler-2/archive/refs/heads/main.zip)
+* [click here to download the latest version](https://github.com/edzwoo/bizhawk-shuffler-2/archive/refs/heads/main.zip)
 
 ## Hotkey for Manual Swap
 * This fork adds a manual swap on input as well as additional hotkey combinations
