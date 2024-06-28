@@ -42,6 +42,7 @@ plugin.description =
 	Bootlegs:
 	- Zook Hero Z (aka Rockman DX6) GBC
 	- Zook Hero 2 (aka Rockman X3) GBC
+	- Zook Hero 3 GBC
 	- Zook Man ZX4 (aka Rockman & Crystal) GBA
 	- Thunder Blast Man (aka Rocman X) GBC
 	- Rocman X NES (NesHawk only)
@@ -554,6 +555,14 @@ local gamedata = {
 		gethp=function() return memory.read_u8(0x52, "HRAM") end,
 		getlc=function() return memory.read_u8(0x60, "HRAM") end,
 		maxhp=function() return 20 end,
+	},
+	['zook-hero-3'] = {
+		func=function()
+			return function()
+				local state_changed, state = update_prev("state", memory.read_u8(0xEE5, "WRAM"))
+				return state_changed and (state == 0x10 or state == 0x12 or state == 0x13)
+			end
+		end
 	},
 	['zook-man-zx4'] = {
 		gethp=function() return memory.read_u8(0x1638, "IWRAM") end,
