@@ -47,6 +47,7 @@ plugin.description =
 	- Thunder Blast Man (aka Rocman X) GBC
 	- Rocman X NES (NesHawk only)
 	- Rockman 8 GB / Rockman X4 GBC
+	- Rockman X3 GEN
 ]]
 
 local NO_MATCH = 'NONE'
@@ -599,6 +600,14 @@ local gamedata = {
 		gethp=function() return memory.read_u8(0x027C, "WRAM") end,
 		getlc=function() return memory.read_u8(0x025E, "WRAM") end,
 		maxhp=function() return 8 end,
+	},
+	['mmx3gen'] = {
+		func=function()
+			return function()
+				local state_changed, state = update_prev("state", memory.read_u8(0xE7AB, "68K RAM"))
+				return state_changed and (state == 3 or state == 4)
+			end
+		end
 	},
 }
 
