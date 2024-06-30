@@ -122,6 +122,17 @@ local function generic_swap(gamemeta)
 	end
 end
 
+local function generic_state_swap(gamemeta)
+	local hitstates = {}
+	for _, state in ipairs(gamemeta.hitstates) do
+		hitstates[state] = true
+	end
+	return function()
+		local state_changed, state = update_prev("state", gamemeta.getstate())
+		return state_changed and hitstates[state]
+	end
+end
+
 local function mmlegends(gamemeta)
 	local mainfunc = generic_swap(gamemeta)
 	return function(data)
@@ -558,12 +569,9 @@ local gamedata = {
 		maxhp=function() return 20 end,
 	},
 	['zook-hero-3'] = {
-		func=function()
-			return function()
-				local state_changed, state = update_prev("state", memory.read_u8(0xEE5, "WRAM"))
-				return state_changed and (state == 0x10 or state == 0x12 or state == 0x13)
-			end
-		end
+		func=generic_state_swap,
+		getstate=function() return memory.read_u8(0xEE5, "WRAM") end,
+		hitstates={0x10, 0x12, 0x13},
 	},
 	['zook-man-zx4'] = {
 		gethp=function() return memory.read_u8(0x1638, "IWRAM") end,
@@ -602,12 +610,9 @@ local gamedata = {
 		maxhp=function() return 8 end,
 	},
 	['mmx3gen'] = {
-		func=function()
-			return function()
-				local state_changed, state = update_prev("state", memory.read_u8(0xE7AB, "68K RAM"))
-				return state_changed and (state == 3 or state == 4)
-			end
-		end
+		func=generic_state_swap,
+		getstate=function() return memory.read_u8(0xE7AB, "68K RAM") end,
+		hitstates={3, 4},
 	},
 }
 
