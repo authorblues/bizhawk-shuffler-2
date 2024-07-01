@@ -221,7 +221,7 @@ end
 function module.initial_setup(callback)
 	local setup_window, resume, start_btn
 	local seed_text, min_text, max_text
-	local mode_combo, hk_complete, plugin_label
+	local mode_combo, hk_complete, hk_swap, plugin_label 
 	local plugin_btn, seed_btn
 	local immutable_inputs
 	local plugin_window = -1
@@ -268,6 +268,47 @@ function module.initial_setup(callback)
 		'Alt+Shift+D',
 		'Backslash (above Enter)',
 		'RightCtrl',
+		'F1',
+		'F2',
+		'F3',
+		'F4',
+		'F5',
+		'F6',
+		'F7',
+		'F8',
+		'F9',
+		'F10',
+		'F11',
+		'F12',
+		'F13',
+		'F14',
+		'F15',
+	}
+	-- Additional for swap
+	local HOTKEY_OPTIONS_SWAP = {
+		'Ctrl+Shift+Delete',
+		'Ctrl+Shift+End',
+		'Ctrl+Shift+D',
+		'Alt+Shift+End',
+		'Alt+Shift+Delete',
+		'Alt+Shift+D',
+		'Backslash (above Enter)',
+		'RightCtrl',
+		'F1',
+		'F2',
+		'F3',
+		'F4',
+		'F5',
+		'F6',
+		'F7',
+		'F8',
+		'F9',
+		'F10',
+		'F11',
+		'F12',
+		'F13',
+		'F14',
+		'F15',
 	}
 	local function invert_table(t)
 		local keys = {}
@@ -337,6 +378,7 @@ function module.initial_setup(callback)
 		config.max_swap = math.max(a, b)
 
 		config.hk_complete = (forms.gettext(hk_complete) or 'Ctrl+Shift+End'):match("[^%s]+")
+		config.hk_swap = (forms.gettext(hk_swap) or 'Ctrl+Shift+Delete'):match("[^%s]+")
 	end
 
 	function main_cleanup()
@@ -402,6 +444,11 @@ function module.initial_setup(callback)
 	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
 	forms.label(setup_window, "Hotkey: Game Completed", 165, y+3, 150, 20)
 	forms.settext(hk_complete, config.hk_complete or 'Ctrl+Shift+End')
+	y = y + 30
+
+	hk_swap = forms.dropdown(setup_window, HOTKEY_OPTIONS_SWAP, 10, y, 150, 20)
+	forms.label(setup_window, "Hotkey: Swap Game", 165, y+3, 150, 20)
+	forms.settext(hk_swap, config.hk_swap or 'Ctrl+Shift+Delete')
 	y = y + 30
 
 	output_files_combo = forms.dropdown(setup_window, OUTPUT_FILE_MODES, 10, y, 150, 20)

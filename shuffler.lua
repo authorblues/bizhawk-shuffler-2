@@ -714,8 +714,11 @@ while true do
 		-- mark the game as complete if the hotkey is pressed (and some time buffer)
 		-- the time buffer should hopefully prevent somebody from attempting to
 		-- press the hotkey and the game swapping, marking the wrong game complete
-		if current_input[config.hk_complete] and not prev_input[config.hk_complete] and
-			frames_since_restart > math.min(3, config.min_swap/2) * 60 then mark_complete() end
+		if current_input[config.hk_complete] and not prev_input[config.hk_complete] and frames_since_restart > math.min(3, config.min_swap/2) * 60 then
+			mark_complete() 
+		elseif current_input[config.hk_swap] and not prev_input[config.hk_swap] then
+			swap_game()
+		end
 		prev_input = current_input
 
 		-- time to swap!
