@@ -176,7 +176,7 @@ function get_dir_contents(dir, tmp, force)
 end
 
 -- types of files to ignore in the games directory
-local IGNORED_FILE_EXTS = { '.msu', '.pcm' }
+local IGNORED_FILE_EXTS = { '.msu', '.pcm', '.txt', '.ini' }
 
 -- get list of games
 function get_games_list(force)
