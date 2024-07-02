@@ -48,6 +48,7 @@ plugin.description =
 	- Rocman X NES (NesHawk only)
 	- Rockman 8 GB / Rockman X4 GBC
 	- Rockman X3 GEN
+	- Rockman EXE5 GBC
 ]]
 
 local NO_MATCH = 'NONE'
@@ -568,7 +569,7 @@ local gamedata = {
 		getlc=function() return memory.read_u8(0x60, "HRAM") end,
 		maxhp=function() return 20 end,
 	},
-	['zook-hero-3'] = {
+	['sintax-gbc'] = {
 		func=generic_state_swap,
 		getstate=function() return memory.read_u8(0xEE5, "WRAM") end,
 		hitstates={0x10, 0x12, 0x13},
