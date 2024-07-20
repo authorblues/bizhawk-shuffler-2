@@ -39,6 +39,9 @@ plugin.description =
 	- Super Adventure Rockman PSX
 	- Mega Man: The Power Battle & The Power Fighters (Arcade)
 
+	Hacks & Homebrew:
+	- Mega Man: The Sequel Wars GEN
+
 	Bootlegs:
 	- Zook Hero Z (aka Rockman DX6) GBC
 	- Zook Hero 2 (aka Rockman X3) GBC
@@ -614,6 +617,11 @@ local gamedata = {
 		func=generic_state_swap,
 		getstate=function() return memory.read_u8(0xE7AB, "68K RAM") end,
 		hitstates={3, 4},
+	},
+	['sequel-wars-red']={ -- Mega Man: The Sequel Wars Episode Red (Genesis homebrew)
+		gethp=function() return memory.read_u16_be(0x306E, "68K RAM") end,
+		getlc=function() return memory.read_u8(0x01A1, "68K RAM") end,
+		maxhp=function() return 28 end,
 	},
 }
 
