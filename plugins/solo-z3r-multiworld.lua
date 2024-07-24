@@ -150,7 +150,7 @@ local function adjust_progressive(item)
 	return PROGRESSIVES[item] or item
 end
 
-function make_player_object()
+local function make_player_object()
 	return { items={}, sends={}, delay=0, prev=0 }
 end
 

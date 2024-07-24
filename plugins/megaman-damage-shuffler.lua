@@ -149,7 +149,7 @@ end
 local function mmx6_swap(gamemeta)
 	return function()
 		-- check the damage counter used for the stats screen. not incremented by acid rain damage
-		_, damage, prev_damage = update_prev('damage', gamemeta.getdamage())
+		local _, damage, prev_damage = update_prev('damage', gamemeta.getdamage())
 		return prev_damage ~= nil and damage > prev_damage
 	end
 end
@@ -625,8 +625,6 @@ local function get_game_tag()
 	local tag = get_tag_from_hash_db(gameinfo.getromhash(), 'plugins/megaman-hashes.dat')
 	if tag ~= nil and gamedata[tag] ~= nil then return tag end
 
-	-- check to see if any of the rom name samples match
-	local name = gameinfo.getromname()
 	for _,check in pairs(backupchecks) do
 		if check.test() then return check.tag end
 	end
