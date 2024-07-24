@@ -1,4 +1,5 @@
 games/*
+start-states/*
 shuffler-src/config.lua
 shuffler-src/.cmd-output.txt
 message.log
