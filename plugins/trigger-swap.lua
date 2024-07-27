@@ -21,8 +21,14 @@ plugin.description =
 
 function plugin.on_frame(data, settings)
 	if settings.triggerfile then
-		fn = loadfile(settings.triggerfile)
-		if fn ~= nil then
+		foundfile = false
+		local fn, err = io.open(settings.triggerfile, 'r')
+		if fn ~= nil then 
+			foundfile = true
+			fn:close()
+		end
+		
+		if foundfile then
 			os.remove(settings.triggerfile)
 			swap_game_delay(1)
 		end
