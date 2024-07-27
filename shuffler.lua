@@ -176,7 +176,7 @@ function get_dir_contents(dir, tmp, force)
 end
 
 -- types of files to ignore in the games directory
-local IGNORED_FILE_EXTS = { '.msu', '.pcm' }
+local IGNORED_FILE_EXTS = { '.msu', '.pcm', '.txt', '.ini' }
 
 -- get list of games
 function get_games_list(force)
@@ -350,7 +350,7 @@ function get_next_game()
 	-- check to make sure that all of the games correspond to actual
 	-- game files that can be opened
 	local all_exist = true
-	for i,game in ipairs(all_games) do
+	for _, game in ipairs(all_games) do
 		all_exist = all_exist and file_exists(GAMES_FOLDER .. '/' .. game)
 	end
 
@@ -410,7 +410,7 @@ function swap_game(next_game)
 
 	-- unique game count, for debug purposes
 	config.game_count = 0
-	for k,v in pairs(config.game_swaps) do
+	for _, _ in pairs(config.game_swaps) do
 		config.game_count = config.game_count + 1
 	end
 
@@ -521,8 +521,8 @@ function frames_to_time(f)
 end
 
 function output_completed()
-	if config.output_files >= 1 then 
-		completed = ""
+	if config.output_files >= 1 then
+		local completed = ""
 		for i,game in ipairs(config.completed_games) do
 			completed = completed .. strip_ext(game) .. '\n'
 		end
