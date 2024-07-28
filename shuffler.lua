@@ -196,9 +196,9 @@ function get_games_list(force)
 			-- open the cue file, oh god here we go...
 			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
 			for line in fp:lines() do
-				-- look for the line that starts with FILE and remove the rest of the stuff
-				if starts_with(line, "FILE") and ends_with(line, "BINARY") then
-					table.insert(toremove, line:sub(7, -9))
+				local ref_file = line.match(line, '^%s*FILE%s+"(.-)"') or line.match(line, '^%s*FILE%s+(%g+)') -- quotes optional
+				if ref_file then
+					table.insert(toremove, ref_file)
 				end
 			end
 			fp:close()
