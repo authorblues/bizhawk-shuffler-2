@@ -199,6 +199,8 @@ function get_games_list(force)
 				local ref_file = line.match(line, '^%s*FILE%s+"(.-)"') or line.match(line, '^%s*FILE%s+(%g+)') -- quotes optional
 				if ref_file then
 					table.insert(toremove, ref_file)
+					-- BizHawk automatically looks for these even if the .cue only references foo.bin
+					table.insert(toremove, ref_file .. '.ecm')
 				end
 			end
 			fp:close()
@@ -206,6 +208,7 @@ function get_games_list(force)
 		elseif extension == '.ccd' then
 			local primary = filename:sub(1, #filename-4)
 			table.insert(toremove, primary .. '.img')
+			table.insert(toremove, primary .. '.img.ecm')
 			table.insert(toremove, primary .. '.sub')
 		elseif extension == '.xml' then
 			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
