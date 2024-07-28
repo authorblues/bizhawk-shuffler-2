@@ -178,6 +178,11 @@ end
 -- types of files to ignore in the games directory
 local IGNORED_FILE_EXTS = { '.msu', '.pcm', '.txt', '.ini' }
 
+local function get_ext(name)
+	local ext = name:match("%.[^.]+$")
+	return ext and ext:lower() or ""
+end
+
 -- get list of games
 function get_games_list(force)
 	local LIST_FILE = '.games-list.txt'
@@ -186,7 +191,8 @@ function get_games_list(force)
 
 	-- find .cue files and remove the associated bin/iso
 	for _,filename in ipairs(games) do
-		if ends_with(filename, '.cue') then
+		local extension = get_ext(filename)
+		if extension == '.cue' then
 			-- open the cue file, oh god here we go...
 			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
 			for line in fp:lines() do
@@ -197,11 +203,11 @@ function get_games_list(force)
 			end
 			fp:close()
 		-- ccd/img format?
-		elseif ends_with(filename, '.ccd') then
+		elseif extension == '.ccd' then
 			local primary = filename:sub(1, #filename-4)
 			table.insert(toremove, primary .. '.img')
 			table.insert(toremove, primary .. '.sub')
-		elseif ends_with(filename, '.xml') then
+		elseif extension == '.xml' then
 			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
 			local xml = fp:read("*all")
 			fp:close()
@@ -215,8 +221,8 @@ function get_games_list(force)
 			end
 		end
 
-		for _,ext in ipairs(IGNORED_FILE_EXTS) do
-			if ends_with(filename, ext) then
+		for _, ignored_ext in ipairs(IGNORED_FILE_EXTS) do
+			if extension == ignored_ext then
 				table.insert(toremove, filename)
 			end
 		end
