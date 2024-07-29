@@ -143,14 +143,16 @@ function write_data(filename, data, mode)
 	handle:close()
 end
 
-function table_subtract(t2, t1)
-	local t = {}
-	for i = 1, #t1 do
-		t[t1[i]] = true
+function table_subtract(target, remove, ignore_case)
+	local remove_lookup = {}
+	for _, value in ipairs(remove) do
+		if ignore_case then value = value:lower() end
+		remove_lookup[value] = true
 	end
-	for i = #t2, 1, -1 do
-		if t[t2[i]] then
-			table.remove(t2, i)
+	for i = #target, 1, -1 do
+		local value = target[i]
+		if remove_lookup[value] or (ignore_case and remove_lookup[value:lower()]) then
+			table.remove(target, i)
 		end
 	end
 end
@@ -188,6 +190,7 @@ function get_games_list(force)
 	local LIST_FILE = '.games-list.txt'
 	local games = get_dir_contents(GAMES_FOLDER, GAMES_FOLDER .. '/' .. LIST_FILE, force or false)
 	local toremove = {}
+	local toremove_ignore_case = {}
 
 	-- find .cue files and remove the associated bin/iso
 	for _,filename in ipairs(games) do
@@ -198,9 +201,9 @@ function get_games_list(force)
 			for line in fp:lines() do
 				local ref_file = line.match(line, '^%s*FILE%s+"(.-)"') or line.match(line, '^%s*FILE%s+(%g+)') -- quotes optional
 				if ref_file then
-					table.insert(toremove, ref_file)
+					table.insert(toremove_ignore_case, ref_file)
 					-- BizHawk automatically looks for these even if the .cue only references foo.bin
-					table.insert(toremove, ref_file .. '.ecm')
+					table.insert(toremove_ignore_case, ref_file .. '.ecm')
 				end
 			end
 			fp:close()
@@ -231,9 +234,10 @@ function get_games_list(force)
 		end
 	end
 
-	table_subtract(games, toremove)
+	table_subtract(games, toremove, PLATFORM == 'WIN')
+	table_subtract(games, toremove_ignore_case, true) -- cue file resolving ignores case even on linux
 	table_subtract(games, { LIST_FILE })
-	table_subtract(games, config.completed_games)
+	table_subtract(games, config.completed_games, PLATFORM == 'WIN')
 	return games
 end
 
