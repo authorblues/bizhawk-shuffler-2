@@ -169,7 +169,7 @@ function get_dir_contents(dir, tmp, force)
 	end
 
 	local file_list = {}
-	local fp = io.open(TEMP_FILE, 'r')
+	local fp = assert(io.open(TEMP_FILE, 'r'))
 	for x in fp:lines() do
 		table.insert(file_list, x)
 	end
@@ -197,7 +197,7 @@ function get_games_list(force)
 		local extension = get_ext(filename)
 		if extension == '.cue' then
 			-- open the cue file, oh god here we go...
-			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
+			local fp = assert(io.open(GAMES_FOLDER .. '/' .. filename, 'r'))
 			for line in fp:lines() do
 				local ref_file = line.match(line, '^%s*FILE%s+"(.-)"') or line.match(line, '^%s*FILE%s+(%g+)') -- quotes optional
 				if ref_file then
@@ -214,7 +214,7 @@ function get_games_list(force)
 			table.insert(toremove, primary .. '.img.ecm')
 			table.insert(toremove, primary .. '.sub')
 		elseif extension == '.xml' then
-			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
+			local fp = assert(io.open(GAMES_FOLDER .. '/' .. filename, 'r'))
 			local xml = fp:read("*all")
 			fp:close()
 
@@ -578,7 +578,7 @@ function cwd()
 	end
 	os.execute(cmd)
 
-	local fp = io.open(DEFAULT_CMD_OUTPUT, 'r')
+	local fp = assert(io.open(DEFAULT_CMD_OUTPUT, 'r'))
 	local resp = fp:read("*all")
 	fp:close()
 	return resp:match( "^%s*(.+)%s*$" )
@@ -658,7 +658,7 @@ end
 
 function get_tag_from_hash_db(target, database)
 	local resp = nil
-	local fp = io.open(database, 'r')
+	local fp = assert(io.open(database, 'r'))
 	for x in fp:lines() do
 		local hash, tag = x:match("^([0-9A-Fa-f]+)%s+(%S+)")
 		if hash == target then resp = tag; break end
