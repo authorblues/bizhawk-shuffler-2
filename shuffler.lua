@@ -34,7 +34,7 @@ MAX_INTEGER = 99999999
 function log_message(msg, quiet)
 	if not quiet then print(msg) end
 
-	local handle, err = io.open('message.log', 'a')
+	local handle = io.open('message.log', 'a')
 	if handle == nil then return end
 	handle:write(os.date("[%X] "))
 	handle:write(tostring(msg))
@@ -536,7 +536,7 @@ end
 function output_completed()
 	if config.output_files >= 1 then
 		local completed = ""
-		for i,game in ipairs(config.completed_games) do
+		for _, game in ipairs(config.completed_games) do
 			completed = completed .. strip_ext(game) .. '\n'
 		end
 		write_data('output-info/completed-games.txt', completed)

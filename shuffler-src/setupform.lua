@@ -2,7 +2,7 @@ local module = {}
 
 local NEWLINE = "\r\n"
 
-function module.make_plugin_window(plugins, main_plugin_label)
+function module.make_plugin_window(plugins)
 	local plugin_combo, info_box, enabled_label
 	local SETTINGS_X = 370
 
@@ -248,7 +248,6 @@ function module.initial_setup(callback)
 
 	local SWAP_MODES_RANDOM = 'Random Order (Default)'
 	local SWAP_MODES_FIXED = 'Fixed Order'
-	local SWAP_MODES_DEFAULT = SWAP_MODES_RANDOM
 	local SWAP_MODES = {[SWAP_MODES_RANDOM] = -1, [SWAP_MODES_FIXED] = 0}
 
 	local OUTPUT_FILE_MODES_DEFAULT = 2
@@ -411,7 +410,7 @@ function module.initial_setup(callback)
 
 	plugin_btn = forms.button(setup_window, "Setup Plugins", function()
 		forms.destroy(plugin_window)
-		plugin_window = module.make_plugin_window(plugins, plugin_label)
+		plugin_window = module.make_plugin_window(plugins)
 	end, 10, y, 150, 20)
 	plugin_label = forms.label(setup_window, "", 165, y+3, 150, 20)
 	module.update_plugin_label()
