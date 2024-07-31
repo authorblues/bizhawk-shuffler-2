@@ -143,12 +143,18 @@ function write_data(filename, data, mode)
 	handle:close()
 end
 
-function table_subtract(target, remove, ignore_case)
-	local remove_lookup = {}
-	for _, value in ipairs(remove) do
-		if ignore_case then value = value:lower() end
-		remove_lookup[value] = true
+-- Create a lookup table where each key is a value from list
+local function to_lookup(list, lowercase)
+	local lookup = {}
+	for _, value in pairs(list) do
+		if lowercase then value = value:lower() end
+		lookup[value] = true
 	end
+	return lookup
+end
+
+function table_subtract(target, remove, ignore_case)
+	local remove_lookup = to_lookup(remove, ignore_case)
 	for i = #target, 1, -1 do
 		local value = target[i]
 		if remove_lookup[value] or (ignore_case and remove_lookup[value:lower()]) then
@@ -178,7 +184,7 @@ function get_dir_contents(dir, tmp, force)
 end
 
 -- types of files to ignore in the games directory
-local IGNORED_FILE_EXTS = { '.msu', '.pcm', '.txt', '.ini' }
+local IGNORED_FILE_EXTS = to_lookup({ '.msu', '.pcm', '.txt', '.ini' })
 
 local function get_ext(name)
 	local ext = name:match("%.[^.]+$")
@@ -225,12 +231,8 @@ function get_games_list(force)
 					table.insert(toremove, asset)
 				end
 			end
-		end
-
-		for _, ignored_ext in ipairs(IGNORED_FILE_EXTS) do
-			if extension == ignored_ext then
-				table.insert(toremove, filename)
-			end
+		elseif IGNORED_FILE_EXTS[extension] then
+			table.insert(toremove, filename)
 		end
 	end
 
