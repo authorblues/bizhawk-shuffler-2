@@ -346,9 +346,9 @@ function load_game(g)
 		return false
 	end
 
-	client.openrom(filename)
-
-	if is_rom_loaded() then
+	local success = client.openrom(filename)
+	-- Compare against false explicitly because BizHawk <2.9.1 doesn't return success bool
+	if success ~= false and is_rom_loaded() then
 		log_debug('ROM loaded: %s "%s" (%s)', emu.getsystemid(), gameinfo.getromname(), gameinfo.getromhash())
 		on_game_load()
 		return true
