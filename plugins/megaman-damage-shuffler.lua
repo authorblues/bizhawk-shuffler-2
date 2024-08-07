@@ -364,7 +364,8 @@ local gamedata = {
 	},
 	['mmx1gbc']={ -- Mega Man Xtreme GBC
 		gethp=function() return bit.band(memory.read_u8(0x0ADC, "WRAM"), 0x7F) end,
-		getlc=function() return memory.read_u8(0x1365, "WRAM") end,
+		getlc=function() return memory.read_u8(0x1365, "WRAM") % 255 end,
+		-- Prevent shuffle on selecting Retry. Lives go from 0 to 255 on losing your last life, then "drop" from 255 to 2 on starting again.
 		maxhp=function() return memory.read_u8(0x1384, "WRAM") end,
 	},
 	['mmx2gbc']={ -- Mega Man Xtreme 2 GBC
