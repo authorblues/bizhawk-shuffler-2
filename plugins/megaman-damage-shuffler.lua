@@ -103,6 +103,12 @@ local function generic_swap(gamemeta)
 		data.prevhp = currhp
 		data.prevlc = currlc
 
+		-- Sometimes you will want to update hp and lives without triggering a swap (e.g., on swapping between characters).
+		-- If a method is provided for swap_exceptions and its conditions are true, process the hp and lives but don't swap.
+		if gamemeta.swap_exceptions and gamemeta.swap_exceptions() then
+			return false
+		end
+
 		-- this delay ensures that when the game ticks away health for the end of a level,
 		-- we can catch its purpose and hopefully not swap, since this isnt damage related
 		if data.hpcountdown ~= nil and data.hpcountdown > 0 then
@@ -120,6 +126,12 @@ local function generic_swap(gamemeta)
 		-- check to see if the life count went down
 		if prevlc ~= nil and currlc < prevlc then
 			return true
+		end
+
+		-- Sometimes you want to swap for things that don't cost hp or lives, like non-standard game overs.
+		-- If a method is provided for other_swaps and its conditions are true, cue up a swap.
+		if gamemeta.other_swaps and gamemeta.other_swaps() then
+			data.delayCountdown = gamemeta.delay or 3
 		end
 
 		return false
