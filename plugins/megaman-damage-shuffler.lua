@@ -370,8 +370,34 @@ local gamedata = {
 	},
 	['mmx2gbc']={ -- Mega Man Xtreme 2 GBC
 		gethp=function() return bit.band(memory.read_u8(0x0121, "WRAM"), 0x7F) end,
-		getlc=function() return memory.read_u8(0x0065, "WRAM") end,
+		getlc=function() return memory.read_u8(0x0065, "WRAM") % 255 end,
+		-- Prevent shuffle on selecting Retry. Lives go from 0 to 255 on losing your last life, then "drop" from 255 to 2 on starting again.
 		maxhp=function() return memory.read_u8(0x0084, "WRAM") end,
+		swap_exceptions=function()
+			local character_changed, character_curr, character_prev = update_prev("character", memory.read_u8(0x00C9, "WRAM"))
+			-- X and Zero might have different HP; prevent swaps if swapping in a character with less HP
+			if character_changed then 
+				return true
+			end
+			local options_changed, options_curr, options_prev = update_prev("options", memory.read_u8(0x0A6A, "WRAM") == 4 or memory.read_u8(0x0A6A, "WRAM") == 5)
+			-- This address holds your selection on the opening screen.
+			-- 0 == Extreme Mode, 1 = X, 2 = Zero, 3 = Continue, 4 = Options, 5 = Boss Attack
+			-- If you go to the Options screen (4) or enter Boss Attack mode, lives will drop to 0
+			-- because you get no extra lives in Boss Attack.
+			-- So, we should never swap until being outside of selecting those modes.
+			if options_curr then
+				return true
+			end
+			local maxhp_changed, maxhp_curr, maxhp_prev = update_prev("maxhp", memory.read_u8(0x0084, "WRAM"))
+			-- When you start a game from a mode where you have increased your maxhp (like Boss Attack)
+			-- then select a mode that doesn't have all the heart tanks yet, like a new game,
+			-- hp and maxhp drop on the same frame accordingly. This should not trigger a swap.
+			-- (Collecting a heart tank to increase maxhp should never trigger a swap, either, fwiw.)
+			if maxhp_changed then
+				return true
+			end
+			return false
+		end,
 	},
 	['mmgg']={ -- Mega Man Game Gear
 		gethp=function() return memory.read_u8(0x0268, "Main RAM") end,
