@@ -103,6 +103,12 @@ local function generic_swap(gamemeta)
 		data.prevhp = currhp
 		data.prevlc = currlc
 
+		-- Sometimes you will want to update hp and lives without triggering a swap (e.g., on swapping between characters).
+		-- If a method is provided for swap_exceptions and its conditions are true, process the hp and lives but don't swap.
+		if gamemeta.swap_exceptions and gamemeta.swap_exceptions() then
+			return false
+		end
+
 		-- this delay ensures that when the game ticks away health for the end of a level,
 		-- we can catch its purpose and hopefully not swap, since this isnt damage related
 		if data.hpcountdown ~= nil and data.hpcountdown > 0 then
@@ -120,6 +126,12 @@ local function generic_swap(gamemeta)
 		-- check to see if the life count went down
 		if prevlc ~= nil and currlc < prevlc then
 			return true
+		end
+
+		-- Sometimes you want to swap for things that don't cost hp or lives, like non-standard game overs.
+		-- If a method is provided for other_swaps and its conditions are true, cue up a swap.
+		if gamemeta.other_swaps then
+			return gamemeta.other_swaps()
 		end
 
 		return false
@@ -352,13 +364,42 @@ local gamedata = {
 	},
 	['mmx1gbc']={ -- Mega Man Xtreme GBC
 		gethp=function() return bit.band(memory.read_u8(0x0ADC, "WRAM"), 0x7F) end,
-		getlc=function() return memory.read_u8(0x1365, "WRAM") end,
+		getlc=function() return memory.read_s8(0x1365, "WRAM") end,
+		-- Prevent shuffle on selecting Retry. Lives go from 0 to 255 on losing your last life, then "drop" from 255 to 2 on starting again.
+		-- treating as a signed byte solves this
 		maxhp=function() return memory.read_u8(0x1384, "WRAM") end,
 	},
 	['mmx2gbc']={ -- Mega Man Xtreme 2 GBC
 		gethp=function() return bit.band(memory.read_u8(0x0121, "WRAM"), 0x7F) end,
-		getlc=function() return memory.read_u8(0x0065, "WRAM") end,
+		getlc=function() return memory.read_s8(0x0065, "WRAM") end,
+		-- Prevent shuffle on selecting Retry. Lives go from 0 to 255 on losing your last life, then "drop" from 255 to 2 on starting again.
+		-- treating as a signed byte solves this
 		maxhp=function() return memory.read_u8(0x0084, "WRAM") end,
+		swap_exceptions=function()
+			local character_changed = update_prev("character", memory.read_u8(0x00C9, "WRAM"))
+			-- X and Zero might have different HP; prevent swaps if swapping in a character with less HP
+			if character_changed then 
+				return true
+			end
+			local menu_selection = memory.read_u8(0x0A6A, "WRAM")
+			-- This address holds your selection on the opening screen.
+			-- 0 == Extreme Mode, 1 = X, 2 = Zero, 3 = Continue, 4 = Options, 5 = Boss Attack
+			-- If you go to the Options screen (4) or enter Boss Attack mode, lives will drop to 0
+			-- because you get no extra lives in Boss Attack.
+			-- So, we should never swap until being outside of selecting those modes.
+			if menu_selection == 4 or menu_selection == 5 then
+				return true
+			end
+			local maxhp_changed = update_prev("maxhp", memory.read_u8(0x0084, "WRAM"))
+			-- When you start a game from a mode where you have increased your maxhp (like Boss Attack)
+			-- then select a mode that doesn't have all the heart tanks yet, like a new game,
+			-- hp and maxhp drop on the same frame accordingly. This should not trigger a swap.
+			-- (Collecting a heart tank to increase maxhp should never trigger a swap, either, fwiw.)
+			if maxhp_changed then
+				return true
+			end
+			return false
+		end,
 	},
 	['mmgg']={ -- Mega Man Game Gear
 		gethp=function() return memory.read_u8(0x0268, "Main RAM") end,
