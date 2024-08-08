@@ -381,13 +381,13 @@ local gamedata = {
 			if character_changed then 
 				return true
 			end
-			local options_changed, options_curr = update_prev("options", memory.read_u8(0x0A6A, "WRAM") == 4 or memory.read_u8(0x0A6A, "WRAM") == 5)
+			local menu_selection = memory.read_u8(0x0A6A, "WRAM")
 			-- This address holds your selection on the opening screen.
 			-- 0 == Extreme Mode, 1 = X, 2 = Zero, 3 = Continue, 4 = Options, 5 = Boss Attack
 			-- If you go to the Options screen (4) or enter Boss Attack mode, lives will drop to 0
 			-- because you get no extra lives in Boss Attack.
 			-- So, we should never swap until being outside of selecting those modes.
-			if options_curr then
+			if menu_selection == 4 or menu_selection == 5 then
 				return true
 			end
 			local maxhp_changed = update_prev("maxhp", memory.read_u8(0x0084, "WRAM"))
