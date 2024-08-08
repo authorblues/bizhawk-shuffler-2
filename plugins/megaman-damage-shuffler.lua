@@ -130,8 +130,8 @@ local function generic_swap(gamemeta)
 
 		-- Sometimes you want to swap for things that don't cost hp or lives, like non-standard game overs.
 		-- If a method is provided for other_swaps and its conditions are true, cue up a swap.
-		if gamemeta.other_swaps and gamemeta.other_swaps() then
-			data.hpcountdown = gamemeta.delay or 3
+		if gamemeta.other_swaps then
+			return gamemeta.other_swaps()
 		end
 
 		return false
