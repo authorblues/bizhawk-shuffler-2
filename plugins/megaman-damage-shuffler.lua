@@ -288,11 +288,19 @@ local gamedata = {
 		gethp=function() return bit.band(memory.read_u8(0x09FF, "WRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x1FB4, "WRAM") end,
 		maxhp=function() return memory.read_u8(0x1FD2, "WRAM") end,
+		swap_exceptions=function()
+			local character_changed = update_prev("character", memory.read_u8(0x0A8E, "WRAM"))
+			return character_changed
+		end,
 	},
 	['mmx3snes-eu']={ -- Mega Man X3 SNES
 		gethp=function() return bit.band(memory.read_u8(0x09FF, "WRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x1FB4, "WRAM") end,
 		maxhp=function() return memory.read_u8(0x1FD2, "WRAM") end,
+		swap_exceptions=function()
+			local character_changed = update_prev("character", memory.read_u8(0x0A8E, "WRAM"))
+			return character_changed
+		end,
 	},
 	['mmx3snes-zp-4.4']={ -- Mega Man X3 SNES + Zero Project 4.4
 		func=function()
