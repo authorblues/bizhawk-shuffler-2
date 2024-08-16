@@ -316,8 +316,16 @@ local gamedata = {
 	},
 	['mmx4psx-us']={ -- Mega Man X4 PSX
 		gethp=function() return bit.band(memory.read_u8(0x141924, "MainRAM"), 0x7F) end,
-		getlc=function() return memory.read_u8(0x172204, "MainRAM") end,
+		getlc=function() return memory.read_s8(0x172204, "MainRAM") end,
 		maxhp=function() return memory.read_u8(0x172206, "MainRAM") end,
+		swap_exceptions=function()
+			local hp_changed, hp_curr = update_prev("hp", bit.band(memory.read_u8(0x141924, "MainRAM"), 0x7F))
+			-- hp drops to 0 for a frame during loading screens, this causes wrong swaps
+			local _, cutscene_curr = update_prev("cutscene", memory.read_u8(0x1721DF, "MainRAM"))
+			-- this address goes alongside the addresses that hold checkpoint and level
+			-- 0 in active gameplay, 1 when loading/in cutscene
+			return hp_changed and hp_curr == 0 and cutscene_curr == 1
+		end,
 	},
 	['mmx5psx-us']={ -- Mega Man X5 PSX
 		gethp=function() return bit.band(memory.read_u8(0x09A0FC, "MainRAM"), 0x7F) end,
