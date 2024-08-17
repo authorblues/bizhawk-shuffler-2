@@ -321,11 +321,25 @@ local gamedata = {
 		gethp=function() return bit.band(memory.read_u8(0x0D9091, "MainRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x0D8743, "MainRAM") end,
 		maxhp=function() return memory.read_u8(0x0D8761, "MainRAM") end,
+		swap_exceptions=function()
+			local character_changed = update_prev("character", memory.read_u8(0x0D9115, "MainRAM"))
+			local maxhp_changed = update_prev("maxhp", memory.read_u8(0x0D8761, "MainRAM"))
+			-- for some reason, for PS1 MMX3, character changes in the post-Mac cutscene before HP swaps over
+			-- However, maxhp still changes on the same frame. Also, max HP should only change meaningfully when characters change or a heart tank is collected.
+			return character_changed or maxhp_changed
+		end,
 	},
 	['mmx3psx-jp']={ -- Mega Man X3 PSX NTSC-J
 		gethp=function() return bit.band(memory.read_u8(0x0D8A45, "MainRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x0D80F7, "MainRAM") end,
 		maxhp=function() return memory.read_u8(0x0D8115, "MainRAM") end,
+		swap_exceptions=function()
+			local character_changed = update_prev("character", memory.read_u8(0x0D8AC9, "MainRAM"))
+			local maxhp_changed = update_prev("maxhp", memory.read_u8(0x0D8115, "MainRAM"))
+			-- for some reason, for PS1 MMX3, character changes in the post-Mac cutscene before HP swaps over
+			-- However, maxhp still changes on the same frame. Also, max HP should only change meaningfully when characters change or a heart tank is collected.
+			return character_changed or maxhp_changed
+		end,
 	},
 	['mmx4psx-us']={ -- Mega Man X4 PSX
 		gethp=function() return bit.band(memory.read_u8(0x141924, "MainRAM"), 0x7F) end,
