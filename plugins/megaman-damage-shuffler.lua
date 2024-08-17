@@ -302,14 +302,19 @@ local gamedata = {
 			return character_changed
 		end,
 	},
-	['mmx3snes-zp-4.4']={ -- Mega Man X3 SNES + Zero Project 4.4
-		func=function()
-			return function()
-				local action_changed, action = update_prev('action', memory.read_u8(0x09DA, "WRAM"))
-				local ride_armor_iframes_changed, ride_armor_iframes = update_prev('ride_armor_iframes', memory.read_s8(0x0CEE, "WRAM") > 0)
-				return (action_changed and (action == 12 or action == 14)) or -- hit or death
-				       (ride_armor_iframes_changed and ride_armor_iframes)
+	['mmx3snes-zp']={ -- Mega Man X3 SNES + Zero Project
+		gethp=function() return memory.read_u8(0x09FF, "WRAM") end,
+		getlc=function() return memory.read_u8(0x1FB4, "WRAM") end,
+		maxhp=function()
+			if memory.read_u8(0x0A8E, "WRAM") == 2 then -- Zero
+				return memory.read_u8(0XF44B, "WRAM") -- Zero's max HP (increases with Heart Tanks)
+			else -- X
+				return memory.read_u8(0XF41B, "WRAM") -- X's max HP (increases with Heart Tanks)
 			end
+		end,
+		swap_exceptions=function()
+			local character_changed = update_prev("character", memory.read_u8(0x0A8E, "WRAM"))
+			return character_changed
 		end,
 	},
 	['mmx3psx-eu']={ -- Mega Man X3 PSX PAL
