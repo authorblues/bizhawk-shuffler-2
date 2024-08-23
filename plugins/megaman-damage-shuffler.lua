@@ -105,7 +105,7 @@ local function generic_swap(gamemeta)
 
 		-- Sometimes you will want to update hp and lives without triggering a swap (e.g., on swapping between characters).
 		-- If a method is provided for swap_exceptions and its conditions are true, process the hp and lives but don't swap.
-		if gamemeta.swap_exceptions and gamemeta.swap_exceptions() then
+		if gamemeta.swap_exceptions and gamemeta.swap_exceptions(gamemeta) then
 			return false
 		end
 
@@ -131,7 +131,7 @@ local function generic_swap(gamemeta)
 		-- Sometimes you want to swap for things that don't cost hp or lives, like non-standard game overs.
 		-- If a method is provided for other_swaps and its conditions are true, cue up a swap.
 		if gamemeta.other_swaps then
-			return gamemeta.other_swaps()
+			return gamemeta.other_swaps(gamemeta)
 		end
 
 		return false
@@ -159,6 +159,15 @@ local function mmlegends(gamemeta)
 		if shield == 0 then return false end
 		return mainfunc(data) or (prevsh == 0)
 	end
+end
+
+local function mmx3_swap_exceptions(gamemeta)
+	-- Prevent swapping when switching from higher HP character to lower HP character
+	local character_changed = update_prev("character", gamemeta.character())
+	-- character changes in the post-Mac cutscene before HP swaps over
+	-- However, maxhp still changes on the same frame. Also, max HP should only change meaningfully when characters change or a heart tank is collected.
+	local maxhp_changed, maxhp = update_prev("maxhp", gamemeta.maxhp())
+	return character_changed or maxhp_changed
 end
 
 local function mmx6_swap(gamemeta)
@@ -284,40 +293,52 @@ local gamedata = {
 		getlc=function() return memory.read_u8(0x1FB3, "WRAM") end,
 		maxhp=function() return memory.read_u8(0x1FD1, "WRAM") end,
 	},
-	['mmx3snes-us']={ -- Mega Man X3 SNES
+	['mmx3snes']={ -- Mega Man X3 SNES
 		gethp=function() return bit.band(memory.read_u8(0x09FF, "WRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x1FB4, "WRAM") end,
 		maxhp=function() return memory.read_u8(0x1FD2, "WRAM") end,
+		character=function() return memory.read_u8(0x0A8E, "WRAM") end,
+		swap_exceptions=mmx3_swap_exceptions,
 	},
-	['mmx3snes-eu']={ -- Mega Man X3 SNES
-		gethp=function() return bit.band(memory.read_u8(0x09FF, "WRAM"), 0x7F) end,
+	['mmx3snes-zp']={ -- Mega Man X3 SNES + Zero Project
+		gethp=function() return memory.read_u8(0x09FF, "WRAM") end,
 		getlc=function() return memory.read_u8(0x1FB4, "WRAM") end,
-		maxhp=function() return memory.read_u8(0x1FD2, "WRAM") end,
-	},
-	['mmx3snes-zp-4.4']={ -- Mega Man X3 SNES + Zero Project 4.4
-		func=function()
-			return function()
-				local action_changed, action = update_prev('action', memory.read_u8(0x09DA, "WRAM"))
-				local ride_armor_iframes_changed, ride_armor_iframes = update_prev('ride_armor_iframes', memory.read_s8(0x0CEE, "WRAM") > 0)
-				return (action_changed and (action == 12 or action == 14)) or -- hit or death
-				       (ride_armor_iframes_changed and ride_armor_iframes)
+		maxhp=function()
+			if memory.read_u8(0x0A8E, "WRAM") == 2 then -- Zero
+				return memory.read_u8(0XF44B, "WRAM") -- Zero's max HP (increases with Heart Tanks)
+			else -- X
+				return memory.read_u8(0XF41B, "WRAM") -- X's max HP (increases with Heart Tanks)
 			end
 		end,
+		character=function() return memory.read_u8(0x0A8E, "WRAM") end,
+		swap_exceptions=mmx3_swap_exceptions,
 	},
 	['mmx3psx-eu']={ -- Mega Man X3 PSX PAL
 		gethp=function() return bit.band(memory.read_u8(0x0D9091, "MainRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x0D8743, "MainRAM") end,
 		maxhp=function() return memory.read_u8(0x0D8761, "MainRAM") end,
+		character=function() return memory.read_u8(0x0D9115, "MainRAM") end,
+		swap_exceptions=mmx3_swap_exceptions,
 	},
 	['mmx3psx-jp']={ -- Mega Man X3 PSX NTSC-J
 		gethp=function() return bit.band(memory.read_u8(0x0D8A45, "MainRAM"), 0x7F) end,
 		getlc=function() return memory.read_u8(0x0D80F7, "MainRAM") end,
 		maxhp=function() return memory.read_u8(0x0D8115, "MainRAM") end,
+		character=function() return memory.read_u8(0x0D8AC9, "MainRAM") end,
+		swap_exceptions=mmx3_swap_exceptions,
 	},
 	['mmx4psx-us']={ -- Mega Man X4 PSX
 		gethp=function() return bit.band(memory.read_u8(0x141924, "MainRAM"), 0x7F) end,
-		getlc=function() return memory.read_u8(0x172204, "MainRAM") end,
+		getlc=function() return memory.read_s8(0x172204, "MainRAM") end,
 		maxhp=function() return memory.read_u8(0x172206, "MainRAM") end,
+		swap_exceptions=function()
+			local hp_changed, hp_curr = update_prev("hp", bit.band(memory.read_u8(0x141924, "MainRAM"), 0x7F))
+			-- hp drops to 0 for a frame during loading screens, this causes wrong swaps
+			local _, cutscene_curr = update_prev("cutscene", memory.read_u8(0x1721DF, "MainRAM"))
+			-- this address goes alongside the addresses that hold checkpoint and level
+			-- 0 in active gameplay, 1 when loading/in cutscene
+			return hp_changed and hp_curr == 0 and cutscene_curr == 1
+		end,
 	},
 	['mmx5psx-us']={ -- Mega Man X5 PSX
 		gethp=function() return bit.band(memory.read_u8(0x09A0FC, "MainRAM"), 0x7F) end,
