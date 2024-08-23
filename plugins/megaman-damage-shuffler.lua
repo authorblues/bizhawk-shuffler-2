@@ -105,7 +105,7 @@ local function generic_swap(gamemeta)
 
 		-- Sometimes you will want to update hp and lives without triggering a swap (e.g., on swapping between characters).
 		-- If a method is provided for swap_exceptions and its conditions are true, process the hp and lives but don't swap.
-		if gamemeta.swap_exceptions and gamemeta.swap_exceptions() then
+		if gamemeta.swap_exceptions and gamemeta.swap_exceptions(gamemeta) then
 			return false
 		end
 
@@ -131,7 +131,7 @@ local function generic_swap(gamemeta)
 		-- Sometimes you want to swap for things that don't cost hp or lives, like non-standard game overs.
 		-- If a method is provided for other_swaps and its conditions are true, cue up a swap.
 		if gamemeta.other_swaps then
-			return gamemeta.other_swaps()
+			return gamemeta.other_swaps(gamemeta)
 		end
 
 		return false
