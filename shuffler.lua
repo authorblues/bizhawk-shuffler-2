@@ -30,6 +30,7 @@ MIN_BIZHAWK_VERSION = "2.6.3"
 MAX_BIZHAWK_VERSION = nil
 RECOMMENDED_LUA_CORE = "LuaInterface"
 UNSUPPORTED_LUA_CORE = "NLua"
+COMPRESSION_WARNING_THRESHOLD = 2
 MAX_INTEGER = 99999999
 
 SHUFFLER_VERSION = "1.0.0_laxaria"
@@ -160,14 +161,22 @@ function write_data(filename, data, mode)
 	handle:close()
 end
 
-function table_subtract(t2, t1)
-	local t = {}
-	for i = 1, #t1 do
-		t[t1[i]] = true
+-- Create a lookup table where each key is a value from list
+local function to_lookup(list, lowercase)
+	local lookup = {}
+	for _, value in pairs(list) do
+		if lowercase then value = value:lower() end
+		lookup[value] = true
 	end
-	for i = #t2, 1, -1 do
-		if t[t2[i]] then
-			table.remove(t2, i)
+	return lookup
+end
+
+function table_subtract(target, remove, ignore_case)
+	local remove_lookup = to_lookup(remove, ignore_case)
+	for i = #target, 1, -1 do
+		local value = target[i]
+		if remove_lookup[value] or (ignore_case and remove_lookup[value:lower()]) then
+			table.remove(target, i)
 		end
 	end
 end
@@ -184,7 +193,7 @@ function get_dir_contents(dir, tmp, force)
 	end
 
 	local file_list = {}
-	local fp = io.open(TEMP_FILE, 'r')
+	local fp = assert(io.open(TEMP_FILE, 'r'))
 	for x in fp:lines() do
 		table.insert(file_list, x)
 	end
@@ -193,33 +202,43 @@ function get_dir_contents(dir, tmp, force)
 end
 
 -- types of files to ignore in the games directory
-local IGNORED_FILE_EXTS = { '.msu', '.pcm' }
+local IGNORED_FILE_EXTS = to_lookup({ '.msu', '.pcm', '.txt', '.ini' })
+
+local function get_ext(name)
+	local ext = name:match("%.[^.]+$")
+	return ext and ext:lower() or ""
+end
 
 -- get list of games
 function get_games_list(force)
 	local LIST_FILE = '.games-list.txt'
 	local games = get_dir_contents(GAMES_FOLDER, GAMES_FOLDER .. '/' .. LIST_FILE, force or false)
 	local toremove = {}
+	local toremove_ignore_case = {}
 
 	-- find .cue files and remove the associated bin/iso
 	for _,filename in ipairs(games) do
-		if ends_with(filename, '.cue') then
+		local extension = get_ext(filename)
+		if extension == '.cue' then
 			-- open the cue file, oh god here we go...
-			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
+			local fp = assert(io.open(GAMES_FOLDER .. '/' .. filename, 'r'))
 			for line in fp:lines() do
-				-- look for the line that starts with FILE and remove the rest of the stuff
-				if starts_with(line, "FILE") and ends_with(line, "BINARY") then
-					table.insert(toremove, line:sub(7, -9))
+				local ref_file = line.match(line, '^%s*FILE%s+"(.-)"') or line.match(line, '^%s*FILE%s+(%g+)') -- quotes optional
+				if ref_file then
+					table.insert(toremove_ignore_case, ref_file)
+					-- BizHawk automatically looks for these even if the .cue only references foo.bin
+					table.insert(toremove_ignore_case, ref_file .. '.ecm')
 				end
 			end
 			fp:close()
 		-- ccd/img format?
-		elseif ends_with(filename, '.ccd') then
+		elseif extension == '.ccd' then
 			local primary = filename:sub(1, #filename-4)
 			table.insert(toremove, primary .. '.img')
+			table.insert(toremove, primary .. '.img.ecm')
 			table.insert(toremove, primary .. '.sub')
-		elseif ends_with(filename, '.xml') then
-			fp = io.open(GAMES_FOLDER .. '/' .. filename, 'r')
+		elseif extension == '.xml' then
+			local fp = assert(io.open(GAMES_FOLDER .. '/' .. filename, 'r'))
 			local xml = fp:read("*all")
 			fp:close()
 
@@ -230,18 +249,15 @@ function get_games_list(force)
 					table.insert(toremove, asset)
 				end
 			end
-		end
-
-		for _,ext in ipairs(IGNORED_FILE_EXTS) do
-			if ends_with(filename, ext) then
-				table.insert(toremove, filename)
-			end
+		elseif IGNORED_FILE_EXTS[extension] then
+			table.insert(toremove, filename)
 		end
 	end
 
-	table_subtract(games, toremove)
+	table_subtract(games, toremove, PLATFORM == 'WIN')
+	table_subtract(games, toremove_ignore_case, true) -- cue file resolving ignores case even on linux
 	table_subtract(games, { LIST_FILE })
-	table_subtract(games, config.completed_games)
+	table_subtract(games, config.completed_games, PLATFORM == 'WIN')
 	return games
 end
 
@@ -311,14 +327,16 @@ local function on_game_load()
 		savestate.load(state)
 	end
 
-	-- write swap counter for this game
-	write_data('output-info/current-swaps.txt', config.game_swaps[config.current_game])
-
-	-- write total swap counter for shuffler
-	write_data('output-info/total-swaps.txt', config.total_swaps)
-
-	-- update game name
-	write_data('output-info/current-game.txt', strip_ext(config.current_game))
+	-- update swap counter for this game
+	local new_swaps = (config.game_swaps[config.current_game] or 0) + 1
+	config.game_swaps[config.current_game] = new_swaps
+	-- update total swap counter
+	config.total_swaps = (config.total_swaps or 0) + 1
+	if config.output_files >= 1 then
+		write_data('output-info/current-swaps.txt', new_swaps)
+		write_data('output-info/total-swaps.txt', config.total_swaps)
+		write_data('output-info/current-game.txt', strip_ext(config.current_game))
+	end
 
 	-- this code just outright crashes on Bizhawk 2.6.1, go figure
 	if checkversion("2.6.2") then
@@ -346,9 +364,9 @@ function load_game(g)
 		return false
 	end
 
-	client.openrom(filename)
-
-	if is_rom_loaded() then
+	local success = client.openrom(filename)
+	-- Compare against false explicitly because BizHawk <2.9.1 doesn't return success bool
+	if success ~= false and is_rom_loaded() then
 		log_debug('ROM loaded: %s "%s" (%s)', emu.getsystemid(), gameinfo.getromname(), gameinfo.getromhash())
 		on_game_load()
 		return true
@@ -365,7 +383,7 @@ function get_next_game()
 	-- check to make sure that all of the games correspond to actual
 	-- game files that can be opened
 	local all_exist = true
-	for i,game in ipairs(all_games) do
+	for _, game in ipairs(all_games) do
 		all_exist = all_exist and file_exists(GAMES_FOLDER .. '/' .. game)
 	end
 
@@ -382,14 +400,13 @@ function get_next_game()
 		return all_games[math.random(#all_games)]
 	else
 		-- manually select the next one
-		if #all_games == 1 then return prev end
 		config.shuffle_index = (config.shuffle_index % #all_games) + 1
 		return all_games[config.shuffle_index]
 	end
 end
 
 -- save current game's savestate, backup config, and load new game
-function swap_game(next_game, is_gui_callback)
+function swap_game(next_game)
 	log_debug('swap_game(%s): running=%s', next_game, running)
 	-- if a swap has already happened, don't call again
 	if not running then return false end
@@ -432,21 +449,18 @@ function swap_game(next_game, is_gui_callback)
 		end
 	end
 
+	-- mute the sound for a moment to help with the swap
+	config.sound = client.GetSoundOn()
+	client.SetSoundOn(false)
+
 	-- at this point, save the game and update the new "current" game after
 	save_current_game()
 	config.current_game = next_game
 	running = false
 
-	-- mute the sound for a moment to help with the swap
-	config.sound = client.GetSoundOn()
-	client.SetSoundOn(false)
-
-	-- force another frame to pass to get the mute to take effect
-	if not is_gui_callback and is_rom_loaded() then emu.frameadvance() end
-
 	-- unique game count, for debug purposes
 	config.game_count = 0
-	for k,v in pairs(config.game_swaps) do
+	for _, _ in pairs(config.game_swaps) do
 		config.game_count = config.game_count + 1
 	end
 
@@ -545,6 +559,14 @@ local function check_compatibility()
 	return true
 end
 
+local function check_savestate_config()
+	local compression = client.getconfig().Savestates.CompressionLevelNormal
+	if compression >= COMPRESSION_WARNING_THRESHOLD then
+		log_console("Savestate compression can noticably increase the time it takes to swap games on some systems. " ..
+			"Savestate compression can be configured in the Config > Rewind & States menu.")
+	end
+end
+
 -- this is going to be an APPROXIMATION and is not a substitute for an actual
 -- timer. games do not run at a consistent or exact 60 fps, so this method is
 -- provided purely for entertainment purposes
@@ -556,11 +578,13 @@ function frames_to_time(f)
 end
 
 function output_completed()
-	completed = ""
-	for i,game in ipairs(config.completed_games) do
-		completed = completed .. strip_ext(game) .. '\n'
+	if config.output_files >= 1 then
+		local completed = ""
+		for _, game in ipairs(config.completed_games) do
+			completed = completed .. strip_ext(game) .. '\n'
+		end
+		write_data('output-info/completed-games.txt', completed)
 	end
-	write_data('output-info/completed-games.txt', completed)
 end
 
 function mark_complete()
@@ -603,6 +627,10 @@ function mark_complete()
 		save_config(config, 'shuffler-src/config.lua')
 		log_message('Shuffler complete!')
 	else
+		-- hack-ish: decrement shuffle index so we don't skip the next game in fixed order
+		if config.shuffle_index >= 1 then
+			config.shuffle_index = config.shuffle_index - 1
+		end
 		swap_game()
 	end
 end
@@ -614,7 +642,7 @@ function cwd()
 	end
 	os.execute(cmd)
 
-	local fp = io.open(DEFAULT_CMD_OUTPUT, 'r')
+	local fp = assert(io.open(DEFAULT_CMD_OUTPUT, 'r'))
 	local resp = fp:read("*all")
 	fp:close()
 	return resp:match( "^%s*(.+)%s*$" )
@@ -695,13 +723,13 @@ function complete_setup()
 	-- otherwise, call swap_game() to setup for the first game load
 	if not config.current_game or not load_game(config.current_game) then
 		running = true
-		swap_game(nil, true)
+		swap_game(nil)
 	end
 end
 
 function get_tag_from_hash_db(target, database)
 	local resp = nil
-	local fp = io.open(database, 'r')
+	local fp = assert(io.open(database, 'r'))
 	for x in fp:lines() do
 		local hash, tag = x:match("^([0-9A-Fa-f]+)%s+(%S+)")
 		if hash == target then resp = tag; break end
@@ -713,6 +741,8 @@ end
 if not check_compatibility() then
 	return
 end
+
+check_savestate_config()
 
 -- load primary configuration
 load_config('shuffler-src/config.lua')
@@ -742,7 +772,7 @@ while true do
 		config.game_frame_count[config.current_game] = cgf
 
 		-- save time info to files for OBS display
-		if config.output_timers then
+		if config.output_files == 2 then
 			local time_total = frames_to_time(frame_count)
 			if time_total ~= ptime_total then
 				write_data('output-info/total-time.txt', time_total)
@@ -764,15 +794,13 @@ while true do
 			end
 		end
 
-		-- calculate input "rises" by subtracting the previously held inputs from the inputs on this frame
-		local input_rise = input.get()
-		for k,v in pairs(prev_input) do input_rise[k] = nil end
-		prev_input = input.get()
-
+		local current_input = input.get()
 		-- mark the game as complete if the hotkey is pressed (and some time buffer)
 		-- the time buffer should hopefully prevent somebody from attempting to
 		-- press the hotkey and the game swapping, marking the wrong game complete
-		if input_rise[config.hk_complete] and frames_since_restart > math.min(3, config.min_swap/2) * 60 then mark_complete() end
+		if current_input[config.hk_complete] and not prev_input[config.hk_complete] and
+			frames_since_restart > math.min(3, config.min_swap/2) * 60 then mark_complete() end
+		prev_input = current_input
 
 		-- time to swap!
 	    if frame_count >= next_swap_time then swap_game() end
