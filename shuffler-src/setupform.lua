@@ -248,7 +248,7 @@ function module.initial_setup(callback)
 
 	local SWAP_MODES_RANDOM = 'Random Order (Default)'
 	local SWAP_MODES_FIXED = 'Fixed Order'
-	local SWAP_MODES_WEIGHTED = 'Random Order, Weighted Odds'
+	local SWAP_MODES_WEIGHTED = 'Weighted Odds'
 	local SWAP_MODES = {[SWAP_MODES_RANDOM] = -1, [SWAP_MODES_FIXED] = 0, [SWAP_MODES_WEIGHTED] = -2}
 
 	local OUTPUT_FILE_MODES_DEFAULT = 2
@@ -301,12 +301,12 @@ function module.initial_setup(callback)
 		config.completed_games = {}
 
 		if config.shuffle_index == -2 then
-
-			config.total_tickets = {}
-			config.last_ticket = {}
-			for _,game in pairs(get_games_list()) do
-				config.total_tickets[game] = 1
-				config.last_ticket[game] = tonumber(_) + 1
+			
+			local all_games = get_games_list()
+			config.total_tickets = #all_games
+			config.tickets = {}
+			for _,game in pairs(all_games) do
+				config.tickets[game] = 1
 			end
 
 		end
@@ -407,7 +407,7 @@ function module.initial_setup(callback)
 	mode_combo = forms.dropdown(setup_window, invert_table(SWAP_MODES), 10, y, 150, 20)
 	forms.label(setup_window, "Shuffler Swap Order", 165, y+3, 150, 20)
 	local select_fixed_order = config.shuffle_index and config.shuffle_index > -1
-	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or SWAP_MODES_RANDOM)
+	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or SWAP_MODES_RANDOM or SWAP_MODES_WEIGHTED)
 	y = y + 30
 
 	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
