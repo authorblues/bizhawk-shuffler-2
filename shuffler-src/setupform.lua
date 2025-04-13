@@ -248,7 +248,8 @@ function module.initial_setup(callback)
 
 	local SWAP_MODES_RANDOM = 'Random Order (Default)'
 	local SWAP_MODES_FIXED = 'Fixed Order'
-	local SWAP_MODES = {[SWAP_MODES_RANDOM] = -1, [SWAP_MODES_FIXED] = 0}
+	local SWAP_MODES_WEIGHTED = 'Random Order, Weighted Odds'
+	local SWAP_MODES = {[SWAP_MODES_RANDOM] = -1, [SWAP_MODES_FIXED] = 0, [SWAP_MODES_WEIGHTED] = -2}
 
 	local OUTPUT_FILE_MODES_DEFAULT = 2
 	local OUTPUT_FILE_MODES = {
@@ -299,6 +300,17 @@ function module.initial_setup(callback)
 
 		config.completed_games = {}
 
+		if config.shuffle_index == -2 then
+
+			config.total_tickets = {}
+			config.last_ticket = {}
+			for _,game in pairs(get_games_list()) do
+				config.total_tickets[game] = 1
+				config.last_ticket[game] = tonumber(_) + 1
+			end
+
+		end
+
 		config.plugins = {}
 		for _,plugin in ipairs(plugins) do
 			if plugin._enabled then
@@ -323,7 +335,7 @@ function module.initial_setup(callback)
 	function save_mutable_settings()
 		-- only set config.shuffle_index if mode has changed or was nil (new config)
 		local new_shuffle_mode = SWAP_MODES[forms.gettext(mode_combo)]
-		local cur_shuffle_mode = config.shuffle_index and (config.shuffle_index >= 0 and 0 or -1)
+		local cur_shuffle_mode = config.shuffle_index and (config.shuffle_index >= 0 and 0 or -1 or -2)
 		if cur_shuffle_mode ~= new_shuffle_mode then
 			config.shuffle_index = new_shuffle_mode
 		end

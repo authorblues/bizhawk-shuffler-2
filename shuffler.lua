@@ -374,18 +374,69 @@ function get_next_game()
 		all_games = get_games_list(true)
 	end
 
-	-- shuffle_index == -1 represents fully random shuffle order
+	-- shuffle_index == -1 represents fully random shuffle order, -2 represents 'weighted' shuffle order
 	if config.shuffle_index < 0 then
 		-- remove the currently loaded game and see if there are any other options
 		table_subtract(all_games, { prev })
 		if #all_games == 0 then return prev end
-		return all_games[math.random(#all_games)]
+		if config.shuffle_index == -1 then
+			return all_games[math.random(#all_games)]
+		elseif config.shuffle_index == -2 then
+			return weighted_shuffle(prev, all_games)
+		end
+		
 	else
 		-- manually select the next one
 		config.shuffle_index = (config.shuffle_index % #all_games) + 1
 		return all_games[config.shuffle_index]
 	end
 end
+
+function weighted_shuffle(prev, all_games)
+	
+	--Here's how the weighted odds work. I don't know the best way to put it into words.
+	--total_tickets tracks how many tickets each game has.
+	--last_ticket tracks the 'highest number' ticket assigned to that game.
+	--Every time we pull a game, the last game loses all its tickets. ALl other games get +1 ticket.
+	--We reassign tickets to each game, in order, and use the running total to keep track of each games 'highest ticket.'
+	--If the 'winning ticket' is less than the games' 'highest ticket,' it wins and gets picked. Lowest such game wins.
+	--i.e. "Game B" just got picked, so it has 0 tickets. "Game A" has 3 tickets. "Game B" has 0 tickets. "Game C" has 9 tickets, "Game D" has 4.
+	--Game A's highest ticket is 3 (0 running total + 3 tickets), Game B is also 3 (it has no tickets), Game C's highest ticket is 12 (3 running total + 9 tickets), Game D is 16 (12 running total + 4)
+	--The random number chosen is 3. Iterate over the array.
+	--Game A's max ticket is 3. The winning ticket is 3. Game A wins. Because it was processed first, Game B doesn't get checked, and Game A is selected.
+	--Same values, but the random number chosen is 6.
+	--Game A's max ticket is 3; it didn't win. Game B's max ticket is also 3, it also doesn't win. Game C's max ticket is 12; 6 <= 12, Game C wins.
+	--So A wins on tickets 1-3, B can't win, C wins on tickets 4-12, D wins on 13-16.
+	--Does that make any sense?
+
+	--index starts at 1, starting with 0 'tickets' in the pot.
+	local runningTotal = 0
+	local winningTicket = 0
+
+	print("\n\n ::::: Time to pick a new game! :::::\n")
+	if prev ~= nil then config.total_tickets[prev] = 0 end
+
+	--update ticket counts
+	for _, game in ipairs(all_games) do
+		config.total_tickets[game] = config.total_tickets[game] + 1
+		runningTotal = runningTotal + config.total_tickets[game]
+		config.last_ticket[game] = runningTotal
+		print(tostring(game) .. " total_tickets = " .. config.total_tickets[game] .. ", last_ticket = " .. config.last_ticket[game] .. "\n")
+	end
+
+	--pull a ticket...
+	winningTicket = math.random(runningTotal)
+	print("\n\n !!! The winning ticket is " .. winningTicket .. " !!!")
+	--unfortunately, we have to iterate -twice- because we don't know the max ticket count until we assign tickets.
+	for _, game in ipairs(all_games) do
+		if winningTicket <= config.last_ticket[game] then
+			print("\n !!! Time to play " .. tostring(game) .. " !!!")
+			return game
+		end
+	end
+	
+end --end weighted_shuffle function
+
 
 -- save current game's savestate, backup config, and load new game
 function swap_game(next_game)
