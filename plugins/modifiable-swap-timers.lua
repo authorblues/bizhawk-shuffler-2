@@ -22,8 +22,8 @@ function modifiable_swap_timers(minTimerFile, maxTimerFile, bootUp)
 
 	local minFile = io.open(minTimerFile, "r") --load the min value, as set in Plugin config
 	local maxFile = io.open(maxTimerFile, "r") --load the max value, as set in Plugin config
-	
-	--Start processing data if both files exist
+
+	--Start processing data if both files were found.
 	if minFile ~= nil and maxFile ~= nil then 
 
 		local minContents = minFile:read()
@@ -45,23 +45,37 @@ function modifiable_swap_timers(minTimerFile, maxTimerFile, bootUp)
 
 		--one or both files did not contain numbers.
 		else
-			
-			print("\n" .. os.date("%H:%M:%S") .. " -- The Modifiable Swap Timers plugin ran into an error reading your files.\nThe files loaded, but the data could not be used.\nYour minimum time file contained: " .. tostring(minContents) .. "\nYour maximum time file contained: " .. tostring(maxContents))
-			
-			if bootUp then error("\nBecause the error occured on initial load, the Shuffler was stopped.")
-			else mstDisplayMsgFrames = 300 end
+
+			local errorMsg = "\n(" .. os.date("%H:%M:%S") .. ") :: The Modifiable Swap Timers plugin ran into an error reading your files.\nYour timer files could not be processed by the plugin.\nYour minimum time file contained: " .. tostring(minContents) .. "\nYour maximum time file contained: " .. tostring(maxContents) .. "\n"
 		
+		if bootUp then
+			
+			errorMsg = "\nThe Shuffler was stopped on start-up due to an error." .. errorMsg
+			error(errorMsg)
+			
+		else
+			mstDisplayMsgFrames = 300
+			print(errorMsg)
+		end
+			
+
 		end
 		--End updating min/max
 
-	--one or both files do not exist.
+	--one or both files were not found.
 	else
+		local errorMsg = "\n(" .. os.date("%H:%M:%S") .. ") :: The Modifiable Swap Timers plugin ran into an error loading your files.\nThe files you selected in the plugin's settings could not be found.\nMinimum timer file location: " .. tostring(minTimerFile) .. "\nMaximum timer file location: " .. tostring(maxTimerFile) .. "\n"
 		
-		error ("\n" .. os.date("%H:%M:%S") .. " -- The Modifiable Swap Timers plugin ran into an error loading your files.\nEither one or both of the files you set could not be loaded.\nYour minimum time file is: " .. minTimerFile .. "\nYour maximum time file is: " .. maxTimerFile)
+		if bootUp then
 			
-		if bootUp then error("\nBecause the error occured on initial load, the Shuffler was stopped.")
-		else mstDisplayMsgFrames = 300 end
-
+			errorMsg = "\nThe Shuffler was stopped on start-up due to an error." .. errorMsg
+			error(errorMsg)
+			
+		else
+			mstDisplayMsgFrames = 300
+			print(errorMsg)
+		end
+		
 	end
 	--end processing data
 	
@@ -75,9 +89,13 @@ function plugin.on_setup(data, settings)
 	--initialize some variables
 	mstDisplayMsgFrames = 0
 	
-	--run the plugin
-	modifiable_swap_timers(settings.minTimerFile, settings.maxTimerFile, true)
+	--check both files were set in settings, then run the plugin
 
+	if settings.minTimerFile ~= nil and settings.maxTimerFile ~= nil then modifiable_swap_timers(settings.minTimerFile, settings.maxTimerFile, true)
+	else
+		error("\n()" .. os.date("%H:%M:%S") .. ")  The Modifiable Swap Timer plugin ran into an error on initial load, and stopped the Shuffler from starting.\nPlease double-check the plugin's settings page and make sure both files are set.")
+		
+	end
 
 end -- Ends the On_Setup part of the plugin
 
@@ -85,7 +103,13 @@ end -- Ends the On_Setup part of the plugin
 --This is called every time the shuffler makes a save state, right before a swap.
 function plugin.on_game_save(data, settings)
 	
-	modifiable_swap_timers(settings.minTimerFile, settings.maxTimerFile, false)
+	--check both files were set in settings, then run the plugin
+	if settings.minTimerFile ~= nil and settings.maxTimerFile ~= nil then modifiable_swap_timers(settings.minTimerFile, settings.maxTimerFile, false)
+	
+	else
+		print("\n" .. os.date("%H:%M:%S") .. " -- Somehow, the settings for the Modifiable Swap Timers plugin were erased mid-session.\nThis plugin doesn't delete files; the error must have been caused by another plugin or interaction.\nIf you are using a stream bot to manage the files for this plugin, check its settings.")
+
+	end
 
 end -- Ends the on_game_Save part of the plugin
 
@@ -100,7 +124,6 @@ function plugin.on_frame(data, settings)
 		gui.drawText((client.screenwidth() / 2), 25, string.format("Modifiable Swap Timer Error. See Lua Console."), 0xFFCCCCFF, 0xFF000000, 14, nil, nil, "center", nil)
 	
 	end --end error display
-		
 
 end --end on_frame plugin
 
