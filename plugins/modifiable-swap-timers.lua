@@ -20,6 +20,9 @@ If you have to reset these values to a default number, for example at the start 
 
 function modifiable_swap_timers(minTimerFile, maxTimerFile, bootUp)
 
+
+
+		
 	local minFile = io.open(minTimerFile, "r") --load the min value, as set in Plugin config
 	local maxFile = io.open(maxTimerFile, "r") --load the max value, as set in Plugin config
 
