@@ -300,17 +300,6 @@ function module.initial_setup(callback)
 
 		config.completed_games = {}
 
-		if config.shuffle_index == -2 then
-			
-			local all_games = get_games_list()
-			config.total_tickets = #all_games
-			config.tickets = {}
-			for _,game in pairs(all_games) do
-				config.tickets[game] = 1
-			end
-
-		end
-
 		config.plugins = {}
 		for _,plugin in ipairs(plugins) do
 			if plugin._enabled then
@@ -335,7 +324,7 @@ function module.initial_setup(callback)
 	function save_mutable_settings()
 		-- only set config.shuffle_index if mode has changed or was nil (new config)
 		local new_shuffle_mode = SWAP_MODES[forms.gettext(mode_combo)]
-		local cur_shuffle_mode = config.shuffle_index and (config.shuffle_index >= 0 and 0 or -1 or -2)
+		local cur_shuffle_mode = config.shuffle_index and (config.shuffle_index >= 0 and 0 or config.shuffle_index)
 		if cur_shuffle_mode ~= new_shuffle_mode then
 			config.shuffle_index = new_shuffle_mode
 		end

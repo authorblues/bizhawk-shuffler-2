@@ -197,6 +197,8 @@ function get_games_list(force)
 	local games = get_dir_contents(GAMES_FOLDER, GAMES_FOLDER .. '/' .. LIST_FILE, force or false)
 	local toremove = {}
 	local toremove_ignore_case = {}
+	
+	
 
 	-- find .cue files and remove the associated bin/iso
 	for _,filename in ipairs(games) do
@@ -234,13 +236,27 @@ function get_games_list(force)
 		elseif IGNORED_FILE_EXTS[extension] then
 			table.insert(toremove, filename)
 		end
+		
 	end
 
 	table_subtract(games, toremove, PLATFORM == 'WIN')
 	table_subtract(games, toremove_ignore_case, true) -- cue file resolving ignores case even on linux
 	table_subtract(games, { LIST_FILE })
 	table_subtract(games, config.completed_games, PLATFORM == 'WIN')
+	
+	--Now that the game list is completed, update the ticket counts for Weighted Odds
+	--Removed/Missing games aren't here to be processed, but their tickets remain in the config.tickets table in case they're re-added for some reason.
+	if config.shuffle_index == -2 then
+		config.total_tickets = 0 
+		if config.tickets == nil then config.tickets = {} end --create the table if it doesn't exist (new session)
+		for _,game in ipairs(games) do 
+			if type(config.tickets[game]) ~= "number" then config.tickets[game] = 1 end --New games get one ticket. 
+			config.total_tickets = config.total_tickets + config.tickets[game] 
+		end
+	end
+
 	return games
+	
 end
 
 -- delete savestates folder
@@ -394,21 +410,21 @@ end
 
 function weighted_shuffle(all_games)
 
-	local runningTotal = 0
 	local winningTicket = math.random(1, config.total_tickets)
 	local winningGame = nil
+	config.total_tickets = 0 --also serves as running total for the ticket check below
 	
 	for _, game in ipairs(all_games) do --iterate the game list
-		if winningTicket <= (runningTotal + config.tickets[game]) and winningGame == nil then --This game wins! but only if there's no winning game set already!
+		
+		if winningTicket <= (config.total_tickets + config.tickets[game]) and winningGame == nil then --This game wins! but only if there's no winning game set already!
 			winningGame = game
 			config.tickets[game] = 0
 		end
 
-		config.tickets[game] = config.tickets[game] +1
-		runningTotal = runningTotal + config.tickets[game]
+		config.tickets[game] = config.tickets[game] + 1
+		config.total_tickets = config.total_tickets + config.tickets[game]
 	end --end iterating game list
 
-	config.total_tickets = runningTotal
 	return winningGame
 end --end weighted_shuffle function
 
