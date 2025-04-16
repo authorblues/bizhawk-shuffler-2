@@ -325,7 +325,6 @@ function module.initial_setup(callback)
 		-- only set config.shuffle_index if mode has changed or was nil (new config)
 		local new_shuffle_mode = SWAP_MODES[forms.gettext(mode_combo)]
 		local cur_shuffle_mode = config.shuffle_index and (config.shuffle_index >= 0 and 0 or config.shuffle_index)
-		
 		if cur_shuffle_mode ~= new_shuffle_mode then
 			config.shuffle_index = new_shuffle_mode
 		end
@@ -397,8 +396,7 @@ function module.initial_setup(callback)
 	mode_combo = forms.dropdown(setup_window, invert_table(SWAP_MODES), 10, y, 150, 20)
 	forms.label(setup_window, "Shuffler Swap Order", 165, y+3, 150, 20)
 	local select_fixed_order = config.shuffle_index and config.shuffle_index > -1
-	local select_random_order = config.shuffle_index == -2 and SWAP_MODES_WEIGHTED or SWAP_MODES_RANDOM
-	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or select_random_order)
+	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or SWAP_MODES_RANDOM or SWAP_MODES_WEIGHTED)
 	y = y + 30
 
 	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
