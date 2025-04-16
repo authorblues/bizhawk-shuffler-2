@@ -396,7 +396,8 @@ function module.initial_setup(callback)
 	mode_combo = forms.dropdown(setup_window, invert_table(SWAP_MODES), 10, y, 150, 20)
 	forms.label(setup_window, "Shuffler Swap Order", 165, y+3, 150, 20)
 	local select_fixed_order = config.shuffle_index and config.shuffle_index > -1
-	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or SWAP_MODES_RANDOM or SWAP_MODES_WEIGHTED)
+	local select_random_order = config.shuffle_index == -2 and SWAP_MODES_WEIGHTED or SWAP_MODES_RANDOM
+	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or select_random_order)
 	y = y + 30
 
 	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
