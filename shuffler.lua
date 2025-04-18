@@ -197,6 +197,8 @@ function get_games_list(force)
 	local games = get_dir_contents(GAMES_FOLDER, GAMES_FOLDER .. '/' .. LIST_FILE, force or false)
 	local toremove = {}
 	local toremove_ignore_case = {}
+	
+	
 
 	-- find .cue files and remove the associated bin/iso
 	for _,filename in ipairs(games) do
@@ -234,13 +236,27 @@ function get_games_list(force)
 		elseif IGNORED_FILE_EXTS[extension] then
 			table.insert(toremove, filename)
 		end
+		
 	end
 
 	table_subtract(games, toremove, PLATFORM == 'WIN')
 	table_subtract(games, toremove_ignore_case, true) -- cue file resolving ignores case even on linux
 	table_subtract(games, { LIST_FILE })
 	table_subtract(games, config.completed_games, PLATFORM == 'WIN')
+	
+	--Now that the game list is completed, update the ticket counts for Weighted Odds
+	--Removed/Missing games aren't here to be processed, but their tickets remain in the config.tickets table in case they're re-added for some reason.
+	if config.shuffle_index == -2 then
+		config.total_tickets = 0 
+		if config.tickets == nil then config.tickets = {} end --create the table if it doesn't exist (new session)
+		for _,game in ipairs(games) do 
+			if type(config.tickets[game]) ~= "number" then config.tickets[game] = 1 end --New games get one ticket. 
+			config.total_tickets = config.total_tickets + config.tickets[game] 
+		end
+	end
+
 	return games
+	
 end
 
 -- delete savestates folder
@@ -374,18 +390,43 @@ function get_next_game()
 		all_games = get_games_list(true)
 	end
 
-	-- shuffle_index == -1 represents fully random shuffle order
+	-- shuffle_index == -1 represents fully random shuffle order, -2 represents 'weighted' shuffle order
 	if config.shuffle_index < 0 then
 		-- remove the currently loaded game and see if there are any other options
 		table_subtract(all_games, { prev })
 		if #all_games == 0 then return prev end
-		return all_games[math.random(#all_games)]
+		if config.shuffle_index == -1 then
+			return all_games[math.random(#all_games)]
+		elseif config.shuffle_index == -2 then
+			return weighted_shuffle(all_games)
+		end
 	else
 		-- manually select the next one
 		config.shuffle_index = (config.shuffle_index % #all_games) + 1
 		return all_games[config.shuffle_index]
 	end
 end
+
+
+function weighted_shuffle(all_games)
+
+	local winningTicket = math.random(1, config.total_tickets)
+	local winningGame = nil
+	config.total_tickets = 0 --also serves as running total for the ticket check below
+	
+	for _, game in ipairs(all_games) do --iterate the game list
+		
+		if winningTicket <= (config.total_tickets + config.tickets[game]) and winningGame == nil then --This game wins! but only if there's no winning game set already!
+			winningGame = game
+			config.tickets[game] = 0
+		end
+
+		config.tickets[game] = config.tickets[game] + 1
+		config.total_tickets = config.total_tickets + config.tickets[game]
+	end --end iterating game list
+
+	return winningGame
+end --end weighted_shuffle function
 
 -- save current game's savestate, backup config, and load new game
 function swap_game(next_game)
