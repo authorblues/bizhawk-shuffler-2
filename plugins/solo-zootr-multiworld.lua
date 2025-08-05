@@ -28,9 +28,7 @@ plugin.description =
 	- Spikevegeta for streaming ZOOTR shuffler and making everybody say "it would be cool if they shared items"
 ]]
 
-local rando_context
-local coop_context = -1
-local player_num = -1
+local player_num
 
 local incoming_player_addr
 local incoming_item_addr
@@ -132,9 +130,9 @@ local function try_fill_names()
 end
 
 local function try_setup(data)
-    rando_context = mainmemory.read_u32_be(0x1C6E90 + 0x15D4) - 0x80000000
+    local rando_context = mainmemory.read_u32_be(0x1C6E90 + 0x15D4) - 0x80000000
     if rando_context < 0 then return false end
-    coop_context = mainmemory.read_u32_be(rando_context + 0x0000) - 0x80000000
+    local coop_context = mainmemory.read_u32_be(rando_context + 0x0000) - 0x80000000
 	if coop_context < 0 then return false end
 
     -- check protocol version
@@ -174,6 +172,7 @@ function plugin.on_setup(data, settings)
 end
 
 function plugin.on_game_load(data, settings)
+	player_num = -1
 	-- this should forcibly debounce the L press
 	data.prevL = true
 end

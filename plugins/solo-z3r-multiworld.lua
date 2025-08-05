@@ -24,8 +24,8 @@ plugin.description =
 	TIP: Generate seeds with unique sprites and name the players according to the sprites, so that send/recv messages will be meaningful and easily understood.
 ]]
 
-local this_player_id = -1
-local this_seed = -1
+local this_player_id
+local this_seed
 
 local ROM_NAME_ADDR = 0x7FC0 -- 15 bytes
 local ROM_NAME_PATTERN = { nil, nil, nil, nil, nil, 0x5F, nil, 0x5F, nil, 0x5F }
@@ -139,6 +139,8 @@ local function adjust_progressive(item)
 
 		[0x64] = 0x64, -- progressive bow
 		[0x65] = 0x65, -- progressive bow (alt)
+		[0x3A] = 0x64, -- bow and arrows
+		[0x3B] = 0x64, -- bow and silver arrows
 		[0x0B] = 0x64, -- bow
 		[0x58] = 0x64, -- silver arrows
 
@@ -148,7 +150,7 @@ local function adjust_progressive(item)
 	return PROGRESSIVES[item] or item
 end
 
-function make_player_object()
+local function make_player_object()
 	return { items={}, sends={}, delay=0, prev=0 }
 end
 
@@ -157,6 +159,9 @@ function plugin.on_setup(data, settings)
 end
 
 function plugin.on_game_load(data, settings)
+	this_player_id = -1
+	this_seed = -1
+
 	-- a handful of checks to make sure this is a SNES game first
 	local has_cartrom = false
 	for i,domain in ipairs(memory.getmemorydomainlist()) do

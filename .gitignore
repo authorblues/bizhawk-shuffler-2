@@ -1,4 +1,5 @@
 games/*
+start-states/*
 shuffler-src/config.lua
 shuffler-src/.cmd-output.txt
 message.log
@@ -43,3 +44,6 @@ luac.out
 *.i*86
 *.x86_64
 *.hex
+
+# Editor settings
+.vscode/

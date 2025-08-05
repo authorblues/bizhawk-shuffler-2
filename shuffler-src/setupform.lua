@@ -2,7 +2,7 @@ local module = {}
 
 local NEWLINE = "\r\n"
 
-function module.make_plugin_window(plugins, main_plugin_label)
+function module.make_plugin_window(plugins)
 	local plugin_combo, info_box, enabled_label
 	local SETTINGS_X = 370
 
@@ -116,11 +116,9 @@ function module.make_plugin_window(plugins, main_plugin_label)
 	forms.setproperty(plugin_error_text, "Visible", false)
 
 	function save_plugin_settings()
-		local enabled_list = {}
 		for _,plugin in ipairs(plugins) do
 			plugin._enabled = forms.ischecked(plugin._ui._enabled)
 			if plugin._enabled then
-				table.insert(enabled_list, plugin.name)
 				for _,setting in ipairs(plugin.settings) do
 					local meta = SETTINGS_TYPES[setting.type:lower()]
 					if meta ~= nil and setting.name ~= nil and meta.getData ~= nil then
@@ -130,12 +128,7 @@ function module.make_plugin_window(plugins, main_plugin_label)
 			end
 		end
 
-		local enabled_count_str = tostring(#enabled_list)
-		if #enabled_list == 0 then enabled_count_str = "No" end
-
-		local output = string.format("%s Plugins Loaded", enabled_count_str)
-		if #enabled_list == 1 then output = enabled_list[1] end
-		forms.settext(main_plugin_label, output)
+		module.update_plugin_label()
 
 		-- close plugin window if open
 		forms.destroy(plugin_window)
@@ -229,6 +222,8 @@ function module.initial_setup(callback)
 	local setup_window, resume, start_btn
 	local seed_text, min_text, max_text
 	local mode_combo, hk_complete, plugin_label
+	local plugin_btn, seed_btn
+	local immutable_inputs
 	local plugin_window = -1
 
 	local plugins = {}
@@ -239,12 +234,28 @@ function module.initial_setup(callback)
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pname)
 			pmodule._enabled = false
 			pmodule._module = pname
+			-- restore plugin data from existing config
+			local plugin_data = config.plugins and config.plugins[pname]
+			if plugin_data then
+				pmodule._enabled = true
+				for _,setting in ipairs(pmodule.settings) do
+					setting._value = plugin_data.settings[setting.name]
+				end
+			end
 			table.insert(plugins, pmodule)
 		end
 	end
 
-	local SWAP_MODES_DEFAULT = 'Random Order (Default)'
-	local SWAP_MODES = {[SWAP_MODES_DEFAULT] = -1, ['Fixed Order'] = 0}
+	local SWAP_MODES_RANDOM = 'Random Order (Default)'
+	local SWAP_MODES_FIXED = 'Fixed Order'
+	local SWAP_MODES = {[SWAP_MODES_RANDOM] = -1, [SWAP_MODES_FIXED] = 0}
+
+	local OUTPUT_FILE_MODES_DEFAULT = 2
+	local OUTPUT_FILE_MODES = {
+		[0] = 'None',
+		[1] = 'Games, Swaps',
+		[2] = 'Games, Swaps, Timers',
+	}
 
 	-- I believe none of these conflict with default Bizhawk hotkeys
 	local HOTKEY_OPTIONS = {
@@ -257,9 +268,19 @@ function module.initial_setup(callback)
 		'Backslash (above Enter)',
 		'RightCtrl',
 	}
+	local function invert_table(t)
+		local keys = {}
+		--for key, _ in pairs(t) do table.insert(keys, key) end
+		for key, value in pairs(t) do keys[value] = key end
+		return keys
+	end
 
 	function start_handler()
-		if not forms.ischecked(resume) then save_new_settings() end
+		if forms.ischecked(resume) then
+			save_mutable_settings()
+		else
+			save_new_settings()
+		end
 		get_games_list(true) -- force refresh of the games list
 
 		forms.destroy(setup_window)
@@ -268,18 +289,14 @@ function module.initial_setup(callback)
 
 	function save_new_settings()
 		config = {}
+
+		save_mutable_settings()
+
 		config.seed = tonumber(forms.gettext(seed_text) or "0")
 		config.nseed = config.seed
 
 		config.auto_shuffle = true
-		config.output_timers = true
-		local a = tonumber(forms.gettext(min_text) or "15")
-		local b = tonumber(forms.gettext(max_text) or "45")
-		config.min_swap = math.min(a, b)
-		config.max_swap = math.max(a, b)
 
-		config.shuffle_index = SWAP_MODES[forms.gettext(mode_combo)]
-		config.hk_complete = (forms.gettext(hk_complete) or 'Ctrl+Shift+End'):match("[^%s]+")
 		config.completed_games = {}
 
 		config.plugins = {}
@@ -303,23 +320,68 @@ function module.initial_setup(callback)
 		config.game_swaps = {}
 	end
 
+	-- settings that may be changed in a runnning session
+	function save_mutable_settings()
+		-- only set config.shuffle_index if mode has changed or was nil (new config)
+		local new_shuffle_mode = SWAP_MODES[forms.gettext(mode_combo)]
+		local cur_shuffle_mode = config.shuffle_index and (config.shuffle_index >= 0 and 0 or -1)
+		if cur_shuffle_mode ~= new_shuffle_mode then
+			config.shuffle_index = new_shuffle_mode
+		end
+
+		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
+
+		local a = tonumber(forms.gettext(min_text)) or 15
+		local b = tonumber(forms.gettext(max_text)) or 45
+		config.min_swap = math.min(a, b)
+		config.max_swap = math.max(a, b)
+
+		config.hk_complete = (forms.gettext(hk_complete) or 'Ctrl+Shift+End'):match("[^%s]+")
+	end
+
 	function main_cleanup()
 		forms.destroy(plugin_window)
 	end
 
 	function random_seed()
-		math.randomseed(os.time() + os.clock()*100000)
+		math.randomseed(os.time(), math.floor(os.clock()*100000))
 		return math.random(MAX_INTEGER)
 	end
 
+	function module.update_plugin_label()
+		local plugin_name
+		local count = 0
+		for _, plugin in pairs(plugins) do
+			if plugin._enabled then
+				count = count + 1
+				plugin_name = plugin.name
+			end
+		end
+		local text = 'No Plugins Loaded'
+		if count == 1 then text = plugin_name end
+		if count > 1 then text = count .. ' Plugins Loaded' end
+		forms.settext(plugin_label, text)
+	end
+
+	local function update_resume_state()
+		local new_session = not forms.ischecked(resume)
+		forms.settext(start_btn, new_session and "Start New Session" or "Resume Previous Session")
+		for _, control in pairs(immutable_inputs) do
+			forms.setproperty(control, "Enabled", new_session)
+		end
+		if not new_session then
+			forms.destroy(plugin_window)
+		end
+	end
+
 	local y = 10
-	setup_window = forms.newform(340, 230, "Bizhawk Shuffler v2 Setup", main_cleanup)
+	setup_window = forms.newform(340, 260, "Bizhawk Shuffler v2 Setup", main_cleanup)
 
 	seed_text = forms.textbox(setup_window, 0, 100, 20, "UNSIGNED", 10, y)
 	forms.label(setup_window, "Seed", 115, y+3, 40, 20)
 	forms.settext(seed_text, config.seed or random_seed())
 
-	forms.button(setup_window, "Randomize Seed", function()
+	seed_btn = forms.button(setup_window, "Randomize Seed", function()
 		forms.settext(seed_text, random_seed())
 	end, 160, y, 150, 20)
 	y = y + 30
@@ -331,14 +393,10 @@ function module.initial_setup(callback)
 	forms.settext(max_text, config.max_swap or 45)
 	y = y + 30
 
-	local _SWAP_MODES = {}
-	for k,v in pairs(SWAP_MODES) do
-		table.insert(_SWAP_MODES, k)
-	end
-
-	mode_combo = forms.dropdown(setup_window, _SWAP_MODES, 10, y, 150, 20)
+	mode_combo = forms.dropdown(setup_window, invert_table(SWAP_MODES), 10, y, 150, 20)
 	forms.label(setup_window, "Shuffler Swap Order", 165, y+3, 150, 20)
-	forms.settext(mode_combo, SWAP_MODES_DEFAULT)
+	local select_fixed_order = config.shuffle_index and config.shuffle_index > -1
+	forms.settext(mode_combo, select_fixed_order and SWAP_MODES_FIXED or SWAP_MODES_RANDOM)
 	y = y + 30
 
 	hk_complete = forms.dropdown(setup_window, HOTKEY_OPTIONS, 10, y, 150, 20)
@@ -346,24 +404,35 @@ function module.initial_setup(callback)
 	forms.settext(hk_complete, config.hk_complete or 'Ctrl+Shift+End')
 	y = y + 30
 
-	forms.button(setup_window, "Setup Plugins", function()
+	output_files_combo = forms.dropdown(setup_window, OUTPUT_FILE_MODES, 10, y, 150, 20)
+	forms.label(setup_window, "Output info files for OBS", 165, y+3, 150, 20)
+	forms.settext(output_files_combo, OUTPUT_FILE_MODES[config.output_files] or OUTPUT_FILE_MODES[OUTPUT_FILE_MODES_DEFAULT])
+	y = y + 30
+
+	plugin_btn = forms.button(setup_window, "Setup Plugins", function()
 		forms.destroy(plugin_window)
-		plugin_window = module.make_plugin_window(plugins, plugin_label)
+		plugin_window = module.make_plugin_window(plugins)
 	end, 10, y, 150, 20)
-	plugin_label = forms.label(setup_window, "No Plugins Loaded", 165, y+3, 150, 20)
+	plugin_label = forms.label(setup_window, "", 165, y+3, 150, 20)
+	module.update_plugin_label()
 	y = y + 30
 
 	resume = forms.checkbox(setup_window, "Resuming a session?", 10, y)
-	forms.setproperty(resume, "Width", 150)
+	forms.setproperty(resume, "AutoSize", true)
 	start_btn = forms.button(setup_window, "Start New Session", start_handler, 160, y, 150, 20)
 	y = y + 30
 
-	forms.addclick(resume, function()
-		if forms.ischecked(resume) then
-			forms.settext(start_btn, "Resume Previous Session")
-		else
-			forms.settext(start_btn, "Start New Session")
-		end
+	immutable_inputs = { seed_text, seed_btn, plugin_btn }
+
+	if config.current_game ~= nil and #get_games_list(true) > 0 then
+		forms.setproperty(resume, "Checked", true)
+		update_resume_state()
+	end
+
+	forms.addclick(resume, update_resume_state)
+
+	event.onexit(function()
+		forms.destroy(setup_window)
 	end)
 end
 
