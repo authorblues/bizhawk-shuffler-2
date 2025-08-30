@@ -30,6 +30,9 @@ RECOMMENDED_LUA_CORE = "LuaInterface"
 UNSUPPORTED_LUA_CORE = "NLua"
 COMPRESSION_WARNING_THRESHOLD = 2
 MAX_INTEGER = 99999999
+-- On Lua 5.1 Win builds, math.random() arg needs to be <0x7FFFFFFF
+-- So swap time*60 needs to be less than that
+MAX_SWAP_TIME = 9999999 -- 115 days ought to be enough for anybody
 
 function log_message(msg, quiet)
 	if not quiet then print(msg) end

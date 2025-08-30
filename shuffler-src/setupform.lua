@@ -330,8 +330,8 @@ function module.initial_setup(callback)
 
 		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
 
-		local a = tonumber(forms.gettext(min_text)) or 15
-		local b = tonumber(forms.gettext(max_text)) or 45
+		local a = math.min(tonumber(forms.gettext(min_text)) or 15, MAX_SWAP_TIME)
+		local b = math.min(tonumber(forms.gettext(max_text)) or 45, MAX_SWAP_TIME)
 		config.min_swap = math.min(a, b)
 		config.max_swap = math.max(a, b)
 
