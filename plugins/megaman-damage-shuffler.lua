@@ -603,8 +603,8 @@ local gamedata = {
 	['mm-power-battle-fighters'] = { -- Mega Man: The Power Battle / Mega Man 2: The Power Fighters (Arcade)
 		func=function()
 			return function()
-				local hp_changed, hp, prev_hp = update_prev('hp', memory.read_u16_be(0xFF8350, "m68000 : System Bus"))
-				local timer = memory.read_u16_be(0xFF8118, "m68000 : System Bus")
+				local hp_changed, hp, prev_hp = update_prev('hp', memory.read_u16_be(0x8350, "m68000 : ram : 0xFF0000-0xFFFFFF"))
+				local timer = memory.read_u16_be(0x8118, "m68000 : ram : 0xFF0000-0xFFFFFF")
 				return (timer ~= 0 and hp_changed and hp < prev_hp)
 			end
 		end
