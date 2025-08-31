@@ -34,6 +34,8 @@ MAX_INTEGER = 99999999
 -- So swap time*60 needs to be less than that
 MAX_SWAP_TIME = 9999999 -- 115 days ought to be enough for anybody
 
+local gettime = require("socket.core").gettime
+
 function log_message(msg, quiet)
 	if not quiet then print(msg) end
 
@@ -321,6 +323,9 @@ local function on_game_load()
 		write_data('output-info/current-swaps.txt', new_swaps)
 		write_data('output-info/total-swaps.txt', config.total_swaps)
 		write_data('output-info/current-game.txt', strip_ext(config.current_game))
+
+		-- update game name
+		write_data('output-info/current-game.txt', strip_ext(config.current_game))
 	end
 
 	-- this code just outright crashes on Bizhawk 2.6.1, go figure
@@ -395,6 +400,9 @@ function swap_game(next_game)
 	log_debug('swap_game(%s): running=%s', next_game, running)
 	-- if a swap has already happened, don't call again
 	if not running then return false end
+	
+	-- set the time for the next game to swap
+	update_next_swap_time()
 
 	-- if no game provided, call get_next_game()
 	next_game = next_game or get_next_game()
@@ -403,7 +411,6 @@ function swap_game(next_game)
 	-- (you might think we should just disable the timer at this point, but this
 	-- allows new games to be added mid-run without the timer being disabled)
 	if next_game == config.current_game then
-		update_next_swap_time()
 		return false
 	end
 
@@ -433,20 +440,21 @@ function swap_game(next_game)
 	end
 
 	-- save an updated randomizer seed
-	config.nseed = math.random(MAX_INTEGER) + config.frame_count
+	config.nseed = math.random(MAX_INTEGER)
 	save_config(config, 'shuffler-src/config.lua')
 
 	return load_game(config.current_game)
 end
 
-function swap_game_delay(f)
-	next_swap_time = config.frame_count + f
+function swap_game_delay(seconds)
+	config.total_time_limit = config.total_time_limit + seconds
 end
 
 function update_next_swap_time()
-	next_swap_time = math.huge -- infinity
 	if config.auto_shuffle then
-		swap_game_delay(math.random(config.min_swap * 60, config.max_swap * 60))
+		swap_game_delay(math.random(config.min_swap * 100, config.max_swap * 100) / 100)
+	else
+		config.total_time_limit = math.huge -- infinity
 	end
 end
 
@@ -528,11 +536,7 @@ local function check_savestate_config()
 	end
 end
 
--- this is going to be an APPROXIMATION and is not a substitute for an actual
--- timer. games do not run at a consistent or exact 60 fps, so this method is
--- provided purely for entertainment purposes
-function frames_to_time(f)
-	local sec = math.floor(f   / 60)
+function seconds_to_time(sec)
 	local min = math.floor(sec / 60)
 	local hrs = math.floor(min / 60)
 	return string.format('%02d:%02d:%02d', hrs, min%60, sec%60)
@@ -606,18 +610,8 @@ function complete_setup()
 	if config.plugins ~= nil then
 		for pmodpath,pdata in pairs(config.plugins) do
 			local pmodule = require(PLUGINS_FOLDER .. '.' .. pmodpath)
-			if checkversion(pmodule.minversion) then
-				log_message('Plugin loaded: ' .. pmodule.name)
-				table.insert(plugins, pmodule)
-				if pmodule.on_setup ~= nil then
-					pmodule.on_setup(pdata.state, pdata.settings)
-				end
-			else
-				log_message(string.format('%s requires Bizhawk version %s+', pmodule.name, pmodule.minversion))
-				log_message("-- Currently installed version: " .. client.getversion())
-				log_message("-- Please update your Bizhawk installation to use this plugin")
-				config.plugins[pmodpath] = nil
-			end
+			pmodule._module = pmodpath
+			if pmodule ~= nil then table.insert(plugins, pmodule) end
 		end
 	end
 
@@ -638,6 +632,9 @@ function complete_setup()
 	for _,game in ipairs(games) do
 		log_message('GAME FOUND: ' .. game, true)
 	end
+	
+	config.total_time_limit = 0
+	config.initial_time = gettime()
 
 	save_config(config, 'shuffler-src/config.lua')
 	math.randomseed(config.nseed or config.seed)
@@ -692,6 +689,9 @@ frames_since_restart = 0
 
 local ptime_total = nil
 local ptime_game = nil
+
+last_time = gettime()
+
 while true do
 	if running and is_rom_loaded() then
 		-- wait for a frame to pass before turning sound back on
@@ -701,25 +701,32 @@ while true do
 		config.frame_count = frame_count
 		frames_since_restart = frames_since_restart + 1
 
+		local time = gettime()
+		local time_difference = time - last_time
+		last_time = time
+
+		local total_time_since_start = time - config.initial_time
+		local total_time = config.total_time + time_difference
+		config.total_time = total_time
+
 		-- update the frame count specifically for the active game as well
-		local cgf = (config.game_frame_count[config.current_game] or 0) + 1
-		config.game_frame_count[config.current_game] = cgf
+		local current_game_seconds = (config.game_second_count[config.current_game] or 0) + time_difference
+		config.game_second_count[config.current_game] = current_game_seconds
 
 		-- save time info to files for OBS display
 		if config.output_files == 2 then
-			local time_total = frames_to_time(frame_count)
+			local time_total = seconds_to_time(total_time)
 			if time_total ~= ptime_total then
 				write_data('output-info/total-time.txt', time_total)
 				ptime_total = time_total
 			end
 
-			local time_game = frames_to_time(cgf)
+			local time_game = seconds_to_time(current_game_seconds)
 			if time_game ~= ptime_game then
 				write_data('output-info/current-time.txt', time_game)
 				ptime_game = time_game
 			end
 		end
-
 		-- let plugins do operations each frame
 		for _,plugin in ipairs(plugins) do
 			if plugin.on_frame ~= nil then
@@ -737,7 +744,7 @@ while true do
 		prev_input = current_input
 
 		-- time to swap!
-	    if frame_count >= next_swap_time then swap_game() end
+	    if total_time_since_start >= config.total_time_limit then swap_game() end
 	end
 
 	emu.frameadvance()
