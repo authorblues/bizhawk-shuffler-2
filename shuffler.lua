@@ -707,15 +707,41 @@ function complete_setup()
 	end
 end
 
+local HASH_DB_PATTERN = "^([0-9A-Fa-f]+)%s+(%S+)"
+
 function get_tag_from_hash_db(target, database)
 	local resp = nil
 	local fp = assert(io.open(database, 'r'))
 	for x in fp:lines() do
-		local hash, tag = x:match("^([0-9A-Fa-f]+)%s+(%S+)")
+		local hash, tag = x:match(HASH_DB_PATTERN)
 		if hash == target then resp = tag; break end
 	end
 	fp:close()
 	return resp
+end
+
+function compare_with_hash_db(_table, database)
+	local not_table, not_db = {}, {}
+	local in_db = {}
+	
+	local fp = assert(io.open(database, 'r'))
+	for x in fp:lines() do
+		local _, tag = x:match(HASH_DB_PATTERN)
+		if not _table[tag] then
+			table.insert(not_table, tag)
+		else
+			in_db[tag] = true
+		end
+	end
+	fp:close()
+	
+	for tag,_ in pairs(_table) do
+		if not in_db[tag] then
+			table.insert(not_db, tag)
+		end
+	end
+	
+	return not_table, not_db
 end
 
 if not check_compatibility() then
