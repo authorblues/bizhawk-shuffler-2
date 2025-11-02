@@ -60,6 +60,7 @@ local tags = {}
 local prevdata
 local swap_scheduled
 local shouldSwap
+local prev_framecount
 
 -- optionally load BizHawk 2.9 compat helper to get rid of bit operator warnings
 local bit = bit
@@ -602,8 +603,8 @@ local gamedata = {
 	['mm-power-battle-fighters'] = { -- Mega Man: The Power Battle / Mega Man 2: The Power Fighters (Arcade)
 		func=function()
 			return function()
-				local hp_changed, hp, prev_hp = update_prev('hp', memory.read_u16_be(0xFF8350, "m68000 : System Bus"))
-				local timer = memory.read_u16_be(0xFF8118, "m68000 : System Bus")
+				local hp_changed, hp, prev_hp = update_prev('hp', memory.read_u16_be(0x8350, "m68000 : ram : 0xFF0000-0xFFFFFF"))
+				local timer = memory.read_u16_be(0x8118, "m68000 : ram : 0xFF0000-0xFFFFFF")
 				return (timer ~= 0 and hp_changed and hp < prev_hp)
 			end
 		end
@@ -707,6 +708,8 @@ function plugin.on_game_load(data, settings)
 	swap_scheduled = false
 	shouldSwap = function() return false end
 
+	prev_framecount = emu.framecount()
+
 	local tag = tags[gameinfo.getromhash()] or get_game_tag()
 	tags[gameinfo.getromhash()] = tag or NO_MATCH
 
@@ -726,6 +729,14 @@ end
 function plugin.on_frame(data, settings)
 	-- run the check method for each individual game
 	if swap_scheduled then return end
+
+	-- Detect resets, savestate load or rewind (or turbo if "Run lua scripts when turboing" is disabled)
+	local inputs = joypad.get()
+	local new_framecount = emu.framecount()
+	if inputs.Reset or inputs.Power or new_framecount ~= prev_framecount + 1 then
+		prevdata = {} -- reset prevdata to avoid swaps
+	end
+	prev_framecount = new_framecount
 
 	local schedule_swap, delay = shouldSwap(prevdata)
 	if schedule_swap and frames_since_restart > 10 then

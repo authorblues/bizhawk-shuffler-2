@@ -30,6 +30,9 @@ RECOMMENDED_LUA_CORE = "LuaInterface"
 UNSUPPORTED_LUA_CORE = "NLua"
 COMPRESSION_WARNING_THRESHOLD = 2
 MAX_INTEGER = 99999999
+-- On Lua 5.1 Win builds, math.random() arg needs to be <0x7FFFFFFF
+-- So swap time*60 needs to be less than that
+MAX_SWAP_TIME = 9999999 -- 115 days ought to be enough for anybody
 
 function log_message(msg, quiet)
 	if not quiet then print(msg) end
@@ -106,24 +109,70 @@ end
 
 -- dump lua object
 function dump(o)
-	function _dump(o, a, b)
+	local NO_INDENT = -999999999
+	local function indent(level) return string.rep('\t', level) end
+	local function is_sequential(t) -- is table a sequential 1..n 'array'
+		local count = 0
+		local sequential = true
+		for key in pairs(t) do
+			if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 then return false end
+			count = count + 1
+			sequential = sequential and key == count
+		end
+		if sequential then return true end
+		for i = 1, count do -- `sequential` may be a false negative, double check
+			if t[i] == nil then return false end
+		end
+		return true
+	end
+	local function ordered_pairs(t)
+		local keys = {}
+		for key in pairs(t) do table.insert(keys, key) end
+		table.sort(keys, function(a, b)
+			local ta, tb = type(a), type(b)
+			if ta ~= tb then return ta < tb end
+			if ta == 'string' then return a:lower() < b:lower() end
+			if ta == 'number' then return a < b end
+			if ta == 'boolean' then return b end
+			return false
+		end)
+		local i = 0
+		return function()
+			i = i + 1
+			local key = keys[i]
+			if key ~= nil then return key, t[key] end
+		end
+	end
+	local function _dump(o, newline, level)
 		if type(o) == 'table' then
 			local s = ''
-			for k,v in pairs(o) do
-				s = s..a..string.format('[%s] = %s,', _dump(k, "", ""), _dump(v, "", ""))..b
+			if is_sequential(o) then
+				for _,v in ipairs(o) do
+					s = string.format('%s%s%s,%s', s, indent(level), _dump(v, newline, level+1), newline)
+				end
+			else
+				for k,v in ordered_pairs(o) do
+					s = string.format('%s%s[%s] = %s,%s', s, indent(level), _dump(k, "", NO_INDENT), _dump(v, newline, level+1), newline)
+				end
 			end
-			return '{'..b..s..'}'..b
-		elseif type(o) == 'number' or type(o) == 'boolean' or o == nil then
-			return tostring(o)
+			return s == '' and '{}' or string.format('{%s%s%s}', newline, s, indent(level-1))
 		elseif type(o) == 'string' then
 			-- %q encloses in double quotes and escapes according to lua rules
+			-- in Lua 5.4 this can handle all primitive types, clean this up whenever support for old BizHawks is dropped
 			return string.format('%q', o)
+		elseif type(o) == 'number' then
+			if o == math.huge then return '1e9999' end
+			if o == -math.huge then return '-1e9999' end
+			if o ~= o then return '0/0' end -- NaN
+			return tostring(o)
+		elseif type(o) == 'boolean' or o == nil then
+			return tostring(o)
 		else -- functions, native objects, coroutines
 			error(string.format('Unsupported value of type "%s" in config.', type(o)))
 		end
 	end
 
-	return _dump(o, "\t", "\n")
+	return _dump(o, "\n", 1)
 end
 
 -- saves primary config file

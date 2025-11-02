@@ -8,13 +8,15 @@ function module.make_plugin_window(plugins)
 
 	local selected_plugin = nil
 	local plugin_map = {}
+	local settings_height = 0
+	local unsaved_changes = false
 
 	local SETTINGS_TYPES =
 	{
 		['boolean'] = {
 			make = function(plugin, win, setting, x, y)
 				setting.input = forms.checkbox(win, setting.label, x, y)
-				if setting.default or setting._value then forms.setproperty(setting.input, "Checked", true) end
+				if (setting._value == nil and setting.default) or setting._value then forms.setproperty(setting.input, "Checked", true) end
 				forms.setproperty(setting.input, "Width", 330)
 
 				table.insert(plugin._ui, setting.input)
@@ -108,9 +110,15 @@ function module.make_plugin_window(plugins)
 			local meta = SETTINGS_TYPES[setting.type:lower()]
 			if meta ~= nil then y = y + meta.make(plugin, win, setting, x, y) end
 		end
+		settings_height = math.max(settings_height, y)
 	end
 
-	local plugin_window = forms.newform(700, 600, "Plugins Setup")
+	local plugin_window = forms.newform(700, 600, "Plugins Setup", function()
+		if unsaved_changes then
+			log_console("Plugin setup was closed without saving changes.")
+		end
+	end)
+	forms.setproperty(plugin_window, "AutoScroll", true)
 
 	local plugin_error_text = forms.label(plugin_window, "", SETTINGS_X, 43, 300, 200)
 	forms.setproperty(plugin_error_text, "Visible", false)
@@ -129,6 +137,8 @@ function module.make_plugin_window(plugins)
 		end
 
 		module.update_plugin_label()
+
+		unsaved_changes = false
 
 		-- close plugin window if open
 		forms.destroy(plugin_window)
@@ -170,6 +180,9 @@ function module.make_plugin_window(plugins)
 			for _,ui in ipairs(plugin._ui) do
 				forms.setproperty(ui, "Visible", plugin_selected and plugin_enabled)
 			end
+
+			-- we don't know if any settings are *actually* being changed, but it's possible
+			unsaved_changes = unsaved_changes or (plugin_selected and plugin_enabled and #plugin._ui > 0)
 		end
 
 		forms.settext(enabled_label, string.format("Enabled Plugins (%d): %s", enabled_count, enabled_list:sub(3)))
@@ -185,6 +198,7 @@ function module.make_plugin_window(plugins)
 			forms.setproperty(curr_plugin._ui._enabled, "Checked", target_state)
 		end
 		update_plugins()
+		unsaved_changes = true -- enabled state probably changed
 	end
 
 	local plugin_names = {'[ Choose a Plugin ]'}
@@ -196,7 +210,7 @@ function module.make_plugin_window(plugins)
 		setup_plugin_settings(plugin_window, SETTINGS_X, plugin)
 		plugin._ui._enabled = forms.checkbox(plugin_window, "Enabled", SETTINGS_X, 10)
 		forms.setproperty(plugin._ui._enabled, "Visible", false)
-		forms.setproperty(plugin._ui._enabled, "Width", 330)
+		forms.setproperty(plugin._ui._enabled, "Width", 140)
 		forms.setproperty(plugin._ui._enabled, "Checked", plugin._enabled)
 		forms.addclick(plugin._ui._enabled, correct_enabled_misclick)
 
@@ -211,8 +225,10 @@ function module.make_plugin_window(plugins)
 	info_box = forms.textbox(plugin_window, "", 350, 450, nil, 10, 40, true, false, "Vertical")
 	forms.setproperty(info_box, "ReadOnly", true)
 
-	enabled_label = forms.label(plugin_window, "", 10, 500, 500, 50)
-	forms.button(plugin_window, "Save and Close", save_plugin_settings, 520, 530, 150, 20)
+	local enablled_label_width = settings_height < 500 and 500 or 350
+	enabled_label = forms.label(plugin_window, "", 10, 500, enablled_label_width, 50)
+	local close_button_y = settings_height < 530 and 530 or 10
+	forms.button(plugin_window, "Save and Close", save_plugin_settings, 520, close_button_y, 150, 20)
 
 	update_plugins()
 	return plugin_window
@@ -331,8 +347,8 @@ function module.initial_setup(callback)
 
 		config.output_files = invert_table(OUTPUT_FILE_MODES)[forms.gettext(output_files_combo)] or OUTPUT_FILE_MODES_DEFAULT
 
-		local a = tonumber(forms.gettext(min_text)) or 15
-		local b = tonumber(forms.gettext(max_text)) or 45
+		local a = math.min(tonumber(forms.gettext(min_text)) or 15, MAX_SWAP_TIME)
+		local b = math.min(tonumber(forms.gettext(max_text)) or 45, MAX_SWAP_TIME)
 		config.min_swap = math.min(a, b)
 		config.max_swap = math.max(a, b)
 
