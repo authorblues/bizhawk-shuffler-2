@@ -368,7 +368,7 @@ local function on_game_load()
 			log_console('Failed to load state: %s', state)
 		end
 	else
-		log_debug('on_game_load: missing state "%s"', state)
+		log_quiet([[State "%s" doesn't exist]], state)
 	end
 
 	-- update swap counter for this game
