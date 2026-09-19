@@ -259,7 +259,8 @@ function get_games_list(force)
 			-- open the cue file, oh god here we go...
 			local fp = assert(io.open(GAMES_FOLDER .. '/' .. filename, 'r'))
 			for line in fp:lines() do
-				local ref_file = line.match(line, '^%s*FILE%s+"(.-)"') or line.match(line, '^%s*FILE%s+(%g+)') -- quotes optional
+				local file_cmd = '^%s*[Ff][Ii][Ll][Ee]%s+' -- case insensitive
+				local ref_file = line:match(file_cmd .. '"(.-)"') or line:match(file_cmd .. '(%g+)') -- quotes optional
 				if ref_file then
 					table.insert(toremove_ignore_case, ref_file)
 					-- BizHawk automatically looks for these even if the .cue only references foo.bin
